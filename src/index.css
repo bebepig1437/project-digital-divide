@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-ink font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight text-navy;
+  }
+}
+
+@layer components {
+  .container-content {
+    @apply mx-auto w-full max-w-content px-5 sm:px-8;
+  }
+
+  .text-gradient {
+    @apply bg-brand-gradient bg-clip-text text-transparent;
+  }
+
+  /* Primary call-to-action button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-navy px-6 py-3
+      text-sm font-semibold text-white shadow-sm transition
+      hover:bg-navy-900 hover:shadow-md focus:outline-none focus-visible:ring-2
+      focus-visible:ring-teal focus-visible:ring-offset-2 focus-visible:ring-offset-cream;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-navy/20
+      bg-white px-6 py-3 text-sm font-semibold text-navy transition
+      hover:border-teal hover:text-teal focus:outline-none focus-visible:ring-2
+      focus-visible:ring-teal focus-visible:ring-offset-2 focus-visible:ring-offset-cream;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-sm font-medium text-navy;
+  }
+
+  .field-input {
+    @apply w-full rounded-xl border border-navy/15 bg-white px-4 py-2.5 text-ink
+      placeholder:text-muted/60 transition
+      focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full bg-teal/10 px-3 py-1
+      text-xs font-semibold uppercase tracking-wider text-teal-700;
+  }
+
+  /* Markdown styling for newsletter posts */
+  .prose-pdd {
+    @apply text-[17px] leading-relaxed text-ink;
+  }
+  .prose-pdd h2 {
+    @apply mt-10 mb-3 text-2xl;
+  }
+  .prose-pdd h3 {
+    @apply mt-8 mb-2 text-xl;
+  }
+  .prose-pdd p {
+    @apply my-4 text-muted;
+  }
+  .prose-pdd a {
+    @apply font-medium text-teal-700 underline underline-offset-2 hover:text-teal;
+  }
+  .prose-pdd ul {
+    @apply my-4 list-disc space-y-1.5 pl-5 text-muted;
+  }
+  .prose-pdd ol {
+    @apply my-4 list-decimal space-y-1.5 pl-5 text-muted;
+  }
+  .prose-pdd strong {
+    @apply font-semibold text-ink;
+  }
+  .prose-pdd blockquote {
+    @apply my-6 border-l-4 border-teal/40 pl-4 italic text-muted;
+  }
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

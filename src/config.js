@@ -7,8 +7,7 @@ export const site = {
   name: 'Project Digital Divide',
   shortName: 'PDD',
 
-  // TODO: replace with the real PDD inbox.
-  email: 'hello@projectdigitaldivide.org',
+  email: 'projectdigitaldivide.org@gmail.com',
 
   socials: {
     // TODO: paste the real Instagram URL once the account is live.

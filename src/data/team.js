@@ -18,7 +18,7 @@ export const team = [
     bio: "I am a junior in high school with a deep passion for artificial intelligence and computer science. My interest goes beyond the classroom: I have worked as an AI intern at a startup, where I built agentic workflows that helped grow their business, and I have conducted research alongside a PhD researcher in computer science from Purdue University, improving the reliability of AI systems. What drives my involvement in Project Digital Divide is how unevenly knowledge is distributed. Digital literacy is one of the most overlooked pieces of the digital divide, and I believe access to AI should not depend on how much money you have or where you went to school. Outside of tech, I am an Eagle Scout, which taught me the value of service and leadership, and when I am not working or studying, you will probably find me playing video games.",
   },
   {
-    name: 'Michelle',
+    name: 'Michelle Truong',
     grade: 'Junior',
     focus: 'Equity in education & restorative justice',
     photo: null, // TODO: add headshot
@@ -27,8 +27,8 @@ export const team = [
   {
     name: 'Joseph Hu',
     grade: 'Junior',
-    focus: 'Coming soon',
+    focus: 'Computer science & STEM education',
     photo: null, // TODO: add headshot
-    bio: 'Bio coming soon.', // TODO: replace with Joseph's real bio
+    bio: "I am a junior in high school. I've always been drawn to computer science and STEM, and I love sharing that with others, whether through teaching robotics and programming to younger kids or helping run a coding club with my classmates. What draws me to Project Digital Divide is that it strikes me as a social issue as well as a technological one. Even though technology keeps moving forward, not everyone gets to move forward with it, and that gap just keeps growing the more new tech gets introduced. Access to devices and the skills to use them shouldn't depend on where you're from or what you can afford, and teaching has made me realize how unfairly those opportunities are distributed. Outside of school, I play piano, and I'm into competitive math and Latin as well.",
   },
 ]

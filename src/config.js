@@ -15,10 +15,6 @@ export const site = {
   },
 }
 
-// Formspree endpoints. Create free forms at https://formspree.io,
-// then paste each form's endpoint URL below.
-// TODO: replace the placeholder IDs (the part after /f/).
-export const formspree = {
-  contact: 'https://formspree.io/f/REPLACE_CONTACT_ID',
-  volunteer: 'https://formspree.io/f/REPLACE_VOLUNTEER_ID',
-}
+// Backend endpoint that emails form submissions.
+// Implemented as a Vercel serverless function in /api/submit.js (uses Resend).
+export const SUBMIT_ENDPOINT = '/api/submit'

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Send, CheckCircle2, Mail } from 'lucide-react'
-import { formspree, site } from '../config'
+import { SUBMIT_ENDPOINT, site } from '../config'
 import Reveal from '../components/Reveal'
 
 const interestAreas = [
@@ -17,12 +17,13 @@ export default function Volunteer() {
   async function handleSubmit(e) {
     e.preventDefault()
     setStatus('sending')
-    const data = new FormData(e.target)
+    const payload = Object.fromEntries(new FormData(e.target).entries())
+    payload.form = 'volunteer'
     try {
-      const res = await fetch(formspree.volunteer, {
+      const res = await fetch(SUBMIT_ENDPOINT, {
         method: 'POST',
-        body: data,
-        headers: { Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
       if (res.ok) {
         setStatus('success')
@@ -63,6 +64,8 @@ export default function Volunteer() {
           ) : (
             <Reveal>
               <form onSubmit={handleSubmit} className="grid gap-5 rounded-2xl border border-navy/10 bg-white p-6 shadow-sm sm:p-9">
+                {/* Honeypot: hidden from people, catches bots */}
+                <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
                     <label className="field-label" htmlFor="v-name">Full name</label>

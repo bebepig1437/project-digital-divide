@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Send, CheckCircle2 } from 'lucide-react'
-import { formspree } from '../config'
+import { SUBMIT_ENDPOINT } from '../config'
 
 const reasons = [
   'Donate a device',
@@ -15,12 +15,13 @@ export default function ContactForm() {
   async function handleSubmit(e) {
     e.preventDefault()
     setStatus('sending')
-    const data = new FormData(e.target)
+    const payload = Object.fromEntries(new FormData(e.target).entries())
+    payload.form = 'contact'
     try {
-      const res = await fetch(formspree.contact, {
+      const res = await fetch(SUBMIT_ENDPOINT, {
         method: 'POST',
-        body: data,
-        headers: { Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
       if (res.ok) {
         setStatus('success')
@@ -45,6 +46,8 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-navy/10 bg-white p-6 shadow-sm sm:p-8">
+      {/* Honeypot: hidden from people, catches bots */}
+      <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="field-label" htmlFor="c-name">Name</label>

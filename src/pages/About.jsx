@@ -39,12 +39,10 @@ export default function About() {
     <>
       <section className="border-b border-navy/10 bg-navy-50/40 py-16 sm:py-20">
         <div className="container-content max-w-3xl text-center">
-          <span className="eyebrow">About us</span>
-          <h1 className="mt-4 text-4xl sm:text-5xl">The students behind the mission</h1>
+          <span className="eyebrow">About Us</span>
+          <h1 className="mt-4 text-4xl sm:text-5xl">The students running the project</h1>
           <p className="mt-5 text-lg text-muted">
-            We're a team of high schoolers who each found our own way to the same conviction:
-            that access to technology, and the skills to use it, shouldn't depend on where
-            you live or what you can afford.
+            We are a team of high schoolers who believe that access to technology and the skills to use it shouldn't depend on where you live or what you can afford.
           </p>
         </div>
       </section>

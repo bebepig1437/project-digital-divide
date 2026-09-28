@@ -12,8 +12,7 @@ export default function Newsletter() {
           <span className="eyebrow">Newsletter</span>
           <h1 className="mt-4 text-4xl sm:text-5xl">News &amp; updates</h1>
           <p className="mt-5 text-lg text-muted">
-            Device drives, workshops, partnerships, and stories from the field: everything
-            we're up to, one post at a time.
+            Upcoming device drives, workshop recaps, partner projects, and updates on what our team is building
           </p>
         </div>
       </section>

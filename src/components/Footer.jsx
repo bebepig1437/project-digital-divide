@@ -1,10 +1,26 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Mail, Instagram } from 'lucide-react'
 import { site } from '../config'
 import ContactForm from './ContactForm'
 import Reveal from './Reveal'
 
-export default function Footer({ showContact = true }) {
+const contactCopy = {
+  '/about': {
+    title: 'Join us or reach out',
+    body: "Want to donate spare gear, host a workshop in your town, or partner with us? Send a note and we'll reply shortly",
+  },
+  default: {
+    title: "Let's get more people connected",
+    body: "Want to donate old hardware, host a digital skills workshop, or partner on a project? Drop us a note and we'll get back to you.",
+  },
+}
+
+export default function Footer({ showContact = true, contactTitle, contactBody }) {
+  const { pathname } = useLocation()
+  const content = contactCopy[pathname] || contactCopy.default
+  const title = contactTitle || content.title
+  const body = contactBody || content.body
+
   return (
     <>
       {showContact && (
@@ -12,10 +28,9 @@ export default function Footer({ showContact = true }) {
           <div className="container-content grid gap-10 lg:grid-cols-2 lg:items-start">
             <Reveal>
               <span className="eyebrow">Get in touch</span>
-              <h2 className="mt-4 text-3xl sm:text-4xl">Let's bridge the divide together.</h2>
+              <h2 className="mt-4 text-3xl sm:text-4xl">{title}</h2>
               <p className="mt-4 max-w-md text-lg text-muted">
-                Want to donate a device, bring digital-skills workshops to your community,
-                or partner with us? Send a note and we'll be in touch.
+                {body}
               </p>
               <a href={`mailto:${site.email}`} className="mt-6 inline-flex items-center gap-2 font-medium text-navy hover:text-teal">
                 <Mail size={18} /> {site.email}
@@ -34,7 +49,7 @@ export default function Footer({ showContact = true }) {
             <img src="/logo.webp" alt="" className="h-11 w-11 rounded-md bg-white/95 object-contain p-0.5" />
             <div>
               <p className="font-display text-lg font-bold">Project Digital Divide</p>
-              <p className="text-sm text-cream/60">Student-led. Community-powered.</p>
+              <p className="text-sm text-cream/60">Student-led and community-powered</p>
             </div>
           </div>
 

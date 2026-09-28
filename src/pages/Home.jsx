@@ -5,11 +5,11 @@ import ImpactMetrics from '../components/ImpactMetrics'
 import Reveal from '../components/Reveal'
 
 const objectives = [
-  'Redistribute surplus devices and help reduce e-waste',
-  'Teach digital literacy with a hands-on approach for all ages',
-  'Support organizations in their transition to modern digital tools',
-  'Grow community awareness of the digital divide',
-  'Build a sustainable, student-run model over time',
+  'Refurbish surplus hardware and keep usable tech out of landfills',
+  'Host practical, hands-on software workshops for all ages',
+  'Help local groups and non-profits switch to modern digital tools',
+  'Spotlight connectivity and hardware gaps in our neighborhoods',
+  'Build a lasting, student-run program that keeps running smoothly',
 ]
 
 export default function Home() {
@@ -28,8 +28,7 @@ export default function Home() {
             Project Digital Divide
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-cream/85">
-            A student-led initiative bringing devices, digital skills, and connectivity to
-            the communities that need them most.
+            A student project getting working computers, digital skills, and internet access to local families without them
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link to="/volunteer" className="btn-secondary border-transparent bg-white text-navy hover:bg-cream hover:text-navy">
@@ -48,21 +47,14 @@ export default function Home() {
           <Reveal>
             <span className="eyebrow">Our mission</span>
             <h2 className="mt-4 text-3xl sm:text-4xl">
-              We bridge the gap between <span className="text-gradient">access and ability</span>.
+              We pair working computers with the <span className="text-gradient">practical skills</span> to actually use them
             </h2>
             <div className="mt-6 space-y-4 text-lg leading-relaxed text-muted">
               <p>
-                Project Digital Divide is a student-led initiative aimed at bridging the
-                digital gap through three different programs. We collect and give new life to
-                computers and other gadgets by fixing them and then giving them to students,
-                families, and members of the community.
+                We are a student-run team tackling the digital divide head-on. We collect used laptops and desktops, fix them up in our shop, and give them directly to local students and families who need a working machine.
               </p>
               <p>
-                We run digital-skills courses covering computer basics, internet safety,
-                productivity tools, and AI literacy. Beyond that, we help nonprofits, community
-                groups, and small businesses adopt modern digital tools, from websites to AI
-                workflows. We believe that providing access to technology is just the first
-                step. The real challenge is equipping people with the skills to use it.
+                We run hands-on workshops on everyday computer skills, account security, and practical AI tools, and we help local non-profits modernize their day-to-day software. Hardware gets you online, but real confidence comes from knowing what to do once you're there.
               </p>
             </div>
           </Reveal>

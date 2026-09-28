@@ -50,11 +50,10 @@ export default function Pillars() {
     <section ref={ref} className="bg-cream py-20 sm:py-28">
       <div className="container-content">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="eyebrow">Our three pillars</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl">Three foundations, one mission</h2>
+          <span className="eyebrow">Our three core programs</span>
+          <h2 className="mt-4 text-3xl sm:text-4xl">Three practical ways we help</h2>
           <p className="mt-4 text-lg text-muted">
-            Access alone isn't enough. We work across three connected pillars to make
-            technology reach, and truly serve, everyone.
+            Hardware is useless without skills, and skills stall out without an internet connection. We tackle all three together.
           </p>
         </div>
       </div>

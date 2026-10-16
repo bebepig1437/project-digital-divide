@@ -34,7 +34,7 @@ export default function Navbar() {
     >
       <nav className="container-content flex h-16 items-center justify-between md:h-20">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src="/logo.webp" alt="" className="h-9 w-9 rounded-md object-contain md:h-11 md:w-11" />
+          <img src="/logo.webp" alt="Project Digital Divide logo" className="h-9 w-9 rounded-md object-contain md:h-11 md:w-11" />
           <span className="font-display text-base font-bold leading-tight text-navy md:text-lg">
             Project Digital Divide
           </span>

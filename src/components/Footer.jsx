@@ -46,7 +46,7 @@ export default function Footer({ showContact = true, contactTitle, contactBody }
       <footer className="bg-navy text-cream">
         <div className="container-content flex flex-col gap-8 py-12 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.webp" alt="" className="h-11 w-11 rounded-md bg-white/95 object-contain p-0.5" />
+            <img src="/logo.webp" alt="Project Digital Divide logo" className="h-11 w-11 rounded-md bg-white/95 object-contain p-0.5" />
             <div>
               <p className="font-display text-lg font-bold">Project Digital Divide</p>
               <p className="text-sm text-cream/60">Student-led and community-powered</p>

@@ -18,7 +18,7 @@ export const team = [
     bio: "Joseph is the one who sends the emails. He's the first contact for districts, the person drafting grant applications late at night, and the one who follows up a third time after being ignored twice. He plays piano and competes in math and Latin. He got into this because he kept noticing that technology moves forward whether or not you can keep up with it, and the people who can't are usually the ones who had the least to begin with. He is probably the reason this project exists.",
   },
   {
-    name: 'Joshua',
+    name: 'Joshua De Leon',
     grade: 'Junior',
     focus: 'Hardware and bench operations',
     photo: null,

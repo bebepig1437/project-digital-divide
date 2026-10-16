@@ -24,5 +24,3 @@ We're tackling all three.
 
 This newsletter is where we'll share what we're up to: device drives, workshops, partnerships,
 and the stories of the people we meet along the way. Thanks for being here.
-
-> _This is an example post. Edit or delete it in `src/content/posts/`._

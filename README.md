@@ -1,6 +1,9 @@
 # Project Digital Divide
 
-Website for **Project Digital Divide (PDD)**, a student-led nonprofit bridging the digital
+[![Live Website](https://img.shields.io/badge/Live_Site-projectdigitaldivide.org-0d9488?style=for-the-badge&logo=google-chrome&logoColor=white)](https://projectdigitaldivide.org)
+[![Vercel Deployment](https://img.shields.io/badge/Deployed_on-Vercel-black?style=for-the-badge&logo=vercel)](https://projectdigitaldivide.org)
+
+Official website for [**Project Digital Divide (PDD)**](https://projectdigitaldivide.org), a student-led nonprofit bridging the digital
 divide through three programs: device refurbishment and donation, digital-literacy education
 (with an AI focus), and broadband-access advocacy.
 
@@ -11,7 +14,7 @@ divide through three programs: device refurbishment and donation, digital-litera
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [lucide-react](https://lucide.dev/) icons
 - Markdown-powered newsletter (`react-markdown` + `remark-gfm`)
-- [Formspree](https://formspree.io/) for contact + volunteer form submissions
+- Vercel Serverless Function (`/api/submit.js` powered by Resend) for contact & volunteer forms
 
 ## Getting started
 

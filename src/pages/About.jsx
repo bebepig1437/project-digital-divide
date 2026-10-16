@@ -1,56 +1,5 @@
-import { team } from '../data/team'
 import Reveal from '../components/Reveal'
-import PhotoPlaceholder from '../components/PhotoPlaceholder'
-
-function MemberRow({ member, index }) {
-  const flipped = index % 2 === 1
-
-  return (
-    <Reveal>
-      <div
-        className={`grid items-center gap-8 md:grid-cols-12 md:gap-14 ${
-          flipped ? 'md:[direction:rtl]' : ''
-        }`}
-      >
-        {/* Side Image Frame (5 Columns on Desktop) */}
-        <div className="md:col-span-5 md:[direction:ltr]">
-          {member.photo ? (
-            <img
-              src={member.photo}
-              alt={member.name}
-              className="aspect-[4/5] w-full rounded-2xl object-cover shadow-sm border border-navy/10"
-            />
-          ) : (
-            <PhotoPlaceholder
-              label={`${member.name} photo`}
-              className="aspect-[4/5] w-full shadow-sm"
-            />
-          )}
-        </div>
-
-        {/* Caption & Bio (7 Columns on Desktop) */}
-        <div className="md:col-span-7 md:[direction:ltr]">
-          <h3 className="font-display text-2xl font-bold text-navy sm:text-3xl">
-            {member.name}
-          </h3>
-
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            <span className="eyebrow !bg-navy-50 !text-navy font-semibold">
-              {member.grade}
-            </span>
-            <span className="eyebrow !bg-teal/10 !text-teal-800 font-semibold">
-              {member.focus}
-            </span>
-          </div>
-
-          <p className="mt-5 text-[16px] leading-relaxed text-muted sm:text-[17px]">
-            {member.bio}
-          </p>
-        </div>
-      </div>
-    </Reveal>
-  )
-}
+import TeamCarousel from '../components/TeamCarousel'
 
 export default function About() {
   return (
@@ -90,10 +39,10 @@ export default function About() {
         </div>
       </section>
 
-      {/* The Team: Clean Side-by-Side Images & Captions */}
+      {/* The Team: Simplistic Carousel with Minimal Transitions */}
       <section className="bg-cream py-20 sm:py-28">
-        <div className="container-content flex flex-col gap-20 sm:gap-24">
-          <div className="mx-auto max-w-2xl text-center">
+        <div className="container-content">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
             <span className="eyebrow">The Team</span>
             <h2 className="mt-3 text-3xl font-bold text-navy sm:text-4xl">
               Who owns what
@@ -103,11 +52,7 @@ export default function About() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-16 sm:gap-20">
-            {team.map((member, i) => (
-              <MemberRow key={member.name} member={member} index={i} />
-            ))}
-          </div>
+          <TeamCarousel />
         </div>
       </section>
     </>

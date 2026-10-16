@@ -1,5 +1,5 @@
 import Reveal from '../components/Reveal'
-import TeamOrbitalWheel from '../components/TeamOrbitalWheel'
+import TeamShowcaseMaster from '../components/team-showcase/TeamShowcaseMaster'
 
 export default function About() {
   return (
@@ -37,10 +37,10 @@ export default function About() {
         </div>
       </section>
 
-      {/* Interactive Rotating Orbital Wheel */}
+      {/* Interactive Showcase Section (All 4 Styles) */}
       <section className="bg-cream py-20 sm:py-28">
         <div className="container-content">
-          <TeamOrbitalWheel />
+          <TeamShowcaseMaster />
         </div>
       </section>
     </>

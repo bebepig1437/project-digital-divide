@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Brand palette — pulled from the PDD logo + proposal doc
+        // Brand palette: pulled from the PDD logo + proposal doc
         navy: {
           DEFAULT: '#1E3A5F',
           50: '#EEF3F8',

@@ -1,52 +1,21 @@
-import { team } from '../data/team'
 import Reveal from '../components/Reveal'
-import PhotoPlaceholder from '../components/PhotoPlaceholder'
-
-function MemberRow({ member, index }) {
-  const flipped = index % 2 === 1
-  return (
-    <Reveal>
-      <div className={`grid items-center gap-8 md:grid-cols-2 md:gap-14 ${flipped ? 'md:[direction:rtl]' : ''}`}>
-        {/* Photo */}
-        <div className="md:[direction:ltr]">
-          {member.photo ? (
-            <img
-              src={member.photo}
-              alt={member.name}
-              className="aspect-[4/5] w-full rounded-2xl object-cover shadow-sm"
-            />
-          ) : (
-            <PhotoPlaceholder label={`${member.name} photo`} className="aspect-[4/5] w-full" />
-          )}
-        </div>
-
-        {/* Bio */}
-        <div className="md:[direction:ltr]">
-          <h2 className="text-2xl sm:text-3xl">{member.name}</h2>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="eyebrow !bg-navy-50 !text-navy">{member.grade}</span>
-            <span className="eyebrow">{member.focus}</span>
-          </div>
-          <p className="mt-5 text-[15px] leading-relaxed text-muted">{member.bio}</p>
-        </div>
-      </div>
-    </Reveal>
-  )
-}
+import TeamOrbitalWheel from '../components/TeamOrbitalWheel'
 
 export default function About() {
   return (
     <>
+      {/* Hero Header */}
       <section className="border-b border-navy/10 bg-navy-50/40 py-16 sm:py-20">
         <div className="container-content max-w-3xl text-center">
           <span className="eyebrow">About Us</span>
-          <h1 className="mt-4 text-4xl sm:text-5xl font-bold text-navy">The students behind the project</h1>
+          <h1 className="mt-4 text-4xl font-bold text-navy sm:text-5xl">The students behind the project</h1>
           <p className="mt-5 text-lg font-medium text-navy/80 sm:text-xl">
             We're five high schoolers in Pearland, Texas, and we got tired of watching working laptops get thrown away.
           </p>
         </div>
       </section>
 
+      {/* Origin Story Narrative */}
       <section className="border-b border-navy/10 bg-white py-16 sm:py-20">
         <div className="container-content max-w-3xl">
           <Reveal>
@@ -68,15 +37,10 @@ export default function About() {
         </div>
       </section>
 
-      <section className="bg-cream py-20 sm:py-24">
-        <div className="container-content flex flex-col gap-20 sm:gap-24">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="eyebrow">The Team</span>
-            <h2 className="mt-3 text-3xl sm:text-4xl">Who owns what</h2>
-          </div>
-          {team.map((member, i) => (
-            <MemberRow key={member.name} member={member} index={i} />
-          ))}
+      {/* Interactive Rotating Orbital Wheel */}
+      <section className="bg-cream py-20 sm:py-28">
+        <div className="container-content">
+          <TeamOrbitalWheel />
         </div>
       </section>
     </>

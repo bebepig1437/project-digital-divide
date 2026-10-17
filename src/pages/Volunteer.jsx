@@ -38,10 +38,10 @@ export default function Volunteer() {
 
   return (
     <>
-      <section className="border-b border-navy/10 bg-navy-50/40 py-16 sm:py-20">
+      <section className="border-b border-brand-slate/10 bg-brand-pale/20 py-16 sm:py-20">
         <div className="container-content max-w-3xl text-center">
           <span className="eyebrow">Volunteer</span>
-          <h1 className="mt-4 text-4xl sm:text-5xl">Join the team</h1>
+          <h1 className="mt-4 text-4xl font-bold text-brand-slate sm:text-5xl">Join the team</h1>
           <p className="mt-5 text-lg text-muted">
             Whether you can fix a laptop, teach a workshop, build a website, or spread the
             word, there's a place for you here. Tell us a bit about yourself.
@@ -49,13 +49,13 @@ export default function Volunteer() {
         </div>
       </section>
 
-      <section className="bg-cream py-16 sm:py-20">
+      <section className="bg-white py-16 sm:py-20">
         <div className="container-content max-w-2xl">
           {status === 'success' ? (
             <Reveal>
-              <div className="flex flex-col items-center gap-3 rounded-2xl border border-teal/20 bg-white p-12 text-center shadow-sm">
-                <CheckCircle2 className="text-teal-600" size={44} />
-                <h2 className="text-2xl">Application received!</h2>
+              <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-teal/20 bg-white p-12 text-center shadow-sm">
+                <CheckCircle2 className="text-brand-teal" size={44} />
+                <h2 className="text-2xl font-bold text-brand-slate">Application received!</h2>
                 <p className="max-w-sm text-muted">
                   Thanks for wanting to help bridge the divide. We'll reach out to you soon.
                 </p>
@@ -63,7 +63,7 @@ export default function Volunteer() {
             </Reveal>
           ) : (
             <Reveal>
-              <form onSubmit={handleSubmit} className="grid gap-5 rounded-2xl border border-navy/10 bg-white p-6 shadow-sm sm:p-9">
+              <form onSubmit={handleSubmit} className="grid gap-5 rounded-3xl border border-brand-slate/10 bg-white p-6 shadow-sm sm:p-9">
                 {/* Honeypot: hidden from people, catches bots */}
                 <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
                 <div className="grid gap-5 sm:grid-cols-2">
@@ -122,7 +122,7 @@ export default function Volunteer() {
 
           <p className="mt-6 text-center text-sm text-muted">
             Prefer email? Reach us at{' '}
-            <a href={`mailto:${site.email}`} className="inline-flex items-center gap-1 font-medium text-navy hover:text-teal">
+            <a href={`mailto:${site.email}`} className="inline-flex items-center gap-1 font-medium text-brand-slate hover:text-brand-teal transition-colors">
               <Mail size={14} /> {site.email}
             </a>
           </p>

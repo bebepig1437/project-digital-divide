@@ -4,33 +4,43 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Brand palette: pulled from the PDD logo + proposal doc
+        // Authoritative Brand Palette
+        brand: {
+          slate: '#1A5C75', // Deep Slate Blue (Primary structural, dark cards, deep text)
+          teal: '#278693',  // Mid Teal (Secondary accent, borders, hover tones)
+          cyan: '#46C0A9',  // Vibrant Cyan-Teal (Action highlights, active badges, focus rings)
+          white: '#FFFFFF', // Pristine White (Crisp surface cards, typography)
+          pale: '#A3E8DE',  // Pale Cyan (Soft tint backgrounds, subtle containers)
+        },
         navy: {
-          DEFAULT: '#1E3A5F',
-          50: '#EEF3F8',
-          100: '#D6E2ED',
-          700: '#27496F',
-          800: '#1E3A5F',
-          900: '#16314F',
-          950: '#0F2236',
+          DEFAULT: '#1A5C75',
+          50: '#F0F8FA',
+          100: '#E0F1F4',
+          700: '#226D87',
+          800: '#1A5C75',
+          900: '#134659',
+          950: '#0C2D3A',
         },
         teal: {
-          DEFAULT: '#2E9D94',
-          400: '#4FBDB0',
-          500: '#3AAFA4',
-          600: '#2E9D94',
-          700: '#247E77',
+          DEFAULT: '#278693',
+          300: '#A3E8DE',
+          400: '#46C0A9',
+          500: '#278693',
+          600: '#1F6F7A',
+          700: '#17565F',
         },
-        cream: '#FAF8F3',
-        ink: '#1E293B',
-        muted: '#64748B',
+        pale: '#A3E8DE',
+        cream: '#FAF8F5',
+        ink: '#102A36',
+        muted: '#527282',
       },
       fontFamily: {
         display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(120deg, #1E3A5F 0%, #2E9D94 60%, #4FBDB0 100%)',
+        'brand-gradient': 'linear-gradient(90deg, #143a56 0%, #185573 20%, #1c7385 40%, #269699 60%, #37bba5 80%, #4eccb0 100%)',
+        'brand-subtle': 'linear-gradient(180deg, #FFFFFF 0%, #F0F8FA 100%)',
       },
       maxWidth: {
         content: '72rem',

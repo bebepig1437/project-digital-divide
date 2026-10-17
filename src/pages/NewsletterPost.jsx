@@ -19,17 +19,17 @@ export default function NewsletterPost() {
   }
 
   return (
-    <article className="bg-cream py-14 sm:py-20">
+    <article className="bg-white py-14 sm:py-20">
       <div className="container-content max-w-3xl">
-        <Link to="/newsletter" className="inline-flex items-center gap-1.5 text-sm font-semibold text-navy hover:text-teal">
+        <Link to="/newsletter" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-slate hover:text-brand-teal transition-colors">
           <ArrowLeft size={15} /> All posts
         </Link>
 
         <header className="mt-6">
-          <time className="text-xs font-semibold uppercase tracking-wider text-teal-700">
+          <time className="text-xs font-semibold uppercase tracking-wider text-brand-teal">
             {formatDate(post.date)}
           </time>
-          <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">{post.title}</h1>
+          <h1 className="mt-3 text-4xl font-bold leading-tight text-brand-slate sm:text-5xl">{post.title}</h1>
         </header>
 
         {post.image ? (

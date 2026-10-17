@@ -9,7 +9,7 @@ function Metric({ metric }) {
         {value.toLocaleString()}
         {metric.suffix}
       </div>
-      <div className="mt-2 text-sm font-medium uppercase tracking-wider text-cream/70">
+      <div className="mt-2 text-sm font-medium uppercase tracking-wider text-white/80">
         {metric.label}
       </div>
     </div>

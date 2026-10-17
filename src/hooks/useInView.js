@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
-// Returns [ref, inView]. `inView` flips to true once the element
-// scrolls into the viewport (once). Used for subtle reveal animations.
-export function useInView(options = { threshold: 0.15, rootMargin: '0px 0px -10% 0px' }) {
+// Returns [ref, inView]. `inView` updates dynamically when the element
+// enters and exits the viewport so reveals re-trigger smoothly on scroll up and down.
+export function useInView(options = { threshold: 0.12, rootMargin: '0px 0px -50px 0px' }) {
   const ref = useRef(null)
   const [inView, setInView] = useState(false)
 
@@ -17,10 +17,7 @@ export function useInView(options = { threshold: 0.15, rootMargin: '0px 0px -10%
     }
 
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setInView(true)
-        observer.disconnect()
-      }
+      setInView(entry.isIntersecting)
     }, options)
 
     observer.observe(node)

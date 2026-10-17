@@ -8,14 +8,14 @@
   }
 
   body {
-    @apply bg-cream text-ink font-sans antialiased;
+    @apply bg-white text-ink font-sans antialiased;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    @apply font-display tracking-tight text-navy;
+    @apply font-display tracking-tight text-brand-slate;
   }
 }
 
@@ -28,34 +28,42 @@
     @apply bg-brand-gradient bg-clip-text text-transparent;
   }
 
+  .hero-banner-bg {
+    background-color: #143a56;
+    background-image:
+      radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+      linear-gradient(90deg, #143a56 0%, #185573 20%, #1c7385 40%, #269699 60%, #37bba5 80%, #4eccb0 100%);
+    background-size: 24px 24px, 100% 100%;
+  }
+
   /* Primary call-to-action button */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-navy px-6 py-3
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-slate px-6 py-3
       text-sm font-semibold text-white shadow-sm transition
-      hover:bg-navy-900 hover:shadow-md focus:outline-none focus-visible:ring-2
-      focus-visible:ring-teal focus-visible:ring-offset-2 focus-visible:ring-offset-cream;
+      hover:bg-brand-teal hover:shadow-md focus:outline-none focus-visible:ring-2
+      focus-visible:ring-brand-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-white;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-navy/20
-      bg-white px-6 py-3 text-sm font-semibold text-navy transition
-      hover:border-teal hover:text-teal focus:outline-none focus-visible:ring-2
-      focus-visible:ring-teal focus-visible:ring-offset-2 focus-visible:ring-offset-cream;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-brand-slate/20
+      bg-white px-6 py-3 text-sm font-semibold text-brand-slate transition
+      hover:border-brand-teal hover:text-brand-teal focus:outline-none focus-visible:ring-2
+      focus-visible:ring-brand-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-white;
   }
 
   .field-label {
-    @apply mb-1.5 block text-sm font-medium text-navy;
+    @apply mb-1.5 block text-sm font-medium text-brand-slate;
   }
 
   .field-input {
-    @apply w-full rounded-xl border border-navy/15 bg-white px-4 py-2.5 text-ink
+    @apply w-full rounded-xl border border-brand-slate/15 bg-white px-4 py-2.5 text-ink
       placeholder:text-muted/60 transition
-      focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30;
+      focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-cyan/30;
   }
 
   .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full bg-teal/10 px-3 py-1
-      text-xs font-semibold uppercase tracking-wider text-teal-700;
+    @apply inline-flex items-center gap-2 rounded-full bg-brand-pale/40 border border-brand-teal/20 px-3 py-1
+      text-xs font-semibold uppercase tracking-wider text-brand-slate;
   }
 
   /* Markdown styling for newsletter posts */

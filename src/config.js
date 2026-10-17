@@ -10,8 +10,7 @@ export const site = {
   email: 'projectdigitaldivide.org@gmail.com',
 
   socials: {
-    // TODO: paste the real Instagram URL once the account is live.
-    instagram: 'https://instagram.com/',
+    instagram: 'https://www.instagram.com/projectdigitaldivide/',
   },
 }
 

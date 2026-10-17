@@ -7,8 +7,8 @@ export default function PhotoPlaceholder({ label = 'Photo', className = '', roun
   return (
     <div
       className={[
-        'flex flex-col items-center justify-center gap-2 border border-dashed border-navy/20',
-        'bg-navy-50/60 text-navy/40',
+        'flex flex-col items-center justify-center gap-2 border border-dashed border-brand-slate/20',
+        'bg-brand-pale/25 text-brand-slate/40',
         rounded,
         className,
       ].join(' ')}

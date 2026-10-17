@@ -151,7 +151,7 @@ export default function TeamCarousel() {
                   <div className="md:col-span-7 flex flex-col justify-between">
                     <div>
                       <p className="text-xs sm:text-sm font-semibold tracking-wider text-teal-700 uppercase">
-                        {member.focus} · {member.grade}
+                        {member.role || member.focus}
                       </p>
 
                       <h3 className="mt-2 text-2xl font-bold tracking-tight text-navy sm:text-4xl">

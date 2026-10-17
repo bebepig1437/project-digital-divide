@@ -70,7 +70,7 @@ export default function TeamHorizonExpander() {
                   }`}
                 >
                   <p className="text-xs font-semibold uppercase tracking-wider text-teal-300 sm:text-sm">
-                    {member.focus} · {member.grade}
+                    {member.role || member.focus}
                   </p>
                   <h3 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-4xl">
                     {member.name}

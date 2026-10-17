@@ -65,7 +65,7 @@ export default function TeamOpenFilmstrip() {
               {/* Text Info */}
               <div className="mt-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
-                  {member.focus} · {member.grade}
+                  {member.role || member.focus}
                 </p>
                 <h3 className="mt-1 font-display text-xl font-bold tracking-tight text-navy sm:text-2xl">
                   {member.name}

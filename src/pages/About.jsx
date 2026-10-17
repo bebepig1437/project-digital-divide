@@ -1,13 +1,7 @@
-import { useState } from 'react'
 import Reveal from '../components/Reveal'
 import TeamHorizonExpander from '../components/TeamHorizonExpander'
-import TeamOpenFilmstrip from '../components/TeamOpenFilmstrip'
-import TeamSplitRoster from '../components/TeamSplitRoster'
-import TeamBentoGrid from '../components/TeamBentoGrid'
 
 export default function About() {
-  const [selectedModel, setSelectedModel] = useState('all')
-
   return (
     <>
       {/* Hero Header */}
@@ -45,7 +39,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* The Team: 4 Interactive Showcase Concepts */}
+      {/* The Team: Horizon Expander */}
       <section className="bg-cream py-20 sm:py-28">
         <div className="container-content">
           <div className="mx-auto mb-12 max-w-2xl text-center">
@@ -56,85 +50,9 @@ export default function About() {
             <p className="mt-3 text-base text-muted">
               Five team leads with distinct functions, from district outreach and hardware diagnostics to software pipeline tooling.
             </p>
-
-            {/* Model Switcher */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-              {[
-                { id: 'all', label: 'View All 4 Models' },
-                { id: 'expander', label: '1. Horizon Expander' },
-                { id: 'filmstrip', label: '2. Open Filmstrip' },
-                { id: 'roster', label: '3. Split Roster' },
-                { id: 'bento', label: '4. Modular Bento' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setSelectedModel(tab.id)}
-                  className={`rounded-full px-4 py-2 text-xs font-semibold transition sm:text-sm ${
-                    selectedModel === tab.id
-                      ? 'bg-navy text-white shadow-sm ring-2 ring-navy/20'
-                      : 'border border-navy/15 bg-white text-navy/70 hover:bg-navy-50 hover:text-navy'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
           </div>
 
-          <div className="space-y-20">
-            {(selectedModel === 'all' || selectedModel === 'expander') && (
-              <div>
-                {selectedModel === 'all' && (
-                  <div className="mb-4 text-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
-                      Model 1 · Interactive Horizon Expander
-                    </span>
-                  </div>
-                )}
-                <TeamHorizonExpander />
-              </div>
-            )}
-
-            {(selectedModel === 'all' || selectedModel === 'filmstrip') && (
-              <div>
-                {selectedModel === 'all' && (
-                  <div className="mb-4 text-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
-                      Model 2 · Open Edge-to-Edge Filmstrip
-                    </span>
-                  </div>
-                )}
-                <TeamOpenFilmstrip />
-              </div>
-            )}
-
-            {(selectedModel === 'all' || selectedModel === 'roster') && (
-              <div>
-                {selectedModel === 'all' && (
-                  <div className="mb-4 text-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
-                      Model 3 · Split Stage & Interactive Roster
-                    </span>
-                  </div>
-                )}
-                <TeamSplitRoster />
-              </div>
-            )}
-
-            {(selectedModel === 'all' || selectedModel === 'bento') && (
-              <div>
-                {selectedModel === 'all' && (
-                  <div className="mb-4 text-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
-                      Model 4 · 5-Card Modular Bento Showcase
-                    </span>
-                  </div>
-                )}
-                <TeamBentoGrid />
-              </div>
-            )}
-          </div>
+          <TeamHorizonExpander />
         </div>
       </section>
     </>

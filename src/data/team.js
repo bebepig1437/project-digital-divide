@@ -21,7 +21,7 @@ export const team = [
     name: 'Joshua De Leon',
     grade: 'Junior',
     focus: 'Hardware and bench operations',
-    photo: null,
+    photo: '/team/joshua.jpg',
     bio: "Joshua runs the bench. He's the one who opens up a donated laptop, finds a dead drive, a cracked hinge, and coffee from three years ago on the keyboard, and still gets it booting by Friday. He does the diagnostics, the drive swaps, the OS installs, and the quality checks before anything leaves the workspace. He doesn't run meetings or write grants. He fixes the machines. When he isn't doing this, he's lifting, or taking apart something that wasn't broken yet.",
   },
   {

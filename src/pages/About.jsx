@@ -15,7 +15,7 @@ export default function About() {
         <div className="container-content max-w-3xl text-center">
           <span className="eyebrow">About Us</span>
           <h1 className="mt-4 text-4xl font-bold text-navy sm:text-5xl">
-            The students behind the project
+            Who we are
           </h1>
           <p className="mt-5 text-lg font-medium text-navy/80 sm:text-xl">
             We're five high schoolers in Pearland, Texas, and we got tired of watching working laptops get thrown away.
@@ -29,16 +29,16 @@ export default function About() {
           <Reveal>
             <div className="space-y-6 text-[16px] leading-relaxed text-muted sm:text-[17px]">
               <p>
-                It started with a question: where do old school computers actually go? The answer was nowhere good. Districts refresh their devices every few years. Most of them still work, but they cannot run the newest version of Windows. A few miles away, students were doing homework on their parents' phones because they didn't have anything else.
+                It started with a question: where do old school computers actually go? The answer was nowhere good. Districts refresh their devices every few years. Most of them still work. They just can't run the newest version of Windows. A few miles away, students were doing homework on their parents' phones because they didn't have anything else.
               </p>
               <p>
                 So we spent four months learning how to talk to a school district. We wrote emails. We got ignored. We wrote more emails. Eventually we got a yes for 100 laptops, and then had to figure out what to do with them.
               </p>
               <p>
-                What we built is a pipeline. We pick up surplus devices, log them, test them, wipe the drives to NIST 800-88 standards, replace what's broken, and install an operating system that actually runs. Then we hand them to students through a workshop where they open the machine themselves and do half the work.
+                What we built is a pipeline. We pick up surplus devices, log them, test them, wipe the drives to NIST 800-88 standards, and replace what's broken. Then we install an operating system that actually runs, and hand the machine to a student through a workshop where they open it up and do half the work themselves.
               </p>
               <p>
-                We're still small. We've deployed about 60 devices so far. The rest are in progress. We track everything, including yield rate, cost per unit, and where each laptop ended up, because the only way this matters is if it actually works and we can prove it.
+                We're still small. We've deployed about 60 devices so far. The rest are in progress. We track yield rate, cost per unit, and where every laptop ends up. The only way this matters is if it actually works, and if we can prove it.
               </p>
             </div>
           </Reveal>

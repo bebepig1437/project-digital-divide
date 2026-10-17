@@ -28,14 +28,14 @@ export default function Navbar() {
       className={[
         'sticky top-0 z-50 transition-colors duration-300',
         scrolled
-          ? 'border-b border-navy/10 bg-cream/85 backdrop-blur-md'
-          : 'border-b border-transparent bg-cream/0',
+          ? 'border-b border-brand-slate/10 bg-white/90 backdrop-blur-md shadow-sm'
+          : 'border-b border-transparent bg-white/0',
       ].join(' ')}
     >
       <nav className="container-content flex h-16 items-center justify-between md:h-20">
         <Link to="/" className="flex items-center gap-2.5 -ml-0.5 sm:-ml-2 md:-ml-4 lg:-ml-7 transition-transform hover:opacity-90">
           <img src="/logo.webp" alt="Project Digital Divide logo" className="h-9 w-9 rounded-md object-contain md:h-11 md:w-11" />
-          <span className="font-display text-base font-bold leading-tight text-navy md:text-lg">
+          <span className="font-display text-base font-bold leading-tight text-brand-slate md:text-lg">
             Project Digital Divide
           </span>
         </Link>
@@ -50,7 +50,7 @@ export default function Navbar() {
               className={({ isActive }) =>
                 [
                   'text-sm font-medium transition-colors',
-                  isActive ? 'text-teal-700' : 'text-navy/70 hover:text-navy',
+                  isActive ? 'text-brand-teal font-semibold' : 'text-brand-slate/75 hover:text-brand-slate',
                 ].join(' ')
               }
             >
@@ -66,7 +66,7 @@ export default function Navbar() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="rounded-lg p-2 text-navy md:hidden -mr-0.5 sm:-mr-2"
+          className="rounded-lg p-2 text-brand-slate md:hidden -mr-0.5 sm:-mr-2"
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
         >
@@ -76,7 +76,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-navy/10 bg-cream md:hidden">
+        <div className="border-t border-brand-slate/10 bg-white shadow-lg md:hidden">
           <div className="container-content flex flex-col gap-1 py-4">
             {links.map((l) => (
               <NavLink
@@ -86,7 +86,7 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   [
                     'rounded-lg px-3 py-2.5 text-base font-medium',
-                    isActive ? 'bg-teal/10 text-teal-700' : 'text-navy/80 hover:bg-navy-50',
+                    isActive ? 'bg-brand-pale/35 text-brand-teal font-semibold' : 'text-brand-slate/80 hover:bg-brand-pale/15',
                   ].join(' ')
                 }
               >

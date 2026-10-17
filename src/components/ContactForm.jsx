@@ -36,16 +36,16 @@ export default function ContactForm() {
 
   if (status === 'success') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-teal/20 bg-white p-10 text-center">
-        <CheckCircle2 className="text-teal-600" size={40} />
-        <h3 className="text-xl">Thanks for reaching out!</h3>
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-brand-teal/20 bg-white p-10 text-center shadow-sm">
+        <CheckCircle2 className="text-brand-teal" size={40} />
+        <h3 className="text-xl font-bold text-brand-slate">Thanks for reaching out!</h3>
         <p className="text-muted">We'll get back to you at the email you provided.</p>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-navy/10 bg-white p-6 shadow-sm sm:p-8">
+    <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-brand-slate/10 bg-white p-6 shadow-sm sm:p-8">
       {/* Honeypot: hidden from people, catches bots */}
       <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       <div className="grid gap-4 sm:grid-cols-2">

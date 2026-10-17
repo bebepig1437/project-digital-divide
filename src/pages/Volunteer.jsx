@@ -38,22 +38,22 @@ export default function Volunteer() {
 
   return (
     <>
-      <section className="border-b border-brand-slate/10 bg-brand-pale/20 py-16 sm:py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
           <span className="eyebrow">Volunteer</span>
-          <h1 className="mt-4 text-4xl font-bold text-brand-slate sm:text-5xl">Join the team</h1>
-          <p className="mt-5 text-lg text-muted">
+          <h1 className="mt-4 text-4xl font-bold tracking-tight text-brand-slate sm:text-5xl">Join the team</h1>
+          <p className="mt-5 text-lg font-medium text-brand-slate/85 sm:text-xl">
             Whether you can fix a laptop, teach a workshop, build a website, or spread the
             word, there's a place for you here. Tell us a bit about yourself.
           </p>
         </div>
       </section>
 
-      <section className="bg-white py-16 sm:py-20">
+      <section className="bg-white pb-20 sm:pb-28">
         <div className="container-content max-w-2xl">
           {status === 'success' ? (
             <Reveal>
-              <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-teal/20 bg-white p-12 text-center shadow-sm">
+              <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-teal/20 bg-brand-pale/10 p-12 text-center shadow-sm">
                 <CheckCircle2 className="text-brand-teal" size={44} />
                 <h2 className="text-2xl font-bold text-brand-slate">Application received!</h2>
                 <p className="max-w-sm text-muted">
@@ -63,7 +63,7 @@ export default function Volunteer() {
             </Reveal>
           ) : (
             <Reveal>
-              <form onSubmit={handleSubmit} className="grid gap-5 rounded-3xl border border-brand-slate/10 bg-white p-6 shadow-sm sm:p-9">
+              <form onSubmit={handleSubmit} className="grid gap-5 rounded-3xl border border-brand-slate/15 bg-brand-pale/10 p-7 shadow-sm sm:p-10">
                 {/* Honeypot: hidden from people, catches bots */}
                 <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
                 <div className="grid gap-5 sm:grid-cols-2">

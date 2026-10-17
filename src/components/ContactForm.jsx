@@ -45,7 +45,7 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-brand-slate/10 bg-white p-6 shadow-sm sm:p-8">
+    <form onSubmit={handleSubmit} className="grid gap-4 rounded-3xl border border-brand-slate/15 bg-brand-pale/10 p-6 shadow-sm sm:p-8">
       {/* Honeypot: hidden from people, catches bots */}
       <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       <div className="grid gap-4 sm:grid-cols-2">

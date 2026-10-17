@@ -15,7 +15,7 @@ const contactCopy = {
   },
 }
 
-export default function Footer({ showContact = true, contactTitle, contactBody }) {
+export default function Footer({ showContact = true, contactTitle, contactBody, contactBg = 'bg-white' }) {
   const { pathname } = useLocation()
   const content = contactCopy[pathname] || contactCopy.default
   const title = contactTitle || content.title
@@ -24,7 +24,7 @@ export default function Footer({ showContact = true, contactTitle, contactBody }
   return (
     <>
       {showContact && (
-        <section id="contact" className="border-t border-brand-slate/10 bg-brand-pale/15 py-20">
+        <section id="contact" className={`border-t border-brand-slate/10 ${contactBg} py-20`}>
           <div className="container-content grid gap-10 lg:grid-cols-2 lg:items-start">
             <Reveal>
               <span className="eyebrow">Get in touch</span>

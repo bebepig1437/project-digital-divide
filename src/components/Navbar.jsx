@@ -41,7 +41,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-8 md:flex -mr-0.5 sm:-mr-2 md:-mr-4 lg:-mr-7">
           {links.map((l) => (
             <NavLink
               key={l.to}
@@ -66,7 +66,7 @@ export default function Navbar() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="rounded-lg p-2 text-navy md:hidden"
+          className="rounded-lg p-2 text-navy md:hidden -mr-0.5 sm:-mr-2"
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
         >

@@ -7,22 +7,22 @@ import Reveal from '../components/Reveal'
 export default function Newsletter() {
   return (
     <>
-      <section className="border-b border-navy/10 bg-navy-50/40 py-16 sm:py-20">
+      <section className="border-b border-brand-slate/10 bg-brand-pale/20 py-16 sm:py-20">
         <div className="container-content max-w-3xl text-center">
           <span className="eyebrow">Newsletter</span>
-          <h1 className="mt-4 text-4xl sm:text-5xl">News &amp; updates</h1>
+          <h1 className="mt-4 text-4xl font-bold text-brand-slate sm:text-5xl">News &amp; updates</h1>
           <p className="mt-5 text-lg text-muted">
             Upcoming device drives, workshop recaps, partner projects, and updates on what our team is building
           </p>
         </div>
       </section>
 
-      <section className="bg-cream py-16 sm:py-20">
+      <section className="bg-white py-16 sm:py-20">
         <div className="container-content max-w-3xl">
           {posts.length === 0 ? (
             <p className="text-center text-muted">No posts yet. Check back soon.</p>
           ) : (
-            <ul className="divide-y divide-navy/10">
+            <ul className="divide-y divide-brand-slate/10">
               {posts.map((post) => (
                 <li key={post.slug}>
                   <Reveal>
@@ -34,18 +34,18 @@ export default function Newsletter() {
                         <img
                           src={post.image}
                           alt=""
-                          className="h-40 w-full rounded-xl object-cover sm:h-28 sm:w-44 sm:flex-none"
+                          className="h-40 w-full rounded-2xl object-cover sm:h-28 sm:w-44 sm:flex-none shadow-sm"
                         />
                       )}
                       <div className="flex-1">
-                        <time className="text-xs font-semibold uppercase tracking-wider text-teal-700">
+                        <time className="text-xs font-semibold uppercase tracking-wider text-brand-teal">
                           {formatDate(post.date)}
                         </time>
-                        <h2 className="mt-2 text-2xl transition-colors group-hover:text-teal-700">
+                        <h2 className="mt-2 text-2xl font-bold text-brand-slate transition-colors group-hover:text-brand-teal">
                           {post.title}
                         </h2>
                         <p className="mt-2 text-[15px] leading-relaxed text-muted">{post.excerpt}</p>
-                        <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-navy">
+                        <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-slate group-hover:text-brand-teal transition-colors">
                           Read more
                           <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                         </span>

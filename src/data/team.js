@@ -5,13 +5,13 @@
 export const team = [
   {
     name: 'Michelle Truong',
-    focus: 'Founder · Narrative and Community',
+    focus: 'Lead · Narrative and Community',
     photo: '/team/michelle.jpg',
     bio: "Michelle is the reason anyone outside the team knows what we do. She writes the case studies, runs the camera, and turns a spreadsheet of deployments into something a person would actually read. She handles workshop materials, most of the presentations, and the district follow-up emails that keep people talking to us. Before this, she mostly noticed that school had quietly started assuming every student had a computer at home, and that most people didn't seem to think that was a problem. She plays tennis and bakes, and she has rewritten the same paragraph of the case study at least four times.",
   },
   {
     name: 'Joseph Hu',
-    focus: 'Founder · Outreach and Partnerships',
+    focus: 'Lead · Outreach and Pipeline Management',
     photo: '/team/joseph.jpg',
     bio: "Joseph is the one who sends the emails. He's the first contact for districts, the person drafting grant applications late at night, and the one who follows up a third time after being ignored twice. He plays piano and competes in math and Latin. He got into this because he kept noticing that technology moves forward whether or not you can keep up with it, and the people who can't are usually the ones who had the least to begin with. He is probably the reason this project exists.",
   },

@@ -18,94 +18,39 @@ export default function Newsletter() {
       </section>
 
       <section className="bg-white pb-20 sm:pb-28">
-        <div className="container-content">
-          <div className="grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-12 lg:items-start">
-            <div>
-              {posts.length === 0 ? (
-                <div className="rounded-3xl border border-brand-slate/15 bg-brand-pale/10 p-12 text-center text-muted">
-                  No posts yet. Check back soon.
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {posts.map((post) => (
-                    <Reveal key={post.slug}>
-                      <Link
-                        to={`/newsletter/${post.slug}`}
-                        className="group flex flex-col justify-between rounded-3xl border border-brand-slate/15 bg-white p-7 sm:p-8 shadow-sm transition-all duration-300 hover:border-brand-teal/40 hover:shadow-md"
-                      >
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand-teal">
-                              Field Dispatch
-                            </span>
-                            <time className="text-xs font-medium text-muted">
-                              {formatDate(post.date)}
-                            </time>
-                          </div>
-                          <h2 className="mt-4 font-display text-2xl font-bold tracking-tight text-brand-slate transition-colors group-hover:text-brand-teal sm:text-3xl">
-                            {post.title}
-                          </h2>
-                          <p className="mt-3 text-base leading-relaxed text-muted">
-                            {post.excerpt}
-                          </p>
-                        </div>
-                        <div className="mt-6 flex items-center justify-between border-t border-brand-slate/10 pt-4">
-                          <span className="text-xs font-medium text-brand-slate/75">
-                            By Student Engineering Team
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-slate group-hover:text-brand-teal transition-colors">
-                            Read article
-                            <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                          </span>
-                        </div>
-                      </Link>
-                    </Reveal>
-                  ))}
-                </div>
-              )}
+        <div className="container-content max-w-3xl">
+          {posts.length === 0 ? (
+            <div className="rounded-3xl border border-brand-slate/15 bg-brand-pale/10 p-12 text-center text-muted">
+              No posts yet. Check back soon.
             </div>
-
-            {/* Sidebar: Newsletter Scope & Topics Card */}
-            <Reveal delay={120}>
-              <div className="rounded-3xl border border-brand-slate/15 bg-brand-pale/15 p-7 shadow-sm sm:p-8">
-                <span className="font-mono text-xs font-bold uppercase tracking-wider text-brand-teal">
-                  Publication Scope
-                </span>
-                <h3 className="mt-2 text-xl font-bold text-brand-slate">
-                  What we publish
-                </h3>
-                <p className="mt-2.5 text-sm leading-relaxed text-muted">
-                  Zero spam, zero generic thinkpieces. We document our hands-on hardware triage, school district partnerships, and student workshop curriculums.
-                </p>
-
-                <div className="mt-6 space-y-3 border-t border-brand-slate/10 pt-5">
-                  <div className="flex items-start gap-3 text-sm text-brand-slate/90">
-                    <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand-teal/15 text-xs font-bold text-brand-teal">✓</span>
-                    <span>Triage benchmarks &amp; yield rates</span>
-                  </div>
-                  <div className="flex items-start gap-3 text-sm text-brand-slate/90">
-                    <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand-teal/15 text-xs font-bold text-brand-teal">✓</span>
-                    <span>District device pickup dates &amp; drives</span>
-                  </div>
-                  <div className="flex items-start gap-3 text-sm text-brand-slate/90">
-                    <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand-teal/15 text-xs font-bold text-brand-teal">✓</span>
-                    <span>Hands-on student workshop recaps</span>
-                  </div>
-                  <div className="flex items-start gap-3 text-sm text-brand-slate/90">
-                    <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand-teal/15 text-xs font-bold text-brand-teal">✓</span>
-                    <span>Lightweight OS &amp; offline study setups</span>
-                  </div>
-                </div>
-
-                <div className="mt-6 rounded-2xl border border-brand-slate/10 bg-white/80 p-4 shadow-xs">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-slate">Cadence</p>
-                  <p className="mt-1 text-xs text-muted">
-                    Published monthly or immediately following major donation batch distributions.
-                  </p>
-                </div>
-              </div>
-            </Reveal>
-          </div>
+          ) : (
+            <div className="space-y-6">
+              {posts.map((post) => (
+                <Reveal key={post.slug}>
+                  <Link
+                    to={`/newsletter/${post.slug}`}
+                    className="group block rounded-3xl border border-brand-slate/15 bg-white p-7 transition-all duration-300 hover:border-brand-teal/50 hover:shadow-md sm:p-8"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <time className="text-xs font-semibold uppercase tracking-wider text-brand-teal">
+                        {formatDate(post.date)}
+                      </time>
+                    </div>
+                    <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-brand-slate transition-colors group-hover:text-brand-teal sm:text-3xl">
+                      {post.title}
+                    </h2>
+                    <p className="mt-3 text-base leading-relaxed text-muted">
+                      {post.excerpt}
+                    </p>
+                    <div className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-brand-slate transition-colors group-hover:text-brand-teal">
+                      <span>Read article</span>
+                      <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

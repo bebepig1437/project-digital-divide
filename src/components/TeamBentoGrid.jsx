@@ -33,7 +33,7 @@ export default function TeamBentoGrid() {
               </div>
 
               <p className="text-xs font-semibold uppercase tracking-wider text-teal-700 sm:text-sm">
-                {hero.focus} · {hero.grade}
+                {hero.role || hero.focus}
               </p>
               <h3 className="mt-1 font-display text-2xl font-bold tracking-tight text-navy sm:text-4xl">
                 {hero.name}

@@ -28,7 +28,7 @@ export default function Home() {
             Project Digital Divide
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-cream/85">
-            A student project getting working computers, digital skills, and internet access to local families without them
+            A student project getting working computers, digital skills, and internet access to families in Pearland and Greater Houston without them
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link to="/volunteer" className="btn-secondary border-transparent bg-white text-navy hover:bg-cream hover:text-navy">

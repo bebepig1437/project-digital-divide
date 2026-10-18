@@ -6,12 +6,12 @@ import Reveal from './Reveal'
 
 const contactCopy = {
   '/about': {
-    title: 'Join us or reach out',
-    body: "Want to donate spare gear, host a workshop in your town, or partner with us? Send a note and we'll reply shortly",
+    title: 'Connect with our team',
+    body: 'Have retired laptops from a school district, want to host a student build workshop, or interested in partnering? Reach out and we will follow up quickly.',
   },
   default: {
-    title: "Let's get more people connected",
-    body: "Want to donate old hardware, host a digital skills workshop, or partner on a project? Drop us a note and we'll get back to you.",
+    title: "Let's connect working laptops with students",
+    body: 'Want to donate retired district hardware, collaborate on a student build workshop, or learn more about our process? Send us a note.',
   },
 }
 

@@ -8,12 +8,12 @@ export default function OperationsPipeline() {
     <section ref={ref} className="border-t border-brand-slate/10 bg-brand-pale/10 py-20 sm:py-28">
       <div className="container-content">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="eyebrow">Refurbishment Flow</span>
+          <span className="eyebrow">The Setup Process</span>
           <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">
-            How we turn surplus into working machines
+            How we get retired laptops ready for students
           </h2>
           <p className="mt-3 text-base text-muted sm:text-lg">
-            Hover or click each stage to explore our triage, Linux build, and direct student placement process.
+            Most machines arrive in good physical shape. Getting them ready is setup and configuration: inspection, lightweight software, and hands-on placement.
           </p>
         </div>
 

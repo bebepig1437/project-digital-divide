@@ -5,32 +5,32 @@
 export const team = [
   {
     name: 'Michelle Truong',
-    focus: 'Lead · Narrative and Community',
+    focus: 'Lead · Narrative and Workshops',
     photo: '/team/michelle.jpg',
-    bio: "Michelle is the reason anyone outside the team knows what we do. She writes the case studies, runs the camera, and turns a spreadsheet of deployments into something a person would actually read. She handles workshop materials, most of the presentations, and the district follow-up emails that keep people talking to us. Before this, she mostly noticed that school had quietly started assuming every student had a computer at home, and that most people didn't seem to think that was a problem. She plays tennis and bakes, and she has rewritten the same paragraph of the case study at least four times.",
+    bio: "Michelle handles the narrative side of the project: case studies, photography, workshop structure, and the follow-up communications that keep district relationships alive. She coordinates the workshop curriculum and translates bench deployment data into something people can actually read and use. The bench work produces working devices; Michelle's writing is what makes those devices legible to partners and grant reviewers.",
   },
   {
     name: 'Joseph Hu',
-    focus: 'Lead · Outreach and Pipeline Management',
+    focus: 'Lead · Outreach and Partnerships',
     photo: '/team/joseph.jpg',
-    bio: "Joseph is the one who sends the emails. He's the first contact for districts, the person drafting grant applications late at night, and the one who follows up a third time after being ignored twice. He plays piano and competes in math and Latin. He got into this because he kept noticing that technology moves forward whether or not you can keep up with it, and the people who can't are usually the ones who had the least to begin with. He is probably the reason this project exists.",
+    bio: "Joseph handles outreach and district partnerships. He manages first contact with district technology departments, writes grant applications, and sends the third follow-up email after being ignored twice. Most outreach dies at the first unanswered message; Joseph's persistence is how the project secured its first 100 laptops and how our supply of retired hardware stays active.",
   },
   {
     name: 'Joshua De Leon',
-    focus: 'Lead · Hardware and Bench Operations',
+    focus: 'Lead · Bench Operations',
     photo: '/team/joshua.jpg',
-    bio: "Joshua runs the bench. He's the one who opens up a donated laptop, finds a dead drive, a cracked hinge, and coffee from three years ago on the keyboard, and still gets it booting by Friday. He does the diagnostics, the drive swaps, the OS installs, and the quality checks before anything leaves the workspace. He doesn't run meetings or write grants. He fixes the machines. When he isn't doing this, he's lifting, or taking apart something that wasn't broken yet.",
+    bio: "Joshua runs the bench. Every machine goes through him: physical intake, hardware checks, cleaning, part replacements, lightweight software installation, and quality control, along with pickups and storage. He does not run committee meetings or write grants; he makes sure every laptop boots reliably and works cleanly before it ever reaches a student.",
   },
   {
     name: 'Sahil Mohammed',
-    focus: 'Software and Internal Systems',
+    focus: 'Software Tooling and Systems',
     photo: null,
-    bio: "Sahil builds the systems we run on, including the intake tracker, the deployment log, and the parts of the pipeline that are invisible until they break. He's worked as an AI intern at a startup and done research with a PhD student at Purdue on AI reliability. He brings a version of that to a project that mostly runs on spreadsheets. He joined because digital literacy gets treated as an afterthought when it's actually half the problem. He's an Eagle Scout.",
+    bio: "Sahil builds the internal software we run on: intake tracking, asset states, and deployment logs. While a spreadsheet works for the first batch of devices, Sahil builds the tracking tools that turn our logs into an accountable, repeatable dataset that other student teams can follow.",
   },
   {
     name: 'Kaleb Wu',
-    focus: 'Software and Internal Systems',
+    focus: 'Software Tooling and Testing',
     photo: null,
-    bio: "Kaleb works on the software side with Sahil, building and testing the tools that track devices from intake to deployment. He lifts, and he's into hardware and electronics. He's here because he thinks the field is gatekept more by cost and geography than by difficulty, and he'd like to do something about that.",
+    bio: "Kaleb works alongside Sahil on building and testing our internal tracking software. He focuses on hardware validation and logging tools that track each machine from district intake to student hand-off, ensuring our yield rates and bench data remain accurate and consistent.",
   },
 ]

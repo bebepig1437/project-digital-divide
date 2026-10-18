@@ -1,4 +1,4 @@
-import { Laptop, Target, Layers, HeartHandshake } from 'lucide-react'
+import { Laptop, Target, Layers, HeartHandshake, Check } from 'lucide-react'
 import Reveal from './Reveal'
 
 const metrics = [

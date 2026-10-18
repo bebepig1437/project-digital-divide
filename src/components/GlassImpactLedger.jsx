@@ -27,7 +27,7 @@ export default function GlassImpactLedger() {
   const [ref, inView] = useInView()
 
   return (
-    <section ref={ref} className="bg-white py-16 sm:py-24">
+    <section ref={ref} className="border-t border-brand-slate/10 bg-white py-16 sm:py-24">
       <div className="container-content">
         <div className="mx-auto max-w-2xl text-center">
           <span className="eyebrow">Project Goals</span>

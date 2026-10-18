@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check } from 'lucide-react'
-import OperationsPipeline from '../components/OperationsPipeline'
-import InteractiveBenchTerminal from '../components/InteractiveBenchTerminal'
 import GlassImpactLedger from '../components/GlassImpactLedger'
 import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
@@ -78,16 +76,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- Element 1: Glass Horizon Expander (Refurbishment Pipeline) ---- */}
-      <OperationsPipeline />
-
-      {/* ---- Element 2: Interactive Bench Terminal (Diagnostics & Telemetry) ---- */}
-      <InteractiveBenchTerminal />
-
-      {/* ---- Element 3: Frosted Glass Impact Ledger (Operational Scale) ---- */}
+      {/* ---- Element 1: Frosted Glass Impact Ledger (Operational Scale) ---- */}
       <GlassImpactLedger />
 
-      {/* ---- Element 4: Accepted Hardware & Triage Matrix (Donations & Salvage) ---- */}
+      {/* ---- Element 2: Accepted Hardware & Distribution Matrix ---- */}
       <HardwareAcceptanceMatrix />
     </>
   )

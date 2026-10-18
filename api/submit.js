@@ -20,7 +20,7 @@ function isEmail(value) {
 
 export default async function handler(req, res) {
   const TO_EMAIL = process.env.TO_EMAIL || 'projectdigitaldivide.org@gmail.com'
-  const FROM_EMAIL = process.env.FROM_EMAIL || 'Project Digital Divide <onboarding@resend.dev>'
+  const FROM_EMAIL = process.env.FROM_EMAIL || 'Project Digital Divide <contact@projectdigitaldivide.org>'
 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')

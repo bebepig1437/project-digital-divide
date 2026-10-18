@@ -52,9 +52,9 @@ export default function HardwareAcceptanceMatrix() {
             </table>
 
             <div className="mt-6 rounded-xl border border-brand-slate/10 bg-white/70 p-4 text-sm leading-relaxed text-muted">
-              <p className="font-semibold text-brand-slate">Which operating system runs best on this hardware</p>
+              <p className="font-semibold text-brand-slate">Operating systems we are testing</p>
               <p className="mt-1">
-                With 4 GB of memory, the choice of operating system matters. We are testing options now and will publish the results when testing is done.
+                With 4 GB of memory, the operating system matters. We are testing Lubuntu, Linux Mint, Raspberry Pi, ChromeOS, and a mini Windows 11.
               </p>
             </div>
           </Reveal>

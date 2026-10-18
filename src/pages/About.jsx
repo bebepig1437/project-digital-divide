@@ -1,5 +1,24 @@
 import TeamHorizonExpander from '../components/TeamHorizonExpander'
 
+const privacy = [
+  {
+    title: 'We track devices, not people.',
+    body: 'Every machine has a log of what came in, what was installed, and where it ended up. We do not collect browsing history, files, or student accounts.',
+  },
+  {
+    title: 'Wiped before it goes out.',
+    body: 'Each machine gets a fresh operating system and a clean user profile. Returned lending-library units run the same wipe before they go out again.',
+  },
+  {
+    title: 'No hidden telemetry.',
+    body: 'The installed software does not phone home about who is using it or what they do with it. If that changes, it is a documented decision, not a quiet one.',
+  },
+  {
+    title: '$0 cost is real.',
+    body: 'There is no fee, no subscription, and no expectation of anything in return. If a unit needs a part replaced, that cost is absorbed before it reaches a student.',
+  },
+]
+
 export default function About() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-20 sm:pt-20 sm:pb-28">
@@ -18,6 +37,18 @@ export default function About() {
         </div>
 
         <TeamHorizonExpander />
+
+        <div className="mx-auto mt-16 max-w-3xl">
+          <h2 className="text-2xl font-bold text-brand-slate">What we collect, and what we do not</h2>
+          <ul className="mt-6 space-y-5 text-ink/85">
+            {privacy.map((p) => (
+              <li key={p.title}>
+                <p className="font-semibold text-brand-slate">{p.title}</p>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{p.body}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   )

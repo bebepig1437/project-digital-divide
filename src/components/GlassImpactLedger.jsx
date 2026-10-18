@@ -2,24 +2,24 @@ import { useInView } from '../hooks/useInView'
 
 const metrics = [
   {
-    number: '100+',
-    label: 'Machines Ingested',
-    context: 'Surplus enterprise laptops secured from district refreshes and local business drives',
+    number: '100',
+    label: 'Laptops Donated',
+    context: 'Dell Latitude 3130 fleet donated by Alvin ISD technology department',
   },
   {
-    number: 'NIST 800-88',
-    label: 'Sanitization Standard',
-    context: 'Cryptographic bare-metal wipe verifying zero personal or institutional data persists',
+    number: '60 to 90',
+    label: 'Target Placed',
+    context: 'Working computers in students\' hands by month ten of our timeline',
   },
   {
-    number: '$0.00',
-    label: 'Cost to Families',
-    context: 'Direct, permanent gifts paired with student-led hands-on maintenance workshops',
+    number: '3',
+    label: 'Distribution Models',
+    context: 'Build workshops, school counselor referrals, and community lending libraries',
   },
   {
-    number: '100%',
-    label: 'Student-Operated',
-    context: 'Run entirely by Pearland high schoolers logging triage, imaging, and field deployment',
+    number: '$0',
+    label: 'Cost to Students',
+    context: 'All laptops, chargers, and hands-on build sessions are completely free',
   },
 ]
 
@@ -30,12 +30,12 @@ export default function GlassImpactLedger() {
     <section ref={ref} className="bg-white py-16 sm:py-24">
       <div className="container-content">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="eyebrow">Operating Scale</span>
+          <span className="eyebrow">Project Goals</span>
           <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">
-            Accountable numbers from our Pearland bench
+            Concrete metrics we track and report
           </h2>
           <p className="mt-3 text-base text-muted sm:text-lg">
-            Every machine is logged by serial number from initial pickup to verified student placement.
+            Every laptop is logged from district pickup to student placement so we can measure yield rates and cost.
           </p>
         </div>
 

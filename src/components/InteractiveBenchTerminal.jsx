@@ -5,46 +5,47 @@ const terminalPhases = [
   {
     id: '01',
     label: 'Phase 01',
-    title: 'Bench Triage & Cryptographic Sanitization',
-    summary: 'Wiping drives to federal standards, clearing fan dust, and repasting thermal compound.',
+    title: 'Physical Triage & Storage Clearing',
+    summary: 'Testing battery runtime, verifying memory, checking audio output, and wiping previous user data.',
     terminalLines: [
-      { tag: '[INIT]', text: 'Bench Station 02 initialized / Operator: J. De Leon' },
-      { tag: '[TARGET]', text: 'Unit ID: PDD-2026-084 / Lenovo ThinkPad T480' },
-      { tag: '[EXEC]', text: 'dcfldd pattern=00 status=on /dev/nvme0n1' },
-      { tag: '[PASS]', text: 'NIST 800-88 Rev 1 Cryptographic Wipe Verified' },
-      { tag: '[CHECK]', text: 'MemTest86 4 passes / 8GB DDR4: 0 errors detected' },
-      { tag: '[BENCH]', text: 'Thermal compound renewed / CPU Delta T: -14.2°C' },
-      { tag: '[STATUS]', text: 'HARDWARE CERTIFIED FOR OS FLASH' },
+      { tag: '[BENCH]', text: 'Bench Station 01 online / Operator: J. De Leon' },
+      { tag: '[TARGET]', text: 'Unit ID: ALV-3130-042 / Dell Latitude 3130' },
+      { tag: '[HARDWARE]', text: 'Intel Pentium Silver N5030 (4 cores, 1.1 GHz base)' },
+      { tag: '[STORAGE]', text: '128GB M.2 SSD cleared / eMMC storage disabled' },
+      { tag: '[MEMORY]', text: '4GB DDR4 single-channel checked / 0 memory errors' },
+      { tag: '[AUDIO]', text: 'Realtek ALC3246 sound & mic test: PASSED' },
+      { tag: '[BATTERY]', text: 'Charge cycle health: 86% / AC charger verified' },
+      { tag: '[STATUS]', text: 'HARDWARE VERIFIED FOR SOFTWARE INSTALLATION' },
     ],
   },
   {
     id: '02',
     label: 'Phase 02',
-    title: 'Lightweight Linux Kernel & Study Tools',
-    summary: 'Stripping Windows bloat so 2017 silicon runs instantly with full offline productivity.',
+    title: 'Lightweight Software Installation',
+    summary: 'Testing fast distributions like Lubuntu and Mint Xfce to guarantee smooth performance on 4GB RAM.',
     terminalLines: [
-      { tag: '[INIT]', text: 'Deployment image: PDD-OS-XFCE-v2.4.img' },
-      { tag: '[KERNEL]', text: 'Linux 6.8.0-pdd-minimal-x86_64' },
-      { tag: '[PKGS]', text: 'Bundled: LibreOffice, Kiwix Offline Wikipedia, Scratch' },
-      { tag: '[SECURITY]', text: 'Hardened Firefox profile + zero telemetry flags' },
-      { tag: '[BENCH]', text: 'Cold boot to desktop: 8.6 seconds (RAM idle: 618 MB)' },
-      { tag: '[PASS]', text: 'Battery cycle test: 82% healthy (>4.5 hrs runtime)' },
-      { tag: '[STATUS]', text: 'WORKSTATION IMAGED AND BENCH-LOCKED' },
+      { tag: '[SETUP]', text: 'Testing lightweight distribution image: Lubuntu (LXQt)' },
+      { tag: '[MEMORY]', text: 'Idle RAM usage: 480 MB (smooth 4GB single-channel profile)' },
+      { tag: '[APPS]', text: 'Preinstalled: LibreOffice, document reader, media player' },
+      { tag: '[BROWSER]', text: 'Clean web browser profile / 8 schoolwork tabs active' },
+      { tag: '[TEST]', text: 'Cold boot to desktop: 9.2 seconds' },
+      { tag: '[DEVICE]', text: 'WiFi, trackpad, webcam, and sleep/wake checks: ALL PASSED' },
+      { tag: '[STATUS]', text: 'SYSTEM CONFIGURED AND READY FOR STUDENTS' },
     ],
   },
   {
     id: '03',
     label: 'Phase 03',
-    title: 'Workshop Teardown & Free Placement',
-    summary: 'Direct hand-off in Pearland community centers where students open machines themselves.',
+    title: 'Hands-On Build Workshop & Hand-Off',
+    summary: 'Students open the chassis, inspect the components, and take full ownership of their machine.',
     terminalLines: [
-      { tag: '[INIT]', text: 'Staging location: Pearland Community Workshop' },
-      { tag: '[RECIPIENT]', text: 'Local Pearland ISD student / Family intake logged' },
-      { tag: '[WORKSHOP]', text: 'Student opened bottom chassis, identified SSD & RAM' },
-      { tag: '[ORIENTATION]', text: 'Taught Linux navigation, software center, safe browsing' },
-      { tag: '[FINANCIAL]', text: 'Hardware cost to recipient family: $0.00' },
-      { tag: '[SUPPORT]', text: 'Free lifetime diagnostic and repairs at PDD bench' },
-      { tag: '[STATUS]', text: 'DEPLOYED INTO ACTIVE ACADEMIC USE' },
+      { tag: '[WORKSHOP]', text: 'Event: Pearland Build It, Keep It workshop session' },
+      { tag: '[STUDENT]', text: 'Ninth-grade recipient paired with student bench mentor' },
+      { tag: '[HANDS-ON]', text: 'Student opened bottom chassis, inspected SSD & RAM' },
+      { tag: '[BOOT]', text: 'Student booted from installation USB and finished setup' },
+      { tag: '[TRAINING]', text: 'Walked through basic navigation, saved files, and updates' },
+      { tag: '[COST]', text: 'Direct cost to recipient student and family: $0.00' },
+      { tag: '[STATUS]', text: 'PERMANENTLY DEPLOYED FOR HOME SCHOOLWORK' },
     ],
   },
 ]
@@ -58,12 +59,12 @@ export default function InteractiveBenchTerminal() {
     <section ref={ref} className="bg-white py-16 sm:py-24">
       <div className="container-content">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="eyebrow">Interactive Telemetry</span>
+          <span className="eyebrow">Bench Inspection</span>
           <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">
-            Live diagnostic inspection bench
+            How each laptop gets checked and configured
           </h2>
           <p className="mt-3 text-base text-muted sm:text-lg">
-            Click any phase to inspect the exact terminal and hardware execution telemetry on our triage bench.
+            Follow the step-by-step bench inspection and software setup on our Dell Latitude 3130 fleet.
           </p>
         </div>
 

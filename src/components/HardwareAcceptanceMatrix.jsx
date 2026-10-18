@@ -7,17 +7,17 @@ export default function HardwareAcceptanceMatrix() {
     <section ref={ref} className="border-t border-brand-slate/10 bg-brand-pale/10 py-16 sm:py-24">
       <div className="container-content">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="eyebrow">Intake Standards</span>
+          <span className="eyebrow">Hardware &amp; Distribution</span>
           <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">
-            What gear we refurbish and what we recycle
+            The hardware we take in and how it reaches students
           </h2>
           <p className="mt-3 text-base text-muted sm:text-lg">
-            Every donated machine either ends up in a student's hands or gets cleanly harvested for components with zero landfill footprint.
+            We focus on education laptops from district refreshes and test three distinct ways to place them in homes.
           </p>
         </div>
 
         <div className="mt-14 grid gap-8 md:grid-cols-2">
-          {/* Card 1: Refurbishment Fleet */}
+          {/* Card 1: What Gear Works Best */}
           <div
             className={[
               'flex flex-col justify-between rounded-3xl border border-brand-slate/15 bg-white p-7 shadow-sm transition-all duration-500 sm:p-9 hover:border-brand-teal/40 hover:shadow-md',
@@ -27,27 +27,27 @@ export default function HardwareAcceptanceMatrix() {
             <div>
               <div className="flex items-center justify-between">
                 <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/15 px-3 py-1 font-mono text-xs font-bold text-brand-slate">
-                  DEPLOYMENT CANDIDATES
+                  HARDWARE PROFILE
                 </span>
                 <span className="font-mono text-xs font-semibold text-brand-teal">
-                  PHASE 01 &amp; 02
+                  ALVIN ISD &amp; DISTRICT SURPLUS
                 </span>
               </div>
 
               <h3 className="mt-4 text-2xl font-bold text-brand-slate">
-                Refurbishment Fleet
+                What Gear Works Best
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">
-                Usable enterprise laptops refurbished on our bench, imaged with lightweight Linux, and gifted directly to students.
+                Education-market laptops from district refresh cycles with working screens, chargers, and batteries.
               </p>
 
               <ul className="mt-6 space-y-3 border-t border-brand-slate/10 pt-6">
                 {[
-                  'Enterprise laptops (Lenovo ThinkPad, Dell Latitude, HP EliteBook)',
-                  'Processors: Intel Core 6th Gen+ or AMD Ryzen equivalent',
-                  'Memory & Storage: 4GB+ RAM, working SATA or NVMe SSD slots',
-                  'Chromebooks capable of Linux environment support',
-                  'OEM laptop AC charging adapters and power bricks',
+                  'Dell Latitude 3130 and similar education-model laptops',
+                  'Intel Pentium Silver, Celeron, or modern multi-core processors',
+                  '4GB+ RAM and working M.2 SSD or SATA drive slots',
+                  'Matching OEM laptop AC charging bricks and power cords',
+                  'Laptops with functional screens, keyboards, and battery health',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-xs font-medium text-brand-slate/90 sm:text-sm">
                     <span className="mt-1 h-2 w-2 flex-none rounded-full bg-brand-cyan" />
@@ -58,11 +58,11 @@ export default function HardwareAcceptanceMatrix() {
             </div>
 
             <div className="mt-8 rounded-xl bg-brand-pale/20 p-4 text-xs font-medium text-brand-slate/80">
-              Target destination: Pearland &amp; Houston student families without home computers.
+              Focus: Laptops that can run a clean, lightweight system smoothly for everyday homework.
             </div>
           </div>
 
-          {/* Card 2: Component Salvage & Zero-Landfill */}
+          {/* Card 2: Three Distribution Models */}
           <div
             style={{ transitionDelay: '120ms' }}
             className={[
@@ -73,27 +73,27 @@ export default function HardwareAcceptanceMatrix() {
             <div>
               <div className="flex items-center justify-between">
                 <span className="rounded-full border border-brand-slate/20 bg-brand-slate/5 px-3 py-1 font-mono text-xs font-bold text-brand-slate">
-                  SALVAGE &amp; RECYCLING
+                  PLACEMENT TRACKS
                 </span>
-                <span className="font-mono text-xs font-semibold text-muted">
-                  ZERO LANDFILL
+                <span className="font-mono text-xs font-semibold text-brand-teal">
+                  THREE TESTED MODELS
                 </span>
               </div>
 
               <h3 className="mt-4 text-2xl font-bold text-brand-slate">
-                Component Harvest
+                How Devices Reach People
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">
-                Damaged or non-booting devices stripped for spare parts to repair other student units, with materials safely recycled.
+                We test three parallel models and record which one keeps laptops in active use the longest.
               </p>
 
               <ul className="mt-6 space-y-3 border-t border-brand-slate/10 pt-6">
                 {[
-                  'Working DDR3 and DDR4 SO-DIMM RAM sticks pulled for fleet upgrades',
-                  'Functioning Wi-Fi cards, ribbon cables, and internal speakers saved for repairs',
-                  'Mechanical hard drives with bad sectors physically degaussed and shredded',
-                  'Dead or swollen lithium-ion batteries routed to certified county e-waste hubs',
-                  'Cracked plastic chassis responsibly sorted for clean polymer recycling',
+                  'Build It, Keep It: 3-hour workshops where students set up their own machine',
+                  'Direct donation through school partners: counselors route devices to students',
+                  'Community lending library: 2-week loan rotation through neighborhood centers',
+                  'Reserve fleet: 20 units held back for quick replacements and repairs',
+                  'Full transparency: $0 cost to students and families across all tracks',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-xs font-medium text-brand-slate/90 sm:text-sm">
                     <span className="mt-1 h-2 w-2 flex-none rounded-full bg-brand-teal" />
@@ -104,7 +104,7 @@ export default function HardwareAcceptanceMatrix() {
             </div>
 
             <div className="mt-8 rounded-xl bg-brand-slate/5 p-4 text-xs font-medium text-muted">
-              Guarantee: 100% data destruction before parts harvest or recycling.
+              Accountability: Every placement is logged to measure long-term device health and student use.
             </div>
           </div>
         </div>

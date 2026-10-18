@@ -1,178 +1,83 @@
-import { Cpu, HardDrive, Zap, CheckCircle2, Users, GraduationCap, Library, ShieldCheck, Sparkles } from 'lucide-react'
-import { useInView } from '../hooks/useInView'
+import Reveal from './Reveal'
 
 const specs = [
-  {
-    icon: Cpu,
-    label: 'Processor',
-    detail: 'Intel Pentium Silver, Celeron, or modern multi-core processors',
-  },
-  {
-    icon: HardDrive,
-    label: 'Memory & Drive',
-    detail: '4GB+ RAM and working M.2 SSD or 2.5-inch SATA drive slots',
-  },
-  {
-    icon: Zap,
-    label: 'Power Delivery',
-    detail: 'Matching OEM laptop AC charging bricks and power cords',
-  },
-  {
-    icon: CheckCircle2,
-    label: 'Physical Health',
-    detail: 'Functional screens, responsive keyboards, and reliable battery capacity',
-  },
-  {
-    icon: Sparkles,
-    label: 'Target Baseline',
-    detail: 'Dell Latitude 3130 and ruggedized district education series',
-  },
+  ['Model', 'Dell Latitude 3130, from Alvin ISD Technology'],
+  ['Processor', 'Intel Pentium Silver N5030, 1.1 GHz, 4 cores / 4 threads, 64-bit'],
+  ['Memory', '4 GB DDR4 @ 2400 MHz, single-channel'],
+  ['Storage', '128 GB M.2 PCIe SSD, plus soldered eMMC flash (no SATA drive)'],
+  ['Graphics', 'Intel HD Graphics 605, about 64 MB video memory'],
+  ['Display', '11.6-inch HD, 1366 \u00d7 768'],
+  ['Audio', 'Realtek ALC3246'],
+  ['BIOS', 'Version 1.43.0'],
 ]
 
-const tracks = [
+const models = [
   {
-    icon: Users,
     label: 'Build It, Keep It',
-    detail: '3-hour interactive workshops where students set up and take home their machine',
+    detail: 'Students open the case, install the drive, and set up their own operating system in a three-hour workshop.',
   },
   {
-    icon: GraduationCap,
-    label: 'Counselor Referrals',
-    detail: 'Direct donations through school staff who know household hardware needs firsthand',
+    label: 'Counselor referrals',
+    detail: 'Partner school staff route finished laptops to the students who need them most.',
   },
   {
-    icon: Library,
-    label: 'Community Lending',
-    detail: '2-week loan rotations hosted in neighborhood community centers',
-  },
-  {
-    icon: ShieldCheck,
-    label: 'Reserve Fleet',
-    detail: '20 units held back for quick troubleshooting, component swaps, and loaners',
+    label: 'Community lending',
+    detail: 'Laptops rotate through a library or community center on two-week loans.',
   },
 ]
 
 export default function HardwareAcceptanceMatrix() {
-  const [ref, inView] = useInView()
-
   return (
-    <section ref={ref} className="border-t border-brand-slate/10 bg-brand-pale/10 py-16 sm:py-24">
+    <section className="border-t border-brand-slate/10 bg-brand-pale/10 py-16 sm:py-24">
       <div className="container-content">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal>
           <span className="eyebrow">Hardware &amp; Distribution</span>
-          <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">
-            The hardware we take in and how it reaches students
-          </h2>
-          <p className="mt-3 text-base text-muted sm:text-lg">
-            We focus on education laptops from district refreshes and test three distinct ways to place them in homes.
-          </p>
-        </div>
+          <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">What we run, and how it reaches students</h2>
+        </Reveal>
 
-        <div className="mt-14 grid gap-8 md:grid-cols-2">
-          {/* Card 1: What Gear Works Best */}
-          <div
-            className={[
-              'relative flex flex-col justify-between overflow-hidden rounded-3xl border border-brand-slate/15 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-teal/40 hover:shadow-lg sm:p-9',
-              inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6',
-            ].join(' ')}
-          >
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-brand-cyan" />
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/15 px-3 py-1 font-mono text-xs font-bold text-brand-slate">
-                  HARDWARE PROFILE
-                </span>
-                <span className="font-mono text-xs font-semibold text-brand-teal">
-                  ALVIN ISD &amp; DISTRICT SURPLUS
-                </span>
-              </div>
+        <div className="mt-12 grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-14">
+          <Reveal>
+            <h3 className="text-lg font-bold text-brand-slate">Dell Latitude 3130 specs</h3>
+            <table className="mt-4 w-full border-collapse text-sm">
+              <tbody>
+                {specs.map(([label, value]) => (
+                  <tr key={label} className="border-t border-brand-slate/10">
+                    <th scope="row" className="w-28 py-2.5 pr-4 text-left align-top font-semibold text-brand-slate">
+                      {label}
+                    </th>
+                    <td className="py-2.5 text-ink/85">{value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-              <h3 className="mt-5 text-2xl font-bold text-brand-slate">
-                What Gear Works Best
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                Education-market laptops from district refresh cycles with working screens, chargers, and batteries.
+            <div className="mt-6 rounded-xl border border-brand-slate/10 bg-white/70 p-4 text-sm leading-relaxed text-muted">
+              <p className="font-semibold text-brand-slate">Which operating system runs best on this hardware</p>
+              <p className="mt-1">
+                With 4 GB of memory, the choice of operating system matters. We are testing options now and will publish the results when testing is done.
               </p>
-
-              <div className="mt-6 space-y-3.5 border-t border-brand-slate/10 pt-6">
-                {specs.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <div key={item.label} className="flex items-start gap-3 rounded-xl border border-brand-slate/5 bg-brand-pale/10 p-3 transition-colors hover:border-brand-teal/20 hover:bg-brand-pale/20">
-                      <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-brand-teal/15 text-brand-teal">
-                        <Icon size={15} strokeWidth={2.2} />
-                      </span>
-                      <div>
-                        <div className="text-xs font-bold uppercase tracking-wider text-brand-slate">
-                          {item.label}
-                        </div>
-                        <div className="mt-0.5 text-xs font-medium text-brand-slate/85 sm:text-[13px]">
-                          {item.detail}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
             </div>
+          </Reveal>
 
-            <div className="mt-8 rounded-2xl border border-brand-teal/15 bg-brand-pale/20 p-4 text-xs font-medium text-brand-slate/90">
-              Focus: Laptops configured with lightweight software tailored for everyday schoolwork and web research.
-            </div>
-          </div>
-
-          {/* Card 2: Three Distribution Models */}
-          <div
-            style={{ transitionDelay: '120ms' }}
-            className={[
-              'relative flex flex-col justify-between overflow-hidden rounded-3xl border border-brand-slate/15 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-teal/40 hover:shadow-lg sm:p-9',
-              inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6',
-            ].join(' ')}
-          >
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-brand-teal" />
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="rounded-full border border-brand-slate/20 bg-brand-slate/5 px-3 py-1 font-mono text-xs font-bold text-brand-slate">
-                  PLACEMENT TRACKS
-                </span>
-                <span className="font-mono text-xs font-semibold text-brand-teal">
-                  THREE TESTED MODELS
-                </span>
-              </div>
-
-              <h3 className="mt-5 text-2xl font-bold text-brand-slate">
-                How Devices Reach People
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                We test three parallel models and record which one keeps laptops in active use the longest.
-              </p>
-
-              <div className="mt-6 space-y-3.5 border-t border-brand-slate/10 pt-6">
-                {tracks.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <div key={item.label} className="flex items-start gap-3 rounded-xl border border-brand-slate/5 bg-brand-pale/10 p-3 transition-colors hover:border-brand-teal/20 hover:bg-brand-pale/20">
-                      <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-brand-teal/15 text-brand-teal">
-                        <Icon size={15} strokeWidth={2.2} />
-                      </span>
-                      <div>
-                        <div className="text-xs font-bold uppercase tracking-wider text-brand-slate">
-                          {item.label}
-                        </div>
-                        <div className="mt-0.5 text-xs font-medium text-brand-slate/85 sm:text-[13px]">
-                          {item.detail}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="mt-8 rounded-2xl border border-brand-slate/10 bg-brand-slate/5 p-4 text-xs font-medium text-muted">
-              Accountability: Every placement is logged to measure long-term device health and student use. $0 cost across all tracks.
-            </div>
-          </div>
+          <Reveal delay={120}>
+            <h3 className="text-lg font-bold text-brand-slate">Three ways to place a laptop</h3>
+            <ol className="mt-4 space-y-5">
+              {models.map((m, i) => (
+                <li key={m.label} className="flex gap-4">
+                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-teal/15 text-sm font-bold text-brand-teal">
+                    {i + 1}
+                  </span>
+                  <div>
+                    <p className="font-semibold text-brand-slate">{m.label}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-muted">{m.detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-8 rounded-xl border border-brand-teal/15 bg-brand-pale/20 p-4 text-sm leading-relaxed text-brand-slate/90">
+              Reserve fleet: 20 units are held back for parts, quick repairs, and loaners.
+            </p>
+          </Reveal>
         </div>
       </div>
     </section>

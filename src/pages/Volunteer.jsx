@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, CheckCircle2, Mail } from 'lucide-react'
+import { Send, CheckCircle2, Mail, RotateCcw } from 'lucide-react'
 import { SUBMIT_ENDPOINT, site } from '../config'
 import Reveal from '../components/Reveal'
 
@@ -58,6 +58,14 @@ export default function Volunteer() {
                 <p className="max-w-sm text-muted">
                   Thanks for wanting to help bridge the divide. We'll reach out to you soon.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setStatus('idle')}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-slate/20 bg-white px-6 py-2.5 text-sm font-semibold text-brand-slate shadow-xs transition hover:border-brand-teal hover:bg-brand-pale/15 hover:text-brand-teal"
+                >
+                  <RotateCcw size={15} />
+                  Submit another application
+                </button>
               </div>
             </Reveal>
           ) : (

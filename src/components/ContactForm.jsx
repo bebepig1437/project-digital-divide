@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, CheckCircle2 } from 'lucide-react'
+import { Send, CheckCircle2, RotateCcw } from 'lucide-react'
 import { SUBMIT_ENDPOINT } from '../config'
 
 const reasons = [
@@ -40,6 +40,14 @@ export default function ContactForm() {
         <CheckCircle2 className="text-brand-teal" size={40} />
         <h3 className="text-xl font-bold text-brand-slate">Thanks for reaching out!</h3>
         <p className="text-muted">We'll get back to you at the email you provided.</p>
+        <button
+          type="button"
+          onClick={() => setStatus('idle')}
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-slate/20 bg-white px-5 py-2.5 text-sm font-semibold text-brand-slate shadow-xs transition hover:border-brand-teal hover:bg-brand-pale/15 hover:text-brand-teal"
+        >
+          <RotateCcw size={15} />
+          Send another message
+        </button>
       </div>
     )
   }

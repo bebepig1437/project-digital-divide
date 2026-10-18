@@ -52,24 +52,6 @@ export default function Home() {
               See how it works
             </a>
           </div>
-
-          {/* Quick Fleet Stat Ribbon */}
-          <div className="mt-14 border-t border-white/15 pt-8">
-            <div className="mx-auto grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 text-center backdrop-blur-md transition-all duration-200 hover:bg-white/15">
-                <div className="font-display text-2xl font-bold text-white sm:text-3xl">100</div>
-                <div className="mt-1 text-xs font-medium text-brand-pale">Laptops Donated (Alvin ISD)</div>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 text-center backdrop-blur-md transition-all duration-200 hover:bg-white/15">
-                <div className="font-display text-2xl font-bold text-white sm:text-3xl">$0</div>
-                <div className="mt-1 text-xs font-medium text-brand-pale">Cost to Students &amp; Families</div>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 text-center backdrop-blur-md transition-all duration-200 hover:bg-white/15">
-                <div className="font-display text-2xl font-bold text-white sm:text-3xl">100%</div>
-                <div className="mt-1 text-xs font-medium text-brand-pale">Student-Run Refurbishment</div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 

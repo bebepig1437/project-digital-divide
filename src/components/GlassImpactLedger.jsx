@@ -12,7 +12,7 @@ export default function GlassImpactLedger() {
     <section id="impact" className="bg-ink/5 py-16 sm:py-20">
       <div className="container-content">
         <Reveal>
-          <span className="eyebrow">Operational Scale</span>
+          <span className="eyebrow">The pilot</span>
           <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">The pilot in four numbers</h2>
         </Reveal>
 

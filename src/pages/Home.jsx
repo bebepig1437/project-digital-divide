@@ -5,11 +5,11 @@ import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
 
 const objectives = [
-  'Secure retired laptops from school district refresh cycles',
-  'Configure lightweight software tuned for everyday schoolwork',
-  'Run Build It, Keep It workshops where students set up their own machine',
-  'Partner with school counselors for direct student referrals',
-  'Log every machine to build a repeatable framework for other teams',
+  'Get retired laptops from school districts',
+  'Set up light, simple software for schoolwork',
+  'Run workshops where students set up their own laptop',
+  'Work with school counselors to reach students',
+  'Log every laptop so other groups can copy our process',
 ]
 
 export default function Home() {
@@ -51,16 +51,16 @@ export default function Home() {
       <section id="mission" className="bg-white py-20 sm:py-28">
         <div className="container-content grid gap-12 lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-16">
           <Reveal>
-            <span className="eyebrow">The Problem &amp; The Bridge</span>
+            <span className="eyebrow">The problem</span>
             <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">
-              The devices exist. The need exists. We build the <span className="text-gradient">logistics bridge</span> that connects them.
+Laptops sit in closets while students go without. We <span className="text-gradient">connect the two.</span>
             </h2>
             <div className="mt-6 space-y-4 text-lg leading-relaxed text-muted">
               <p>
                 School districts replace laptops on a three to five year cycle. When the cycle ends, working machines get resold or recycled. A few miles away, students do homework on parents' phones because school-issued devices stay at school and there is no computer at home.
               </p>
               <p>
-                The gap between them is a logistics problem. Most retired machines are in good physical condition. Getting them ready for a ninth grader is mostly configuration. We clean the hardware, install simple and responsive software, and place them with students through workshops and counselor partnerships.
+Most retired laptops still work. Getting one ready for a ninth grader mostly means setting it up. We clean each one, install simple software, and get it to a student through workshops and school counselors.
               </p>
             </div>
 
@@ -70,7 +70,7 @@ export default function Home() {
             <div className="relative overflow-hidden rounded-3xl border border-brand-slate/15 bg-brand-pale/15 p-7 shadow-sm transition-all duration-300 hover:shadow-md sm:p-8">
               <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-brand-slate via-brand-teal to-brand-cyan" />
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-brand-slate">What we are building</h3>
+                <h3 className="text-lg font-bold text-brand-slate">What we do</h3>
               </div>
               <ul className="mt-5 space-y-3.5">
                 {objectives.map((o) => (

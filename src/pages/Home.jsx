@@ -13,6 +13,13 @@ const objectives = [
 ]
 
 export default function Home() {
+  const pilotFacts = [
+    { label: 'Device model', value: 'Dell Latitude 3130' },
+    { label: 'From', value: 'Alvin ISD Technology' },
+    { label: 'Cost to students', value: '$0. Always.' },
+    { label: 'Team size', value: '5 high school students' },
+    { label: 'Reserve fleet', value: '20 units held back' },
+  ]
   return (
     <>
       {/* ---- Banner (Hero with 6-point sampled horizontal gradient & dot grid) ---- */}
@@ -43,6 +50,21 @@ export default function Home() {
             >
               See how it works
             </a>
+          </div>
+          <p className="mt-4 text-sm text-white/75 max-w-md mx-auto">
+            Student-run. Zero cost to the families we serve. Built on a 100-unit pilot from Alvin ISD.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-white/75">
+            <Rocket size={14} className="text-brand-cyan" />
+            <span className="text-brand-cyan">Pilot live</span>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-white/75">
+            {pilotFacts.map((f) => (
+              <span key={f.label} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                <span className="text-brand-cyan">{f.label}</span>
+                <span className="font-medium">{f.value}</span>
+              </span>
+            ))}
           </div>
         </div>
       </section>

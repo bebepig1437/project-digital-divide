@@ -7,9 +7,6 @@
 //   TO_EMAIL         recipient (defaults to the org Gmail)
 //   FROM_EMAIL       verified sender (defaults to Resend's onboarding sender)
 
-const TO_EMAIL = process.env.TO_EMAIL || 'projectdigitaldivide.org@gmail.com'
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Project Digital Divide <onboarding@resend.dev>'
-
 function escapeHtml(value = '') {
   return String(value).replace(
     /[&<>"']/g,
@@ -22,6 +19,9 @@ function isEmail(value) {
 }
 
 export default async function handler(req, res) {
+  const TO_EMAIL = process.env.TO_EMAIL || 'projectdigitaldivide.org@gmail.com'
+  const FROM_EMAIL = process.env.FROM_EMAIL || 'Project Digital Divide <onboarding@resend.dev>'
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Method not allowed' })

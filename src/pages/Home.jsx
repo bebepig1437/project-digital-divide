@@ -18,14 +18,6 @@ export default function Home() {
       {/* ---- Banner (Hero with 6-point sampled horizontal gradient & dot grid) ---- */}
       <section className="hero-banner-bg relative overflow-hidden text-white">
         <div className="container-content relative py-20 text-center sm:py-28">
-          {/* Ambient Location & Status Pill */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-mono font-medium tracking-wide text-brand-pale backdrop-blur-md shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-cyan opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-cyan" />
-            </span>
-            <span>Pearland, TX · Student-Led Initiative</span>
-          </div>
 
           <img
             src="/logo.webp"

@@ -4,11 +4,11 @@ import { SUBMIT_ENDPOINT, site } from '../config'
 import Reveal from '../components/Reveal'
 
 const interestAreas = [
-  'Device refurbishment & repair',
-  'Teaching digital skills / workshops',
-  'Helping organizations with tech & AI',
-  'Outreach & advocacy',
-  'Wherever I\'m needed',
+  'Hardware testing & bench setup',
+  'Build It, Keep It workshop mentoring',
+  'School district outreach & partnerships',
+  'Software tracking tools & data logging',
+  'Wherever the team needs help',
 ]
 
 export default function Volunteer() {
@@ -40,11 +40,10 @@ export default function Volunteer() {
     <>
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
-          <span className="eyebrow">Volunteer</span>
+          <span className="eyebrow">Get Involved</span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-brand-slate sm:text-5xl">Join the team</h1>
           <p className="mt-5 text-lg font-medium text-brand-slate/85 sm:text-xl">
-            Whether you can fix a laptop, teach a workshop, build a website, or spread the
-            word, there's a place for you here. Tell us a bit about yourself.
+            Whether you want to help test laptops on the bench, mentor students at a build workshop, connect with local schools, or build tracking software, we would love to have you.
           </p>
         </div>
       </section>
@@ -94,7 +93,7 @@ export default function Volunteer() {
 
                 <div>
                   <label className="field-label" htmlFor="v-skills">Relevant skills &amp; experience</label>
-                  <textarea id="v-skills" name="skills_experience" rows={3} className="field-input resize-y" placeholder="e.g. hardware repair, teaching, web/AI, languages, anything relevant" />
+                  <textarea id="v-skills" name="skills_experience" rows={3} className="field-input resize-y" placeholder="e.g. laptop hardware, software setup, student mentoring, community outreach" />
                 </div>
 
                 <div>

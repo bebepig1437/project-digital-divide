@@ -9,10 +9,10 @@ export default function Newsletter() {
     <>
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
-          <span className="eyebrow">Newsletter</span>
+          <span className="eyebrow">Field Dispatches</span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-brand-slate sm:text-5xl">News &amp; updates</h1>
           <p className="mt-5 text-lg font-medium text-brand-slate/85 sm:text-xl">
-            Upcoming device drives, workshop recaps, partner projects, and updates on what our team is building
+            Updates on our hardware intake, student build workshops, district partnerships, and what we are learning as we build.
           </p>
         </div>
       </section>

@@ -7,54 +7,49 @@ import Reveal from '../components/Reveal'
 export default function Newsletter() {
   return (
     <>
-      <section className="border-b border-brand-slate/10 bg-brand-pale/20 py-16 sm:py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
-          <span className="eyebrow">Newsletter</span>
-          <h1 className="mt-4 text-4xl font-bold text-brand-slate sm:text-5xl">News &amp; updates</h1>
-          <p className="mt-5 text-lg text-muted">
-            Upcoming device drives, workshop recaps, partner projects, and updates on what our team is building
+          <span className="eyebrow">Field Dispatches</span>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight text-brand-slate sm:text-5xl">News &amp; updates</h1>
+          <p className="mt-5 text-lg font-medium text-brand-slate/85 sm:text-xl">
+            Updates on our hardware intake, student build workshops, district partnerships, and what we are learning as we build.
           </p>
         </div>
       </section>
 
-      <section className="bg-white py-16 sm:py-20">
+      <section className="bg-white pb-20 sm:pb-28">
         <div className="container-content max-w-3xl">
           {posts.length === 0 ? (
-            <p className="text-center text-muted">No posts yet. Check back soon.</p>
+            <div className="rounded-3xl border border-brand-slate/15 bg-brand-pale/10 p-12 text-center text-muted">
+              No posts yet. Check back soon.
+            </div>
           ) : (
-            <ul className="divide-y divide-brand-slate/10">
+            <div className="space-y-6">
               {posts.map((post) => (
-                <li key={post.slug}>
-                  <Reveal>
-                    <Link
-                      to={`/newsletter/${post.slug}`}
-                      className="group flex flex-col gap-4 py-8 sm:flex-row sm:items-start sm:gap-8"
-                    >
-                      {post.image && (
-                        <img
-                          src={post.image}
-                          alt=""
-                          className="h-40 w-full rounded-2xl object-cover sm:h-28 sm:w-44 sm:flex-none shadow-sm"
-                        />
-                      )}
-                      <div className="flex-1">
-                        <time className="text-xs font-semibold uppercase tracking-wider text-brand-teal">
-                          {formatDate(post.date)}
-                        </time>
-                        <h2 className="mt-2 text-2xl font-bold text-brand-slate transition-colors group-hover:text-brand-teal">
-                          {post.title}
-                        </h2>
-                        <p className="mt-2 text-[15px] leading-relaxed text-muted">{post.excerpt}</p>
-                        <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-slate group-hover:text-brand-teal transition-colors">
-                          Read more
-                          <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                        </span>
-                      </div>
-                    </Link>
-                  </Reveal>
-                </li>
+                <Reveal key={post.slug}>
+                  <Link
+                    to={`/newsletter/${post.slug}`}
+                    className="group block rounded-3xl border border-brand-slate/15 bg-white p-7 transition-all duration-300 hover:border-brand-teal/50 hover:shadow-md sm:p-8"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <time className="text-xs font-semibold uppercase tracking-wider text-brand-teal">
+                        {formatDate(post.date)}
+                      </time>
+                    </div>
+                    <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-brand-slate transition-colors group-hover:text-brand-teal sm:text-3xl">
+                      {post.title}
+                    </h2>
+                    <p className="mt-3 text-base leading-relaxed text-muted">
+                      {post.excerpt}
+                    </p>
+                    <div className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-brand-slate transition-colors group-hover:text-brand-teal">
+                      <span>Read article</span>
+                      <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                </Reveal>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </section>

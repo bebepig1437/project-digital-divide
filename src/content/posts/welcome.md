@@ -1,26 +1,36 @@
 ---
 title: Welcome to Project Digital Divide
 date: 2026-06-13
-excerpt: We're a student-led team on a mission to bring devices, digital skills, and connectivity to the communities that need them most. Here's what we're about.
+excerpt: How five high schoolers in Pearland secured 100 retired laptops from Alvin ISD, set up a hardware bench, and started building a logistics bridge for local students.
 image:
 ---
 
-We started Project Digital Divide with a simple observation: technology has become the
-front door to education, work, and opportunity, but that door is still closed for far too
-many people.
+We started Project Digital Divide with a simple observation: school districts replace their laptops on a three to five year cycle. When that cycle ends, the machines get resold or recycled, even though most of them still work. A few miles away, students are doing homework on their parents' phones because the school-issued Chromebook stays at school and there is no computer at home.
 
-## Why we exist
+The gap between those two facts is a logistics problem, not a technology problem. The devices exist. The need exists. What is missing is the process that connects them: taking retired machines, setting them up with clean software, and handing them to a student.
 
-Across our community and beyond, the gap shows up in three ways:
+## Where our first fleet came from
 
-- **Devices** are expensive, and perfectly good hardware gets thrown away every day.
-- **Skills** are unevenly distributed. Having a laptop doesn't help if no one ever showed
-  you how to use it safely and productively.
-- **Connectivity** still doesn't reach many rural and underserved areas.
+After four months of emails, follow-ups, and discussions, Alvin ISD's technology department donated 100 retired laptops. The machines are Dell Latitude 3130s, an education model from the early 2020s. They arrived with chargers, in solid physical condition, and already decommissioned from the district asset system.
 
-We're tackling all three.
+District technology departments receive countless vague requests for free equipment. What moved this from ignored to approved was specificity: a clear plan for what happens to the hardware, an accounting of where each device goes, and a clear answer to what the district gets out of it. The machines get used by local students instead of sitting in storage, and the district can point to concrete community impact.
 
-## What's next
+## The setup work
 
-This newsletter is where we'll share what we're up to: device drives, workshops, partnerships,
-and the stories of the people we meet along the way. Thanks for being here.
+Getting a machine from retired by the district to usable by a ninth grader is installation and configuration, not heavy repair. The screens, keyboards, and drives work, and the batteries hold a charge. About one in five machines needs a minor part swapped; the rest need software.
+
+The Dell Latitude 3130 runs an Intel Pentium Silver processor with 4GB of single-channel memory and a 128GB SSD. While heavy modern operating systems feel sluggish on budget memory, lightweight desktop environments run smoothly. We are testing distributions like Lubuntu and Linux Mint with Xfce, timing cold boot speeds, monitoring memory under eight open browser tabs, and checking WiFi, trackpads, and audio output.
+
+## Three ways we reach students
+
+We are testing three placement models in parallel:
+
+- **Build It, Keep It:** Three-hour weekend workshops where students open the case, inspect the components, boot from a USB drive, and configure the software themselves under our supervision.
+- **Direct donation through school partners:** Handing batches of finished laptops to school counselors and social workers who route them directly to students who cannot attend weekend sessions.
+- **Community lending libraries:** Placing devices on two-week rotating loans at community centers and libraries to serve multiple families over the school year.
+
+## Building a repeatable dataset
+
+Our goal is sixty to ninety laptops placed in students' hands by month ten. Along the way, we log every serial number, initial condition, part swap, bench cost, and deployment track. The dataset and problem log we produce will be published openly so any student team can replicate the operation.
+
+Thanks for following along as we build.

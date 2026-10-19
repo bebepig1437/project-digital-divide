@@ -60,18 +60,21 @@ export default function Footer({ showContact = true, contactTitle, contactBody, 
             <Link to="/volunteer" className="hover:text-white transition-colors">Volunteer</Link>
           </nav>
 
-          <div className="flex items-center gap-4">
-            <a href={`mailto:${site.email}`} aria-label="Email" className="rounded-full bg-white/10 p-2.5 transition hover:bg-brand-cyan hover:text-brand-slate">
-              <Mail size={18} />
+          <div className="flex items-center gap-3">
+            <a href={`mailto:${site.email}`} aria-label="Email" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+              <Mail size={16} />
             </a>
-            <a href={site.socials.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="rounded-full bg-white/10 p-2.5 transition hover:bg-brand-cyan hover:text-brand-slate">
-              <Instagram size={18} />
+            <a href={site.socials.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+              <Instagram size={16} />
+            </a>
+            <a href="https://github.com/bebepig1437/project-digital-divide" target="_blank" rel="noreferrer" aria-label="GitHub" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+              <Github size={16} />
             </a>
           </div>
         </div>
         <div className="border-t border-white/10">
           <div className="container-content py-5 text-center text-xs text-white/50">
-            © {new Date().getFullYear()} Project Digital Divide. All rights reserved. · <a href="https://github.com/bebepig1437/project-digital-divide" target="_blank" rel="noreferrer" className="text-white/70 hover:text-white transition-colors flex items-center gap-1">View on GitHub <Github size={12} /></a>
+            © {new Date().getFullYear()} Project Digital Divide. All rights reserved.
           </div>
         </div>
       </footer>

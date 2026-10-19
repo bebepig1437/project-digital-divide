@@ -49,7 +49,7 @@ export default function Footer({ showContact = true, contactTitle, contactBody, 
             <img src="/logo.webp" alt="Project Digital Divide logo" className="h-11 w-11 rounded-md bg-white object-contain p-0.5 shadow-sm" />
             <div>
               <p className="font-display text-lg font-bold text-white">Project Digital Divide</p>
-              <p className="text-sm text-brand-pale/80">Student-led in Pearland, TX · Serving Greater Houston</p>
+              <p className="text-sm text-brand-pale/80">Student-led in Pearland, TX · Serving Houston & Greater Houston</p>
             </div>
           </div>
 

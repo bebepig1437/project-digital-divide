@@ -25,7 +25,7 @@ export default function Home() {
             className="mx-auto mb-8 h-24 w-24 rounded-2xl bg-white object-contain p-1.5 shadow-xl transition-transform duration-300 hover:scale-105"
           />
           <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
-            Project Digital Divide
+            Project Digital Divide — Houston’s Student-Run Laptop Program
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">
             A student-run project in Pearland that sets up retired school laptops, documents what holds up, runs workshops, and deploys the devices at no cost to families.

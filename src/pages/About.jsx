@@ -1,4 +1,8 @@
+import { Helmet } from 'react-helmet-async'
 import TeamHorizonExpander from '../components/TeamHorizonExpander'
+
+const siteUrl = 'https://projectdigitaldivide.org'
+const logoUrl = `${siteUrl}/logo.webp`
 
 const privacy = [
   {
@@ -20,8 +24,26 @@ const privacy = [
 ]
 
 export default function About() {
+  const meta = [
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: 'https://projectdigitaldivide.org/about' },
+    { property: 'og:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+    { name: 'twitter:card', content: 'summary' },
+    { name: 'twitter:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+  ]
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-20 sm:pt-20 sm:pb-28">
+    <>
+      <Helmet>
+        <title>About Us | Project Digital Divide</title>
+        <meta name="description" content="Meet the five high schoolers in Pearland, Texas running Project Digital Divide. We clean up retired laptops, configure lightweight software, and get them to students who need a computer at home." />
+        {meta.map((m, i) => (
+          <meta key={i} {...m} />
+        ))}
+        <meta name="twitter:title" content="About Us | Project Digital Divide" />
+        <meta name="twitter:description" content="Meet the five high schoolers in Pearland, Texas running Project Digital Divide. We clean up retired laptops, configure lightweight software, and get them to students who need a computer at home." />
+      </Helmet>
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-20 sm:pt-20 sm:pb-28">
       <div className="container-content">
         <div className="mx-auto mb-12 max-w-3xl text-center">
           <span className="eyebrow">The Team</span>
@@ -51,5 +73,6 @@ export default function About() {
         </div>
       </div>
     </section>
+    </>
   )
 }

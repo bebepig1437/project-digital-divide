@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ArrowLeft } from 'lucide-react'
+import { Helmet } from 'react-helmet-async'
 import { getPost, formatDate } from '../lib/posts'
 import PhotoPlaceholder from '../components/PhotoPlaceholder'
 
@@ -18,8 +19,29 @@ export default function NewsletterPost() {
     )
   }
 
+  const postUrl = `https://projectdigitaldivide.org/newsletter/${slug}`
+  const imageUrl = post.image || 'https://projectdigitaldivide.org/logo.webp'
+  const meta = [
+    { property: 'og:type', content: 'article' },
+    { property: 'og:url', content: postUrl },
+    { property: 'og:image', content: imageUrl },
+    { property: 'article:published_time', content: post.date },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:image', content: imageUrl },
+  ]
+
   return (
-    <div className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-10 pb-20 sm:pt-14 sm:pb-28">
+    <>
+      <Helmet>
+        <title>{post.title} | Project Digital Divide</title>
+        <meta name="description" content={post.excerpt} />
+        {meta.map((m, i) => (
+          <meta key={i} {...m} />
+        ))}
+        <meta name="twitter:title" content={post.title} />
+        <meta name="twitter:description" content={post.excerpt} />
+      </Helmet>
+      <div className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-10 pb-20 sm:pt-14 sm:pb-28">
       <article className="container-content max-w-3xl">
         <Link to="/newsletter" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-slate hover:text-brand-teal transition-colors">
           <ArrowLeft size={15} /> All posts
@@ -53,5 +75,6 @@ export default function NewsletterPost() {
         </div>
       </article>
     </div>
+    </>
   )
 }

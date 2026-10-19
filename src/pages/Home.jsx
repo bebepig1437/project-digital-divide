@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check } from 'lucide-react'
+import { Helmet } from 'react-helmet-async'
 import GlassImpactLedger from '../components/GlassImpactLedger'
 import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
+
+const siteUrl = 'https://projectdigitaldivide.org'
+const logoUrl = `${siteUrl}/logo.webp`
 
 const objectives = [
   'Get retired laptops from school districts',
@@ -13,8 +17,25 @@ const objectives = [
 ]
 
 export default function Home() {
+  const meta = [
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: siteUrl },
+    { property: 'og:image', content: logoUrl },
+    { name: 'twitter:card', content: 'summary' },
+    { name: 'twitter:image', content: logoUrl },
+  ]
+
   return (
     <>
+      <Helmet>
+        <title>Project Digital Divide | Houston's Student-Run Laptop Program in Pearland, TX</title>
+        <meta name="description" content="Houston-area student-run project in Pearland, Texas, taking laptops retired by school districts, setting them up with lightweight software, and getting them to students who need a computer at home — at no cost to families." />
+        {meta.map((m, i) => (
+          <meta key={i} {...m} />
+        ))}
+        <meta name="twitter:title" content="Project Digital Divide | Houston's Student-Run Laptop Program" />
+        <meta name="twitter:description" content="Houston-area student-run project in Pearland, Texas, taking laptops retired by school districts, setting them up with lightweight software, and getting them to students who need a computer at home — at no cost to families." />
+      </Helmet>
       {/* ---- Banner (Hero with 6-point sampled horizontal gradient & dot grid) ---- */}
       <section className="hero-banner-bg relative overflow-hidden text-white">
         <div className="container-content relative py-20 text-center sm:py-28">

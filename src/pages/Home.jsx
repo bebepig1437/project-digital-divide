@@ -28,7 +28,7 @@ export default function Home() {
             Project Digital Divide
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">
-            A student-run project in Pearland that sets up retired school laptops, documents what holds up, runs workshops, and deploys the devices at no cost to families.
+            A student-run project in Pearland that sets up retired school laptops, documents what holds up, runs workshops, and deploys the devices at no cost to families across Houston.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link

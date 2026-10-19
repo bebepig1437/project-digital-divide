@@ -28,7 +28,7 @@ export default function Home() {
             Project Digital Divide
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">
-            Student-run. Zero cost to the families we serve. Built on a 100-unit pilot from Alvin ISD.
+            A student-run project in Pearland that sets up retired school laptops, documents what holds up, runs workshops, and deploys the devices at no cost to families.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -41,7 +41,7 @@ export default function Home() {
               href="#mission"
               className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition-all duration-200 hover:bg-white/20 hover:border-white/40"
             >
-              See how it works
+              Learn more
             </a>
           </div>
         </div>

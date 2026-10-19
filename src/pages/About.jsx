@@ -4,24 +4,7 @@ import TeamHorizonExpander from '../components/TeamHorizonExpander'
 const siteUrl = 'https://projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
 
-const privacy = [
-  {
-    title: 'We track devices, not people.',
-    body: 'Every machine has a log of what came in, what was installed, and where it ended up. We do not collect browsing history, files, or student accounts.',
-  },
-  {
-    title: 'Wiped before it goes out.',
-    body: 'Each machine gets a fresh operating system and a clean user profile. Returned lending-library units run the same wipe before they go out again.',
-  },
-  {
-    title: 'No hidden telemetry.',
-    body: 'The installed software does not phone home about who is using it or what they do with it. If that changes, it is a documented decision, not a quiet one.',
-  },
-  {
-    title: '$0 cost is real.',
-    body: 'There is no fee, no subscription, and no expectation of anything in return. If a unit needs a part replaced, that cost is absorbed before it reaches a student.',
-  },
-]
+const privacy = `We log each device's chain of custody — intake, refurbishment, and placement — but we do not collect personal data, browsing history, files, or student accounts. Every laptop is wiped and reconfigured with a clean OS before deployment; returned units receive the same treatment. No telemetry, no background data collection, and no usage tracking on installed software. There is no cost to students or families — no fees, subscriptions, or hidden charges. If a repair is needed, we absorb the cost before the device reaches a student.`
 
 export default function About() {
   const meta = [
@@ -61,15 +44,8 @@ export default function About() {
         <TeamHorizonExpander />
 
         <div className="mx-auto mt-16 max-w-3xl">
-          <h2 className="text-2xl font-bold text-brand-slate">What we collect, and what we do not</h2>
-          <ul className="mt-6 space-y-5 text-ink/85">
-            {privacy.map((p) => (
-              <li key={p.title}>
-                <p className="font-semibold text-brand-slate">{p.title}</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted">{p.body}</p>
-              </li>
-            ))}
-          </ul>
+          <h2 className="text-2xl font-bold text-brand-slate">Privacy & Commitment</h2>
+          <p className="mt-6 text-base leading-relaxed text-ink/85">{privacy}</p>
         </div>
       </div>
     </section>

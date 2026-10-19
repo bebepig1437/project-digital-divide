@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Mail, Instagram } from 'lucide-react'
+import { Mail, Instagram, Github } from 'lucide-react'
 import { site } from '../config'
 import ContactForm from './ContactForm'
 import Reveal from './Reveal'
@@ -71,7 +71,7 @@ export default function Footer({ showContact = true, contactTitle, contactBody, 
         </div>
         <div className="border-t border-white/10">
           <div className="container-content py-5 text-center text-xs text-white/50">
-            © {new Date().getFullYear()} Project Digital Divide. All rights reserved.
+            © {new Date().getFullYear()} Project Digital Divide. All rights reserved. · <a href="https://github.com/bebepig1437/project-digital-divide" target="_blank" rel="noreferrer" className="text-white/70 hover:text-white transition-colors flex items-center gap-1">View on GitHub <Github size={12} /></a>
           </div>
         </div>
       </footer>

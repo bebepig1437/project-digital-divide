@@ -4,8 +4,6 @@ import TeamHorizonExpander from '../components/TeamHorizonExpander'
 const siteUrl = 'https://projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
 
-const privacy = `We log each device's chain of custody — intake, refurbishment, and placement — but we do not collect personal data, browsing history, files, or student accounts. Every laptop is wiped and reconfigured with a clean OS before deployment; returned units receive the same treatment. No telemetry, no background data collection, and no usage tracking on installed software. There is no cost to students or families — no fees, subscriptions, or hidden charges. If a repair is needed, we absorb the cost before the device reaches a student.`
-
 export default function About() {
   const meta = [
     { property: 'og:type', content: 'website' },
@@ -42,11 +40,6 @@ export default function About() {
         </div>
 
         <TeamHorizonExpander />
-
-        <div className="mx-auto mt-16 max-w-3xl">
-          <h2 className="text-2xl font-bold text-brand-slate">Privacy & Commitment</h2>
-          <p className="mt-6 text-base leading-relaxed text-ink/85">{privacy}</p>
-        </div>
       </div>
     </section>
     </>

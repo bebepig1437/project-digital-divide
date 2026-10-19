@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Send, CheckCircle2, Mail, RotateCcw } from 'lucide-react'
+import { Helmet } from 'react-helmet-async'
 import { SUBMIT_ENDPOINT, site } from '../config'
 import Reveal from '../components/Reveal'
 
@@ -13,6 +14,14 @@ const interestAreas = [
 
 export default function Volunteer() {
   const [status, setStatus] = useState('idle')
+
+  const meta = [
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: 'https://projectdigitaldivide.org/volunteer' },
+    { property: 'og:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+    { name: 'twitter:card', content: 'summary' },
+    { name: 'twitter:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+  ]
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -38,6 +47,15 @@ export default function Volunteer() {
 
   return (
     <>
+      <Helmet>
+        <title>Volunteer | Project Digital Divide</title>
+        <meta name="description" content="Join our student-led team bridging the digital divide in Houston. Help test laptops, mentor students at build workshops, connect with local schools, or build tracking software." />
+        {meta.map((m, i) => (
+          <meta key={i} {...m} />
+        ))}
+        <meta name="twitter:title" content="Volunteer | Project Digital Divide" />
+        <meta name="twitter:description" content="Join our student-led team bridging the digital divide in Houston. Help test laptops, mentor students at build workshops, connect with local schools, or build tracking software." />
+      </Helmet>
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
           <span className="eyebrow">Get Involved</span>

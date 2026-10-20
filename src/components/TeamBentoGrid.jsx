@@ -13,9 +13,9 @@ export default function TeamBentoGrid() {
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-5 md:grid-cols-12">
           {/* Main Hero Card (7 Cols) */}
-          <div className="overflow-hidden rounded-3xl border border-navy/10 bg-white p-6 shadow-sm sm:p-10 md:col-span-7 flex flex-col justify-between">
+          <div className="overflow-hidden rounded-3xl border border-line/10 bg-surface p-6 shadow-sm sm:p-10 md:col-span-7 flex flex-col justify-between">
             <div>
-              <div className="mb-6 overflow-hidden rounded-2xl bg-navy-50/50 border border-navy/10">
+              <div className="mb-6 overflow-hidden rounded-2xl bg-raised border border-line/10">
                 {hero.photo ? (
                   <img
                     key={hero.name}
@@ -51,9 +51,9 @@ export default function TeamBentoGrid() {
                 key={member.name}
                 type="button"
                 onClick={() => setSelected(member.originalIndex)}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-teal/40 hover:shadow-md"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-line/10 bg-surface p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-teal/40 hover:shadow-md"
               >
-                <div className="mb-3 overflow-hidden rounded-xl bg-navy-50/60 border border-navy/10">
+                <div className="mb-3 overflow-hidden rounded-xl bg-raised border border-line/10">
                   {member.photo ? (
                     <img
                       src={member.photo}

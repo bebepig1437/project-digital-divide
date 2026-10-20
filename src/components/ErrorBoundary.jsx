@@ -22,12 +22,12 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-brand-pale/15 flex items-center justify-center p-6 text-brand-slate">
-          <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-brand-slate/15 shadow-xl text-center">
+        <div className="min-h-screen bg-brand-pale/15 flex items-center justify-center p-6 text-heading">
+          <div className="max-w-md w-full bg-surface rounded-3xl p-8 border border-line/15 shadow-xl text-center">
             <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
               <AlertTriangle size={32} />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-brand-slate">
+            <h1 className="text-2xl font-bold tracking-tight text-heading">
               Something went wrong
             </h1>
             <p className="mt-3 text-sm text-muted leading-relaxed">
@@ -42,7 +42,7 @@ export default class ErrorBoundary extends React.Component {
 
             <button
               onClick={this.handleReload}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-slate px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-slate/90"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-slate px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-slate/90 dark:bg-brand-cyan dark:text-navy-950 dark:hover:bg-brand-pale"
             >
               <RotateCcw size={15} />
               Reload Page

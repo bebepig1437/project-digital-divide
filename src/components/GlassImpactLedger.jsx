@@ -13,7 +13,7 @@ export default function GlassImpactLedger() {
       <div className="container-content">
         <Reveal>
           <span className="eyebrow">The pilot</span>
-          <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">The pilot in four numbers</h2>
+          <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">The pilot in four numbers</h2>
         </Reveal>
 
         <Reveal delay={120}>
@@ -21,7 +21,7 @@ export default function GlassImpactLedger() {
             {numbers.map((n) => (
               <div key={n.label} className="flex flex-col-reverse border-l-4 border-brand-cyan pl-5">
                 <dt className="mt-2 text-sm text-muted">{n.label}</dt>
-                <dd className="text-4xl font-extrabold text-brand-slate sm:text-5xl">{n.value}</dd>
+                <dd className="text-4xl font-extrabold text-heading sm:text-5xl">{n.value}</dd>
               </div>
             ))}
           </dl>

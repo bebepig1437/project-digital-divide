@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
@@ -31,8 +32,17 @@ export default {
         },
         pale: '#A3E8DE',
         cream: '#FAF8F5',
-        ink: '#102A36',
-        muted: '#527282',
+
+        // Semantic theme tokens, backed by CSS variables that swap under `html.dark`.
+        // See src/index.css for the variable values per theme.
+        canvas: 'rgb(var(--c-canvas) / <alpha-value>)',
+        wash: 'rgb(var(--c-wash) / <alpha-value>)',
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',
+        raised: 'rgb(var(--c-raised) / <alpha-value>)',
+        heading: 'rgb(var(--c-heading) / <alpha-value>)',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
+        ink: 'rgb(var(--c-ink) / <alpha-value>)',
+        muted: 'rgb(var(--c-muted) / <alpha-value>)',
       },
       fontFamily: {
         display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],

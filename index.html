@@ -4,6 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/webp" href="/logo.webp" sizes="48x48" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- Apply the persisted theme before first paint to avoid a flash of the wrong theme.
+         Mirrors src/hooks/useTheme.js: default light, optional persisted 'dark'. -->
+    <script>
+      ;(function () {
+        try {
+          var theme = localStorage.getItem('pdd:theme');
+          var dark = theme === 'dark';
+          var root = document.documentElement;
+          root.classList.toggle('dark', dark);
+          root.style.colorScheme = dark ? 'dark' : 'light';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.content = dark ? '#0F1A21' : '#ffffff';
+        } catch (e) {}
+      })();
+    </script>
     <meta
       name="description"
       content="Houston-area student-run project in Pearland, Texas, taking laptops retired by school districts, setting them up with lightweight software, and getting them to students who need a computer at home — at no cost to families."

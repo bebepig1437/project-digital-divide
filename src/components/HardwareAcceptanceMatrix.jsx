@@ -28,21 +28,21 @@ const models = [
 
 export default function HardwareAcceptanceMatrix() {
   return (
-    <section className="border-t border-brand-slate/10 bg-brand-pale/10 py-16 sm:py-24">
+    <section className="border-t border-line/10 bg-brand-pale/10 py-16 sm:py-24">
       <div className="container-content">
         <Reveal>
           <span className="eyebrow">Hardware &amp; Distribution</span>
-          <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">What we run, and how it reaches students</h2>
+          <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">What we run, and how it reaches students</h2>
         </Reveal>
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-14">
           <Reveal>
-            <h3 className="text-lg font-bold text-brand-slate">Dell Latitude 3130 specs</h3>
+            <h3 className="text-lg font-bold text-heading">Dell Latitude 3130 specs</h3>
             <table className="mt-4 w-full border-collapse text-sm">
               <tbody>
                 {specs.map(([label, value]) => (
-                  <tr key={label} className="border-t border-brand-slate/10">
-                    <th scope="row" className="w-28 py-2.5 pr-4 text-left align-top font-semibold text-brand-slate">
+                  <tr key={label} className="border-t border-line/10">
+                    <th scope="row" className="w-28 py-2.5 pr-4 text-left align-top font-semibold text-heading">
                       {label}
                     </th>
                     <td className="py-2.5 text-ink/85">{value}</td>
@@ -51,8 +51,8 @@ export default function HardwareAcceptanceMatrix() {
               </tbody>
             </table>
 
-            <div className="mt-6 rounded-xl border border-brand-slate/10 bg-white/70 p-4 text-sm leading-relaxed text-muted">
-              <p className="font-semibold text-brand-slate">Operating systems we are testing</p>
+            <div className="mt-6 rounded-xl border border-line/10 bg-surface/70 p-4 text-sm leading-relaxed text-muted">
+              <p className="font-semibold text-heading">Operating systems we are testing</p>
               <p className="mt-1">
                 With 4 GB of memory, the operating system matters. We are testing Lubuntu, Linux Mint, Raspberry Pi, ChromeOS, and a mini Windows 11.
               </p>
@@ -60,21 +60,21 @@ export default function HardwareAcceptanceMatrix() {
           </Reveal>
 
           <Reveal delay={120}>
-            <h3 className="text-lg font-bold text-brand-slate">Three ways to place a laptop</h3>
+            <h3 className="text-lg font-bold text-heading">Three ways to place a laptop</h3>
             <ol className="mt-4 space-y-5">
               {models.map((m, i) => (
                 <li key={m.label} className="flex gap-4">
-                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-teal/15 text-sm font-bold text-brand-teal">
+                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-teal/15 text-sm font-bold text-brand-teal dark:text-brand-cyan">
                     {i + 1}
                   </span>
                   <div>
-                    <p className="font-semibold text-brand-slate">{m.label}</p>
+                    <p className="font-semibold text-heading">{m.label}</p>
                     <p className="mt-0.5 text-sm leading-relaxed text-muted">{m.detail}</p>
                   </div>
                 </li>
               ))}
             </ol>
-            <p className="mt-8 rounded-xl border border-brand-teal/15 bg-brand-pale/20 p-4 text-sm leading-relaxed text-brand-slate/90">
+            <p className="mt-8 rounded-xl border border-brand-teal/15 bg-brand-pale/20 p-4 text-sm leading-relaxed text-heading/90">
               Reserve fleet: 20 units are held back for parts, quick repairs, and loaners.
             </p>
           </Reveal>

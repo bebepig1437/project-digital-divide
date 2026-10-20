@@ -44,7 +44,12 @@ export default function Home() {
           <img
             src="/logo.webp"
             alt="Project Digital Divide logo"
-            className="mx-auto mb-8 h-24 w-24 rounded-2xl bg-white object-contain p-1.5 shadow-xl transition-transform duration-300 hover:scale-105"
+            className="mx-auto mb-8 h-24 w-24 rounded-2xl bg-white dark:bg-transparent object-contain p-1.5 shadow-xl dark:shadow-none transition-transform duration-300 hover:scale-105 dark:hidden"
+          />
+          <img
+            src="/logo-dark.jpeg"
+            alt="Project Digital Divide logo"
+            className="mx-auto mb-8 h-24 w-24 rounded-2xl dark:bg-transparent object-contain p-1.5 transition-transform duration-300 hover:scale-105 hidden dark:block"
           />
           <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
             Project Digital Divide

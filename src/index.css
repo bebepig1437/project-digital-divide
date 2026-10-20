@@ -64,6 +64,16 @@
     background-size: 24px 24px, 100% 100%;
   }
 
+  /* Hero banner goes dark on one side: deep bird-logo navy (#2D556E) ramping
+     into vibrant bird color (#4DB7A9) — stays readable under dark mode. */
+  .dark .hero-banner-bg {
+    background-color: #0B141C;
+    background-image:
+      radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, #0B141C 0%, #2D556E 35%, #4DB7A9 100%);
+    background-size: 24px 24px, 100% 100%;
+  }
+
   /* Primary call-to-action button */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-slate px-6 py-3

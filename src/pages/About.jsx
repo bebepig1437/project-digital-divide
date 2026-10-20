@@ -28,8 +28,7 @@ export default function About() {
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-canvas pt-16 pb-20 sm:pt-20 sm:pb-28">
       <div className="container-content">
         <div className="mx-auto mb-12 max-w-3xl text-center">
-          <span className="eyebrow">Student-led nonprofit in Pearland, TX · refurbishing computers and bridging the digital divide across Greater Houston</span>
-          <span className="eyebrow eyebrow-small mt-2 block">The Team</span>
+          <span className="eyebrow eyebrow-small">The Team</span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">
             Who we are
           </h1>

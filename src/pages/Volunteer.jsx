@@ -53,6 +53,7 @@ export default function Volunteer() {
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
+        <link rel="canonical" href="https://projectdigitaldivide.org/volunteer" />
         <meta name="twitter:title" content="Volunteer | Project Digital Divide" />
         <meta name="twitter:description" content="Join our student-led team bridging the digital divide in Houston. Help test laptops, mentor students at build workshops, connect with local schools, or build tracking software." />
       </Helmet>

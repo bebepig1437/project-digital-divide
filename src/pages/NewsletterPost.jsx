@@ -38,6 +38,7 @@ export default function NewsletterPost() {
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
+        <link rel="canonical" href={postUrl} />
         <meta name="twitter:title" content={post.title} />
         <meta name="twitter:description" content={post.excerpt} />
       </Helmet>
@@ -65,7 +66,7 @@ export default function NewsletterPost() {
         </header>
 
         {post.image ? (
-          <img src={post.image} alt="" className="mt-8 aspect-[16/9] w-full rounded-3xl object-cover shadow-sm border border-brand-slate/10" />
+          <img src={post.image} alt={post.title} className="mt-8 aspect-[16/9] w-full rounded-3xl object-cover shadow-sm border border-brand-slate/10" />
         ) : null}
 
         <div className="mt-8 rounded-3xl border border-brand-slate/15 bg-white p-8 sm:p-12 shadow-sm">

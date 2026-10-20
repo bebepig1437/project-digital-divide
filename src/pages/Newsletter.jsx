@@ -22,6 +22,7 @@ export default function Newsletter() {
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
+        <link rel="canonical" href="https://projectdigitaldivide.org/newsletter" />
         <meta name="twitter:title" content="News & Updates | Project Digital Divide" />
         <meta name="twitter:description" content="Updates on our hardware intake, student build workshops, district partnerships, and what we are learning as we build." />
       </Helmet>

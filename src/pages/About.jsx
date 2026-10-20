@@ -21,6 +21,7 @@ export default function About() {
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
+        <link rel="canonical" href="https://projectdigitaldivide.org/about" />
         <meta name="twitter:title" content="About Us | Project Digital Divide" />
         <meta name="twitter:description" content="Meet the five high schoolers in Pearland, Texas running Project Digital Divide. We clean up retired laptops, configure lightweight software, and get them to students who need a computer at home." />
       </Helmet>

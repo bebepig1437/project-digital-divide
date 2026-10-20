@@ -1,27 +1,42 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, Rocket } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
+import { Helmet } from 'react-helmet-async'
 import GlassImpactLedger from '../components/GlassImpactLedger'
 import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
 
+const siteUrl = 'https://projectdigitaldivide.org'
+const logoUrl = `${siteUrl}/logo.webp`
+
 const objectives = [
-  'Secure retired laptops from school district refresh cycles',
-  'Configure lightweight software tuned for everyday schoolwork',
-  'Run Build It, Keep It workshops where students set up their own machine',
-  'Partner with school counselors for direct student referrals',
-  'Log every machine to build a repeatable framework for other teams',
+  'Get retired laptops from school districts',
+  'Set up light, simple software for schoolwork',
+  'Run workshops where students set up their own laptop',
+  'Work with school counselors to reach students',
+  'Log every laptop so other groups can copy our process',
 ]
 
 export default function Home() {
-  const pilotFacts = [
-    { label: 'Device model', value: 'Dell Latitude 3130' },
-    { label: 'From', value: 'Alvin ISD Technology' },
-    { label: 'Cost to students', value: '$0. Always.' },
-    { label: 'Team size', value: '5 high school students' },
-    { label: 'Reserve fleet', value: '20 units held back' },
+  const meta = [
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: siteUrl },
+    { property: 'og:image', content: logoUrl },
+    { name: 'twitter:card', content: 'summary' },
+    { name: 'twitter:image', content: logoUrl },
   ]
+
   return (
     <>
+      <Helmet>
+        <title>Project Digital Divide | Houston's Student-Run Laptop Program in Pearland, TX</title>
+        <meta name="description" content="Houston-area student-run project in Pearland, Texas, taking laptops retired by school districts, setting them up with lightweight software, and getting them to students who need a computer at home — at no cost to families." />
+        {meta.map((m, i) => (
+          <meta key={i} {...m} />
+        ))}
+        <link rel="canonical" href="https://projectdigitaldivide.org/" />
+        <meta name="twitter:title" content="Project Digital Divide | Houston's Student-Run Laptop Program" />
+        <meta name="twitter:description" content="Houston-area student-run project in Pearland, Texas, taking laptops retired by school districts, setting them up with lightweight software, and getting them to students who need a computer at home — at no cost to families." />
+      </Helmet>
       {/* ---- Banner (Hero with 6-point sampled horizontal gradient & dot grid) ---- */}
       <section className="hero-banner-bg relative overflow-hidden text-white">
         <div className="container-content relative py-20 text-center sm:py-28">
@@ -35,7 +50,7 @@ export default function Home() {
             Project Digital Divide
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">
-            A student-run project in Pearland, Texas. We take laptops retired by school districts, set them up with lightweight software, and get them to students who need a computer at home.
+            A student-run project in Pearland that sets up retired school laptops, documents what holds up, runs workshops, and deploys the devices at no cost to families across Houston.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -48,23 +63,8 @@ export default function Home() {
               href="#mission"
               className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition-all duration-200 hover:bg-white/20 hover:border-white/40"
             >
-              See how it works
+              Learn more
             </a>
-          </div>
-          <p className="mt-4 text-sm text-white/75 max-w-md mx-auto">
-            Student-run. Zero cost to the families we serve. Built on a 100-unit pilot from Alvin ISD.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-white/75">
-            <Rocket size={14} className="text-brand-cyan" />
-            <span className="text-brand-cyan">Pilot live</span>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-white/75">
-            {pilotFacts.map((f) => (
-              <span key={f.label} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                <span className="text-brand-cyan">{f.label}</span>
-                <span className="font-medium">{f.value}</span>
-              </span>
-            ))}
           </div>
         </div>
       </section>
@@ -73,33 +73,26 @@ export default function Home() {
       <section id="mission" className="bg-white py-20 sm:py-28">
         <div className="container-content grid gap-12 lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-16">
           <Reveal>
-            <span className="eyebrow">The Problem &amp; The Bridge</span>
+            <span className="eyebrow">The problem</span>
             <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">
-              The devices exist. The need exists. We build the <span className="text-gradient">logistics bridge</span> that connects them.
+Laptops sit in closets while students go without. We <span className="text-gradient">connect the two.</span>
             </h2>
             <div className="mt-6 space-y-4 text-lg leading-relaxed text-muted">
               <p>
                 School districts replace laptops on a three to five year cycle. When the cycle ends, working machines get resold or recycled. A few miles away, students do homework on parents' phones because school-issued devices stay at school and there is no computer at home.
               </p>
               <p>
-                The gap between them is a logistics problem, not a technology problem. Most retired machines are in good physical condition. Getting them ready for a ninth grader is configuration, not heavy repair. We clean the hardware, install simple and responsive software, and place them with students through workshops and counselor partnerships.
+Most retired laptops still work. Getting one ready for a ninth grader mostly means setting it up. We clean each one, install simple software, and get it to a student through workshops and school counselors.
               </p>
             </div>
 
-            {/* Strategic Quote Callout */}
-            <div className="mt-8 rounded-2xl border-l-4 border-brand-cyan bg-brand-pale/15 p-5 text-sm font-medium italic text-brand-slate sm:text-base">
-              "The gap between surplus laptops and students without computers is a logistics bridge, not a technology problem."
-            </div>
           </Reveal>
 
           <Reveal delay={120}>
             <div className="relative overflow-hidden rounded-3xl border border-brand-slate/15 bg-brand-pale/15 p-7 shadow-sm transition-all duration-300 hover:shadow-md sm:p-8">
               <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-brand-slate via-brand-teal to-brand-cyan" />
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-brand-slate">What we are building</h3>
-                <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-2.5 py-0.5 font-mono text-xs font-semibold text-brand-teal">
-                  Pilot Phase · 2026
-                </span>
+                <h3 className="text-lg font-bold text-brand-slate">What we do</h3>
               </div>
               <ul className="mt-5 space-y-3.5">
                 {objectives.map((o) => (

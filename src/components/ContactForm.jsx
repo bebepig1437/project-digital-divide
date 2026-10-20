@@ -3,10 +3,12 @@ import { Send, CheckCircle2, RotateCcw } from 'lucide-react'
 import { SUBMIT_ENDPOINT } from '../config'
 
 const reasons = [
-  'Donate a device',
-  'Request tech help for my organization',
-  'Partnership',
-  'General inquiry',
+  'Donate a laptop or parts',
+  'Donate cleaning supplies',
+  'Refer a student or family',
+  'Host a workshop',
+  'Volunteer',
+  'Something else',
 ]
 
 export default function ContactForm() {
@@ -75,11 +77,14 @@ export default function ContactForm() {
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
+        <p className="mt-2 text-sm text-muted">
+          Supplies we use: isopropyl alcohol (70% or higher), cotton swabs, microfiber cloths, and compressed air.
+        </p>
       </div>
 
       <div>
         <label className="field-label" htmlFor="c-message">Message</label>
-        <textarea id="c-message" name="message" required rows={4} className="field-input resize-y" placeholder="How can we help?" />
+        <textarea id="c-message" name="message" required rows={4} className="field-input resize-y" placeholder="What you have, or what you need" />
       </div>
 
       {status === 'error' && (

@@ -1,17 +1,17 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Mail, Instagram } from 'lucide-react'
+import { Mail, Instagram, Github } from 'lucide-react'
 import { site } from '../config'
 import ContactForm from './ContactForm'
 import Reveal from './Reveal'
 
 const contactCopy = {
   '/about': {
-    title: 'Connect with our team',
-    body: 'Have retired laptops from a school district, want to host a student build workshop, or interested in partnering? Reach out and we will follow up quickly.',
+    title: 'Get in touch',
+    body: 'Have a retired laptop, cleaning supplies, or a student who needs one? Send us a note and we will reply by email.',
   },
   default: {
-    title: "Let's connect working laptops with students",
-    body: 'Want to donate retired district hardware, collaborate on a student build workshop, or learn more about our process? Send us a note.',
+    title: 'How can you help?',
+    body: 'Donate a laptop or supplies, refer a student, host a workshop, or volunteer. Tell us what you have and we will follow up by email.',
   },
 }
 
@@ -49,7 +49,7 @@ export default function Footer({ showContact = true, contactTitle, contactBody, 
             <img src="/logo.webp" alt="Project Digital Divide logo" className="h-11 w-11 rounded-md bg-white object-contain p-0.5 shadow-sm" />
             <div>
               <p className="font-display text-lg font-bold text-white">Project Digital Divide</p>
-              <p className="text-sm text-brand-pale/80">Student-led in Pearland, TX · Serving Greater Houston</p>
+              <p className="text-sm text-brand-pale/80">Student-led in Pearland, TX · Serving Houston & Greater Houston</p>
             </div>
           </div>
 
@@ -60,12 +60,15 @@ export default function Footer({ showContact = true, contactTitle, contactBody, 
             <Link to="/volunteer" className="hover:text-white transition-colors">Volunteer</Link>
           </nav>
 
-          <div className="flex items-center gap-4">
-            <a href={`mailto:${site.email}`} aria-label="Email" className="rounded-full bg-white/10 p-2.5 transition hover:bg-brand-cyan hover:text-brand-slate">
-              <Mail size={18} />
+          <div className="flex items-center gap-3">
+            <a href={`mailto:${site.email}`} aria-label="Email" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+              <Mail size={16} />
             </a>
-            <a href={site.socials.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="rounded-full bg-white/10 p-2.5 transition hover:bg-brand-cyan hover:text-brand-slate">
-              <Instagram size={18} />
+            <a href={site.socials.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+              <Instagram size={16} />
+            </a>
+            <a href="https://github.com/bebepig1437/project-digital-divide" target="_blank" rel="noreferrer" aria-label="GitHub" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+              <Github size={16} />
             </a>
           </div>
         </div>

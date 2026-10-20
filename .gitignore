@@ -25,3 +25,4 @@ pnpm-debug.log*
 # Claude Code / skills tooling
 .claude/
 skills-lock.json
+.freebuff/

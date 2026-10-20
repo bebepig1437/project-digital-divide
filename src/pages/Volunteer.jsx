@@ -57,7 +57,7 @@ export default function Volunteer() {
         <meta name="twitter:title" content="Volunteer | Project Digital Divide" />
         <meta name="twitter:description" content="Join our student-led team bridging the digital divide in Houston. Help test laptops, mentor students at build workshops, connect with local schools, or build tracking software." />
       </Helmet>
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-12 sm:pt-20 sm:pb-16">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-canvas pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
           <span className="eyebrow">Get Involved</span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">Join the team</h1>

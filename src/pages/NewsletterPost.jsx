@@ -42,7 +42,7 @@ export default function NewsletterPost() {
         <meta name="twitter:title" content={post.title} />
         <meta name="twitter:description" content={post.excerpt} />
       </Helmet>
-      <div className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-10 pb-20 sm:pt-14 sm:pb-28">
+      <div className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-canvas pt-10 pb-20 sm:pt-14 sm:pb-28">
       <article className="container-content max-w-3xl">
         <Link to="/newsletter" className="inline-flex items-center gap-1.5 text-sm font-semibold text-heading hover:text-brand-teal dark:hover:text-brand-pale transition-colors">
           <ArrowLeft size={15} /> All posts

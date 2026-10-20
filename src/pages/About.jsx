@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async'
 import TeamHorizonExpander from '../components/TeamHorizonExpander'
+import TestimonialStrip from '../components/TestimonialStrip'
 
 const siteUrl = 'https://projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
@@ -39,7 +40,13 @@ export default function About() {
             Here is who owns what across our shop bench, district partnerships, and student workshops.
           </p>
         </div>
+      </div>
+    </section>
 
+    <TestimonialStrip />
+
+    <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/40 via-brand-pale/20 via-brand-pale/8 pt-16 pb-20 sm:pt-20 sm:pb-28">
+    <div className="container-content">
         <TeamHorizonExpander />
       </div>
     </section>

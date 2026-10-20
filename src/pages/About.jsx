@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async'
 import TeamHorizonExpander from '../components/TeamHorizonExpander'
+import TestimonialFeature from '../components/TestimonialFeature'
 
 const siteUrl = 'https://projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
@@ -25,11 +26,10 @@ export default function About() {
         <meta name="twitter:title" content="About Us | Project Digital Divide" />
         <meta name="twitter:description" content="Meet the five high schoolers in Pearland, Texas running Project Digital Divide. We clean up retired laptops, configure lightweight software, and get them to students who need a computer at home." />
       </Helmet>
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-16 pb-20 sm:pt-20 sm:pb-28">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/40 via-brand-pale/20 via-brand-pale/8 pt-16 pb-20 sm:pt-20 sm:pb-28">
       <div className="container-content">
         <div className="mx-auto mb-12 max-w-3xl text-center">
-          <span className="eyebrow">Student-led nonprofit in Pearland, TX · refurbishing computers and bridging the digital divide across Greater Houston</span>
-          <span className="eyebrow eyebrow-small mt-2 block">The Team</span>
+          <span className="eyebrow eyebrow-small">The Team</span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">
             Who we are
           </h1>
@@ -40,10 +40,16 @@ export default function About() {
             Here is who owns what across our shop bench, district partnerships, and student workshops.
           </p>
         </div>
+      </div>
+    </section>
 
+    <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/40 via-brand-pale/20 via-brand-pale/8 pt-16 pb-20 sm:pt-20 sm:pb-28">
+    <div className="container-content">
         <TeamHorizonExpander />
       </div>
     </section>
+
+    <TestimonialFeature />
     </>
   )
 }

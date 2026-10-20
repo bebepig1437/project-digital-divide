@@ -9,11 +9,11 @@ export default function TeamSplitRoster() {
 
   return (
     <div className="w-full">
-      <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-navy/10 bg-white p-6 shadow-sm sm:p-10 lg:p-12">
+      <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-line/10 bg-surface p-6 shadow-sm sm:p-10 lg:p-12">
         <div className="grid items-start gap-10 md:grid-cols-12 md:gap-12">
           {/* Left: Dynamic Portrait Stage */}
           <div className="md:col-span-5">
-            <div className="relative overflow-hidden rounded-2xl border border-navy/10 bg-navy-50/50 shadow-inner">
+            <div className="relative overflow-hidden rounded-2xl border border-line/10 bg-raised shadow-inner">
               {currentMember.photo ? (
                 <img
                   key={currentMember.name}
@@ -43,7 +43,7 @@ export default function TeamSplitRoster() {
                     onClick={() => setSelected(i)}
                     onMouseEnter={() => setSelected(i)}
                     className={`cursor-pointer py-4 transition-all duration-200 ${
-                      isSelected ? 'bg-navy-50/40 px-4 rounded-xl' : 'hover:pl-2'
+                      isSelected ? 'bg-navy-50/40 dark:bg-raised/40 px-4 rounded-xl' : 'hover:pl-2'
                     }`}
                   >
                     <div className="flex items-baseline justify-between gap-4">

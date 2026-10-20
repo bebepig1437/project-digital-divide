@@ -30,10 +30,10 @@ export default function About() {
         <div className="mx-auto mb-12 max-w-3xl text-center">
           <span className="eyebrow">Student-led nonprofit in Pearland, TX · refurbishing computers and bridging the digital divide across Greater Houston</span>
           <span className="eyebrow eyebrow-small mt-2 block">The Team</span>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-brand-slate sm:text-5xl">
+          <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">
             Who we are
           </h1>
-          <p className="mt-5 text-lg font-medium leading-relaxed text-brand-slate/85 sm:text-xl">
+          <p className="mt-5 text-lg font-medium leading-relaxed text-heading/85 sm:text-xl">
             We are five high schoolers in Pearland, Texas. When school districts retire working laptops, we clean them up, configure lightweight software, and get them to students who need a computer at home.
           </p>
           <p className="mt-3 text-sm text-muted">

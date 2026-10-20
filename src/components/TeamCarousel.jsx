@@ -93,7 +93,7 @@ export default function TeamCarousel() {
         type="button"
         onClick={prev}
         aria-label="Previous team member"
-        className="absolute left-0 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-navy/15 bg-white text-navy shadow-sm transition hover:bg-navy hover:text-white hover:scale-105 active:scale-95"
+        className="absolute left-0 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-line/15 bg-surface text-heading shadow-sm transition hover:bg-navy hover:text-white hover:scale-105 active:scale-95"
       >
         <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
       </button>
@@ -103,7 +103,7 @@ export default function TeamCarousel() {
         type="button"
         onClick={next}
         aria-label="Next team member"
-        className="absolute right-0 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-navy/15 bg-white text-navy shadow-sm transition hover:bg-navy hover:text-white hover:scale-105 active:scale-95"
+        className="absolute right-0 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-line/15 bg-surface text-heading shadow-sm transition hover:bg-navy hover:text-white hover:scale-105 active:scale-95"
       >
         <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
       </button>
@@ -129,7 +129,7 @@ export default function TeamCarousel() {
         >
           {team.map((member) => (
             <div key={member.name} className="w-full flex-shrink-0">
-              <div className="rounded-3xl border border-navy/10 bg-white p-6 sm:p-12 shadow-sm">
+              <div className="rounded-3xl border border-line/10 bg-surface p-6 sm:p-12 shadow-sm">
                 <div className="grid items-center gap-8 md:grid-cols-12 md:gap-12">
                   {/* Photo Frame */}
                   <div className="md:col-span-5 pointer-events-none">
@@ -137,7 +137,7 @@ export default function TeamCarousel() {
                       <img
                         src={member.photo}
                         alt={member.name}
-                        className="aspect-[4/5] w-full rounded-2xl object-cover shadow-sm border border-navy/10"
+                        className="aspect-[4/5] w-full rounded-2xl object-cover shadow-sm border border-line/10"
                       />
                     ) : (
                       <PhotoPlaceholder
@@ -164,7 +164,7 @@ export default function TeamCarousel() {
                     </div>
 
                     {/* Minimal Counter */}
-                    <div className="mt-8 pt-6 border-t border-navy/10 flex items-center justify-between text-xs font-medium text-navy/50">
+                    <div className="mt-8 pt-6 border-t border-navy/10 flex items-center justify-between text-xs font-medium text-heading/50">
                       <span>Swipe or use arrows to browse</span>
                       <span className="font-mono text-sm text-navy/80 font-semibold">
                         {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
@@ -184,7 +184,7 @@ export default function TeamCarousel() {
           <div
             key={i}
             className={`h-1 rounded-full transition-all duration-300 ${
-              i === index ? 'w-8 bg-teal-600' : 'w-2 bg-navy/15'
+              i === index ? 'w-8 bg-teal-600' : 'w-2 bg-line/15'
             }`}
           />
         ))}

@@ -22,7 +22,7 @@ export default function TeamOpenFilmstrip() {
             type="button"
             onClick={() => scroll('left')}
             aria-label="Scroll left"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-navy/15 bg-white text-navy shadow-sm transition hover:bg-navy hover:text-white active:scale-95"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-line/15 bg-surface text-heading shadow-sm transition hover:bg-navy hover:text-white active:scale-95"
           >
             <ChevronLeft size={20} />
           </button>
@@ -30,7 +30,7 @@ export default function TeamOpenFilmstrip() {
             type="button"
             onClick={() => scroll('right')}
             aria-label="Scroll right"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-navy/15 bg-white text-navy shadow-sm transition hover:bg-navy hover:text-white active:scale-95"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-line/15 bg-surface text-heading shadow-sm transition hover:bg-navy hover:text-white active:scale-95"
           >
             <ChevronRight size={20} />
           </button>
@@ -44,10 +44,10 @@ export default function TeamOpenFilmstrip() {
           {team.map((member) => (
             <div
               key={member.name}
-              className="w-[300px] sm:w-[350px] flex-shrink-0 snap-start overflow-hidden rounded-3xl border border-navy/10 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+              className="w-[300px] sm:w-[350px] flex-shrink-0 snap-start overflow-hidden rounded-3xl border border-line/10 bg-surface p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
             >
               {/* Photo Frame */}
-              <div className="overflow-hidden rounded-2xl bg-navy-50/60 border border-navy/10">
+              <div className="overflow-hidden rounded-2xl bg-raised border border-line/10">
                 {member.photo ? (
                   <img
                     src={member.photo}

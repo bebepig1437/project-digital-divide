@@ -2,20 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Semantic color tokens, defined as CSS variables so a single `.dark` class on
+   <html> swaps the whole theme without per-component variants.
+   Values are space-separated RGB triplets so Tailwind's alpha modifiers
+   (e.g. bg-surface/90) keep working. */
+:root {
+  --c-canvas: 255 255 255;  /* page background */
+  --c-wash: 240 248 250;    /* alternating section background (light: #F0F8FA) */
+  --c-surface: 255 255 255; /* cards / panels (light: white) */
+  --c-raised: 255 255 255;  /* elevated cards (light: white) */
+  --c-ink: 16 42 54;        /* body text (light: #102A36) */
+  --c-muted: 82 114 130;    /* secondary text (light: #527282) */
+  --c-heading: 26 92 117;   /* headings/labels (light: #1A5C75) */
+  --c-line: 26 92 117;      /* borders base (light: #1A5C75, used at low alpha) */
+  color-scheme: light;
+}
+
+.dark {
+  --c-canvas: 15 26 33;     /* #0F1A21 deep slate canvas */
+  --c-wash: 10 18 24;       /* #0A1218 alternating section background */
+  --c-surface: 22 34 44;    /* #16222B card surface */
+  --c-raised: 27 44 56;     /* #1B2C38 elevated surface */
+  --c-ink: 231 238 241;     /* #E7EEF1 body text */
+  --c-muted: 159 192 204;   /* #9FC0CC secondary text */
+  --c-heading: 216 237 241; /* #D8EDF1 headings/labels */
+  --c-line: 163 232 222;    /* borders base (dark: pale cyan, used at low alpha) */
+  color-scheme: dark;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-white text-ink font-sans antialiased;
+    @apply bg-canvas text-ink font-sans antialiased;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    @apply font-display tracking-tight text-brand-slate;
+    @apply font-display tracking-tight text-heading;
   }
 }
 
@@ -41,29 +69,33 @@
     @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-slate px-6 py-3
       text-sm font-semibold text-white shadow-sm transition
       hover:bg-brand-teal hover:shadow-md focus:outline-none focus-visible:ring-2
-      focus-visible:ring-brand-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+      focus-visible:ring-brand-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-white
+      dark:bg-brand-cyan dark:text-navy-950 dark:hover:bg-brand-pale
+      dark:focus-visible:ring-offset-canvas;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-brand-slate/20
-      bg-white px-6 py-3 text-sm font-semibold text-brand-slate transition
-      hover:border-brand-teal hover:text-brand-teal focus:outline-none focus-visible:ring-2
-      focus-visible:ring-brand-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-line/20
+      bg-surface px-6 py-3 text-sm font-semibold text-heading transition
+      hover:border-brand-teal hover:text-brand-teal dark:hover:border-brand-cyan
+      dark:hover:text-brand-cyan focus:outline-none focus-visible:ring-2
+      focus-visible:ring-brand-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-white
+      dark:focus-visible:ring-offset-canvas;
   }
 
   .field-label {
-    @apply mb-1.5 block text-sm font-medium text-brand-slate;
+    @apply mb-1.5 block text-sm font-medium text-heading;
   }
 
   .field-input {
-    @apply w-full rounded-xl border border-brand-slate/15 bg-white px-4 py-2.5 text-ink
+    @apply w-full rounded-xl border border-line/15 bg-surface px-4 py-2.5 text-ink
       placeholder:text-muted/60 transition
-      focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-cyan/30;
+      focus:border-brand-teal dark:focus:border-brand-cyan focus:outline-none focus:ring-2 focus:ring-brand-cyan/30;
   }
 
   .eyebrow {
     @apply inline-flex items-center gap-2 rounded-full bg-brand-pale/40 border border-brand-teal/20 px-3 py-1
-      text-xs font-semibold uppercase tracking-wider text-brand-slate;
+      text-xs font-semibold uppercase tracking-wider text-heading;
   }
 
   /* Markdown styling for newsletter posts */
@@ -80,7 +112,7 @@
     @apply my-4 text-muted;
   }
   .prose-pdd a {
-    @apply font-medium text-teal-700 underline underline-offset-2 hover:text-teal;
+    @apply font-medium text-teal-700 underline underline-offset-2 hover:text-teal dark:text-brand-cyan dark:hover:text-brand-pale;
   }
   .prose-pdd ul {
     @apply my-4 list-disc space-y-1.5 pl-5 text-muted;

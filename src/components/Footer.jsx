@@ -15,7 +15,7 @@ const contactCopy = {
   },
 }
 
-export default function Footer({ showContact = true, contactTitle, contactBody, contactBg = 'bg-white' }) {
+export default function Footer({ showContact = true, contactTitle, contactBody, contactBg = 'bg-surface' }) {
   const { pathname } = useLocation()
   const content = contactCopy[pathname] || contactCopy.default
   const title = contactTitle || content.title
@@ -24,15 +24,15 @@ export default function Footer({ showContact = true, contactTitle, contactBody, 
   return (
     <>
       {showContact && (
-        <section id="contact" className={`border-t border-brand-slate/10 ${contactBg} py-20`}>
+        <section id="contact" className={`border-t border-line/10 ${contactBg} py-20`}>
           <div className="container-content grid gap-10 lg:grid-cols-2 lg:items-start">
             <Reveal>
               <span className="eyebrow">Get in touch</span>
-              <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">{title}</h2>
+              <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">{title}</h2>
               <p className="mt-4 max-w-md text-lg text-muted">
                 {body}
               </p>
-              <a href={`mailto:${site.email}`} className="mt-6 inline-flex items-center gap-2 font-medium text-brand-slate hover:text-brand-teal transition-colors">
+              <a href={`mailto:${site.email}`} className="mt-6 inline-flex items-center gap-2 font-medium text-heading hover:text-brand-teal dark:hover:text-brand-pale transition-colors">
                 <Mail size={18} /> {site.email}
               </a>
             </Reveal>
@@ -61,13 +61,13 @@ export default function Footer({ showContact = true, contactTitle, contactBody, 
           </nav>
 
           <div className="flex items-center gap-3">
-            <a href={`mailto:${site.email}`} aria-label="Email" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+            <a href={`mailto:${site.email}`} aria-label="Email" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-heading dark:hover:text-navy-950">
               <Mail size={16} />
             </a>
-            <a href={site.socials.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+            <a href={site.socials.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-heading dark:hover:text-navy-950">
               <Instagram size={16} />
             </a>
-            <a href="https://github.com/bebepig1437/project-digital-divide" target="_blank" rel="noreferrer" aria-label="GitHub" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-brand-slate">
+            <a href="https://github.com/bebepig1437/project-digital-divide" target="_blank" rel="noreferrer" aria-label="GitHub" className="rounded-full bg-white/10 p-2 transition hover:bg-brand-cyan hover:text-heading dark:hover:text-navy-950">
               <Github size={16} />
             </a>
           </div>

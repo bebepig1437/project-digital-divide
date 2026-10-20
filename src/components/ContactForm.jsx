@@ -38,14 +38,14 @@ export default function ContactForm() {
 
   if (status === 'success') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-brand-teal/20 bg-white p-10 text-center shadow-sm">
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-brand-teal/20 bg-surface p-10 text-center shadow-sm">
         <CheckCircle2 className="text-brand-teal" size={40} />
-        <h3 className="text-xl font-bold text-brand-slate">Thanks for reaching out!</h3>
+        <h3 className="text-xl font-bold text-heading">Thanks for reaching out!</h3>
         <p className="text-muted">We'll get back to you at the email you provided.</p>
         <button
           type="button"
           onClick={() => setStatus('idle')}
-          className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-slate/20 bg-white px-5 py-2.5 text-sm font-semibold text-brand-slate shadow-xs transition hover:border-brand-teal hover:bg-brand-pale/15 hover:text-brand-teal"
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-line/20 bg-surface px-5 py-2.5 text-sm font-semibold text-heading shadow-xs transition hover:border-brand-teal hover:bg-brand-pale/15 hover:text-brand-teal dark:hover:text-brand-pale"
         >
           <RotateCcw size={15} />
           Send another message
@@ -55,7 +55,7 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 rounded-3xl border border-brand-slate/15 bg-brand-pale/10 p-6 shadow-sm sm:p-8">
+    <form onSubmit={handleSubmit} className="grid gap-4 rounded-3xl border border-line/15 bg-brand-pale/10 p-6 shadow-sm sm:p-8">
       {/* Honeypot: hidden from people, catches bots */}
       <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       <div className="grid gap-4 sm:grid-cols-2">

@@ -55,7 +55,7 @@ export default function Home() {
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/volunteer"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-brand-slate shadow-md transition-all duration-200 hover:bg-brand-pale hover:shadow-lg hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-navy-900 shadow-md transition-all duration-200 hover:bg-brand-pale hover:shadow-lg hover:-translate-y-0.5"
             >
               Get involved <ArrowRight size={16} />
             </Link>
@@ -70,11 +70,11 @@ export default function Home() {
       </section>
 
       {/* ---- Mission & Objectives ---- */}
-      <section id="mission" className="bg-white py-20 sm:py-28">
+      <section id="mission" className="bg-canvas py-20 sm:py-28">
         <div className="container-content grid gap-12 lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-16">
           <Reveal>
             <span className="eyebrow">The problem</span>
-            <h2 className="mt-4 text-3xl font-bold text-brand-slate sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">
 Laptops sit in closets while students go without. We <span className="text-gradient">connect the two.</span>
             </h2>
             <div className="mt-6 space-y-4 text-lg leading-relaxed text-muted">
@@ -89,10 +89,10 @@ Most retired laptops still work. Getting one ready for a ninth grader mostly mea
           </Reveal>
 
           <Reveal delay={120}>
-            <div className="relative overflow-hidden rounded-3xl border border-brand-slate/15 bg-brand-pale/15 p-7 shadow-sm transition-all duration-300 hover:shadow-md sm:p-8">
+            <div className="relative overflow-hidden rounded-3xl border border-line/15 bg-brand-pale/15 p-7 shadow-sm transition-all duration-300 hover:shadow-md sm:p-8">
               <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-brand-slate via-brand-teal to-brand-cyan" />
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-brand-slate">What we do</h3>
+                <h3 className="text-lg font-bold text-heading">What we do</h3>
               </div>
               <ul className="mt-5 space-y-3.5">
                 {objectives.map((o) => (

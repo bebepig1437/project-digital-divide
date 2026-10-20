@@ -44,20 +44,20 @@ export default function NewsletterPost() {
       </Helmet>
       <div className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-white pt-10 pb-20 sm:pt-14 sm:pb-28">
       <article className="container-content max-w-3xl">
-        <Link to="/newsletter" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-slate hover:text-brand-teal transition-colors">
+        <Link to="/newsletter" className="inline-flex items-center gap-1.5 text-sm font-semibold text-heading hover:text-brand-teal dark:hover:text-brand-pale transition-colors">
           <ArrowLeft size={15} /> All posts
         </Link>
 
-        <header className="mt-8 rounded-3xl border border-brand-slate/15 bg-white p-8 sm:p-10 shadow-sm">
+        <header className="mt-8 rounded-3xl border border-line/15 bg-surface p-8 sm:p-10 shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand-teal">
+            <span className="rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand-teal dark:text-brand-cyan">
               Field Dispatch
             </span>
             <time className="text-xs font-medium text-muted">
               {formatDate(post.date)}
             </time>
           </div>
-          <h1 className="mt-4 font-display text-3xl font-bold leading-tight text-brand-slate sm:text-4xl md:text-5xl">
+          <h1 className="mt-4 font-display text-3xl font-bold leading-tight text-heading sm:text-4xl md:text-5xl">
             {post.title}
           </h1>
           <p className="mt-4 text-base leading-relaxed text-muted sm:text-lg">
@@ -66,10 +66,10 @@ export default function NewsletterPost() {
         </header>
 
         {post.image ? (
-          <img src={post.image} alt={post.title} className="mt-8 aspect-[16/9] w-full rounded-3xl object-cover shadow-sm border border-brand-slate/10" />
+          <img src={post.image} alt={post.title} className="mt-8 aspect-[16/9] w-full rounded-3xl object-cover shadow-sm border border-line/10" />
         ) : null}
 
-        <div className="mt-8 rounded-3xl border border-brand-slate/15 bg-white p-8 sm:p-12 shadow-sm">
+        <div className="mt-8 rounded-3xl border border-line/15 bg-surface p-8 sm:p-12 shadow-sm">
           <div className="prose-pdd">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
           </div>

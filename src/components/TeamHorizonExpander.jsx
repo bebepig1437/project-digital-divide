@@ -9,7 +9,7 @@ export default function TeamHorizonExpander() {
     <div className="w-full">
       <div className="mx-auto max-w-6xl">
         {/* Panoramic Horizontal Expander */}
-        <div className="flex h-[560px] w-full flex-col gap-3 overflow-hidden rounded-3xl border border-brand-slate/15 bg-white p-3 shadow-sm md:h-[620px] md:flex-row md:gap-3.5 md:p-3.5">
+        <div className="flex h-[560px] w-full flex-col gap-3 overflow-hidden rounded-3xl border border-line/15 bg-surface p-3 shadow-sm md:h-[620px] md:flex-row md:gap-3.5 md:p-3.5">
           {team.map((member, i) => {
             const isExpanded = active === i
 

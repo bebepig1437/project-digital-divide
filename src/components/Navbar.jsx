@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { site } from '../config'
+import useTheme from '../hooks/useTheme'
+import ThemeToggle from './ThemeToggle'
 
 const links = [
   { to: '/', label: 'Home' },
@@ -12,6 +14,7 @@ const links = [
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [theme, toggleTheme] = useTheme()
   const location = useLocation()
 
   useEffect(() => setOpen(false), [location.pathname])
@@ -28,14 +31,14 @@ export default function Navbar() {
       className={[
         'sticky top-0 z-50 transition-colors duration-300',
         scrolled
-          ? 'border-b border-brand-slate/10 bg-white/90 backdrop-blur-md shadow-sm'
-          : 'border-b border-transparent bg-white/0',
+          ? 'border-b border-line/10 bg-surface/95 backdrop-blur-md shadow-sm'
+          : 'border-b border-transparent bg-transparent',
       ].join(' ')}
     >
       <nav className="container-content flex h-16 items-center justify-between md:h-20">
         <Link to="/" className="flex items-center gap-2.5 -ml-0.5 sm:-ml-2 md:-ml-4 lg:-ml-7 transition-transform hover:opacity-90">
           <img src="/logo.webp" alt="Project Digital Divide logo" className="h-9 w-9 rounded-md object-contain md:h-11 md:w-11" />
-          <span className="font-display text-base font-bold leading-tight text-brand-slate md:text-lg">
+          <span className="font-display text-base font-bold leading-tight text-heading md:text-lg">
             Project Digital Divide
           </span>
         </Link>
@@ -50,33 +53,38 @@ export default function Navbar() {
               className={({ isActive }) =>
                 [
                   'text-sm font-medium transition-colors',
-                  isActive ? 'text-brand-teal font-semibold' : 'text-brand-slate/75 hover:text-brand-slate',
+                  isActive ? 'text-brand-teal font-semibold dark:text-brand-cyan' : 'text-heading/75 hover:text-heading',
                 ].join(' ')
               }
             >
               {l.label}
             </NavLink>
           ))}
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
           <Link to="/volunteer" className="btn-primary px-5 py-2.5">
             Volunteer
           </Link>
         </div>
 
         {/* Mobile toggle */}
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="rounded-lg p-2 text-brand-slate md:hidden -mr-0.5 sm:-mr-2"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-        >
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        {/* Mobile controls: theme + menu toggle */}
+        <div className="flex items-center gap-1 md:hidden -mr-0.5 sm:-mr-2">
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="rounded-lg p-2 text-heading"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-brand-slate/10 bg-white shadow-lg md:hidden">
+        <div className="border-t border-line/10 bg-surface shadow-lg md:hidden">
           <div className="container-content flex flex-col gap-1 py-4">
             {links.map((l) => (
               <NavLink
@@ -86,7 +94,7 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   [
                     'rounded-lg px-3 py-2.5 text-base font-medium',
-                    isActive ? 'bg-brand-pale/35 text-brand-teal font-semibold' : 'text-brand-slate/80 hover:bg-brand-pale/15',
+                    isActive ? 'bg-brand-pale/35 text-brand-teal font-semibold dark:text-brand-cyan' : 'text-heading/80 hover:bg-brand-pale/15',
                   ].join(' ')
                 }
               >

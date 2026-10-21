@@ -72,11 +72,11 @@ export default function Volunteer() {
         <div className="container-content max-w-2xl">
           {status === 'success' ? (
             <Reveal>
-              <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-teal/20 bg-brand-pale/10 p-12 text-center shadow-sm">
+              <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-teal/20 bg-brand-pale/10 p-10 text-center shadow-sm">
                 <CheckCircle2 className="text-brand-teal" size={44} />
-                <h2 className="text-2xl font-bold text-heading">Application received!</h2>
+                <h2 className="text-2xl font-bold text-heading">Thanks — we got it.</h2>
                 <p className="max-w-sm text-muted">
-                  Thanks for wanting to help bridge the divide. We'll reach out to you soon.
+                  Thanks for wanting to help bridge the divide. We'll reply by email soon.
                 </p>
                 <button
                   type="button"
@@ -84,13 +84,13 @@ export default function Volunteer() {
                   className="mt-4 inline-flex items-center gap-2 rounded-full border border-line/20 bg-surface px-6 py-2.5 text-sm font-semibold text-heading shadow-xs transition hover:border-brand-teal hover:bg-brand-pale/15 hover:text-brand-teal"
                 >
                   <RotateCcw size={15} />
-                  Submit another application
+                  Send another
                 </button>
               </div>
             </Reveal>
           ) : (
             <Reveal>
-              <form onSubmit={handleSubmit} className="grid gap-5 rounded-3xl border border-line/15 bg-brand-pale/10 p-7 shadow-sm sm:p-10">
+              <form onSubmit={handleSubmit} className="grid gap-5 rounded-3xl border border-line/15 bg-brand-pale/10 p-6 shadow-sm sm:p-8">
                 {/* Honeypot: hidden from people, catches bots */}
                 <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
                 <div className="grid gap-5 sm:grid-cols-2">
@@ -104,14 +104,23 @@ export default function Volunteer() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="field-label" htmlFor="v-grade">Grade (if you&apos;re in school)</label>
-                  <input id="v-grade" name="grade_or_age" required className="field-input" placeholder="e.g. 11th grade" />
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label className="field-label" htmlFor="v-grade">Grade or age (optional)</label>
+                    <input id="v-grade" name="grade_or_age" className="field-input" placeholder="e.g. 11th grade, or 17" />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="v-availability">Availability</label>
+                    <input id="v-availability" name="availability" className="field-input" placeholder="e.g. weekday afternoons" />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="field-label" htmlFor="v-parent-email">Parent or guardian email (if you&apos;re under 18, this speeds up the waiver)</label>
-                  <input id="v-parent-email" name="parent_email" type="email" className="field-input" placeholder="parent@email.com" />
+                  <label className="field-label" htmlFor="v-parent-email">Parent or guardian email</label>
+                  <input id="v-parent-email" name="parent_email" type="email" aria-describedby="v-parent-help" className="field-input" placeholder="parent@email.com" />
+                  <p id="v-parent-help" className="mt-1.5 text-xs text-muted">
+                    Optional — if you&apos;re under 18, this speeds up the waiver.
+                  </p>
                 </div>
 
                 <div>
@@ -129,13 +138,8 @@ export default function Volunteer() {
                   <textarea id="v-skills" name="skills_experience" rows={3} className="field-input resize-y" placeholder="e.g. laptop hardware, software setup, student mentoring, community outreach" />
                 </div>
 
-                <div>
-                  <label className="field-label" htmlFor="v-availability">Availability</label>
-                  <input id="v-availability" name="availability" className="field-input" placeholder="e.g. weekday afternoons, ~3 hrs/week" />
-                </div>
-
                 {status === 'error' && (
-                  <p className="text-sm text-red-600">
+                  <p aria-live="polite" className="text-sm text-red-600">
                     Something went wrong. Please try again, or email us at {site.email}.
                   </p>
                 )}
@@ -148,15 +152,17 @@ export default function Volunteer() {
                   {status === 'sending' ? 'Sending…' : <>Send <Send size={16} /></>}
                 </button>
 
-                <p className="mt-4 text-xs text-muted text-center">
-                  <Link to="/" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
-                    Just want to donate a device or request one for a student? Use the contact form
-                    <ArrowRight size={12} />
-                  </Link>
-                </p>
-                <p className="text-xs text-muted text-center">
-                  Or email <a href={`mailto:${site.email}`} className="text-brand-teal hover:underline dark:text-brand-cyan">{site.email}</a>
-                </p>
+                <div className="space-y-1.5 text-center text-xs text-muted">
+                  <p>
+                    <Link to="/#contact" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
+                      Just want to donate a device or request one for a student? Use the contact form
+                      <ArrowRight size={12} />
+                    </Link>
+                  </p>
+                  <p className="whitespace-nowrap">
+                    Or email <a href={`mailto:${site.email}`} className="text-brand-teal hover:underline dark:text-brand-cyan">{site.email}</a>
+                  </p>
+                </div>
               </form>
             </Reveal>
           )}

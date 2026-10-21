@@ -3,12 +3,19 @@ import { Outlet, useLocation } from 'react-router-dom'
 import Navbar from './Navbar'
 import Footer from './Footer'
 
-// Scrolls to the top of the page on every route change.
+// Scrolls to the top on route changes, or to the target section when the URL
+// carries a hash (e.g. /#contact from the volunteer form).
 function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   useEffect(() => {
+    const target = hash ? document.getElementById(hash.slice(1)) : null
+    if (target) {
+      const top = target.getBoundingClientRect().top + window.scrollY - 24
+      window.scrollTo({ top, behavior: 'auto' })
+      return
+    }
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' })
-  }, [pathname])
+  }, [pathname, hash])
   return null
 }
 

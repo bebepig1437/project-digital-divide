@@ -1,44 +1,35 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Mail, Instagram, Github } from 'lucide-react'
 import { site } from '../config'
 import ContactForm from './ContactForm'
 import Reveal from './Reveal'
 
-const contactCopy = {
-  '/about': {
-    title: 'Get in touch',
-    body: 'Donate a laptop or supplies, request a device for a student, host a workshop, or volunteer. Anything useful helps. If you&apos;d rather pick something specific, our Amazon wishlist has the small stuff we go through fastest. Tell us what you&apos;ve got and we&apos;ll reply by email.',
-  },
-  default: {
-    title: 'How can you help?',
-    body: 'Donate a laptop or supplies, request a device for a student, host a workshop, or volunteer. Anything useful helps. If you&apos;d rather pick something specific, our Amazon wishlist has the small stuff we go through fastest. Tell us what you&apos;ve got and we&apos;ll reply by email.',
-  },
-}
-
-export default function Footer({ showContact = true, contactTitle, contactBody, contactBg = 'bg-surface' }) {
-  const { pathname } = useLocation()
-  const content = contactCopy[pathname] || contactCopy.default
-  const title = contactTitle || content.title
-  const body = contactBody || content.body
-
+export default function Footer({ showContact = true }) {
   return (
     <>
       {showContact && (
-        <section id="contact" className={`border-t border-line/10 ${contactBg} py-20`}>
+        <section id="contact" className="border-t border-line/10 bg-surface py-20">
           <div className="container-content grid gap-10 lg:grid-cols-2 lg:items-start">
             <Reveal>
               <span className="eyebrow">Get in touch</span>
-              <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">{title}</h2>
+              <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">How can you help?</h2>
               <p className="mt-4 max-w-md text-lg text-muted">
-                {body}
-              </p>
-              <p className="mt-4 max-w-md text-sm text-muted">
-                Don&apos;t include a student&apos;s name or school in this form. We&apos;ll ask for that by email once we&apos;ve replied.
-              </p>
-              <p className="mt-4 max-w-md text-sm text-muted">
-                <a href="https://www.amazon.com/hz/wishlist/ls/2BSB1I7207W2K?ref_=wl_share" target="_blank" rel="noopener noreferrer" className="text-brand-teal hover:underline dark:text-brand-cyan">
+                Donate a laptop or supplies, request a device for a student, host a workshop, or
+                volunteer. Anything useful helps. If you'd rather pick something specific, our{' '}
+                <a
+                  href="https://www.amazon.com/hz/wishlist/ls/2BSB1I7207W2K?ref_=wl_share"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-teal hover:underline dark:text-brand-cyan"
+                >
                   Amazon wishlist
-                </a>
+                </a>{' '}
+                has the small stuff we go through fastest. Tell us what you've got and we'll reply by
+                email.
+              </p>
+              <p className="mt-4 max-w-md text-sm text-muted">
+                Don't include a student's name or school in this form. We'll ask for that by email
+                once we've replied.
               </p>
               <a href={`mailto:${site.email}`} className="mt-6 inline-flex items-center gap-2 font-medium text-heading hover:text-brand-teal dark:hover:text-brand-pale transition-colors">
                 <Mail size={18} /> {site.email}

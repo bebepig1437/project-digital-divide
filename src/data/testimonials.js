@@ -21,13 +21,13 @@ export const testimonials = [
 export const aboutTestimonials = [
   {
     quote:
-      "What stands out most about Ms. Truong is not simply the idea itself, but her determination to turn that idea into action.",
+      "I strongly endorse Michelle Truong and Project Digital Divide. I am confident she possesses the character, leadership, and commitment necessary to successfully execute this initiative and create lasting benefits for students in need.",
     name: "Heather Brown",
     role: "Executive Director of Technology Services for Alvin ISD",
   },
   {
     quote:
-      "I strongly endorse Michelle Truong and Project Digital Divide. I am confident she possesses the character, leadership, and commitment necessary to successfully execute this initiative and create lasting benefits for students in need.",
+      "Rather than waiting for opportunities to come to her, she actively creates them. Her efforts reflect a level of maturity and leadership that is uncommon for someone her age.",
     name: "Heather Brown",
     role: "Executive Director of Technology Services for Alvin ISD",
   },

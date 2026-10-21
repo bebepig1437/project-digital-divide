@@ -75,7 +75,6 @@ export default function Newsletter() {
         </div>
       </section>
 
-      <Testimonials items={testimonials} />
     </>
   )
 }

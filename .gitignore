@@ -26,3 +26,4 @@ pnpm-debug.log*
 .claude/
 skills-lock.json
 .freebuff/
+/freebuff-sites-build/

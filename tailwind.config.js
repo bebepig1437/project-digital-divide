@@ -2,14 +2,6 @@
 export default {
   darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
-  safelist: [
-    { pattern: /flex-\[1\]/ },
-    { pattern: /flex-\[6\]/ },
-    { pattern: /md:flex-row/ },
-    { pattern: /md:gap-3\.5/ },
-    { pattern: /md:p-3\.5/ },
-    { pattern: /md:h-\[620px\]/ },
-  ],
   theme: {
     extend: {
       colors: {

@@ -1,9 +1,6 @@
 import { Helmet } from 'react-helmet-async'
 import TeamHorizonExpander from '../components/TeamHorizonExpander'
 
-const siteUrl = 'https://projectdigitaldivide.org'
-const logoUrl = `${siteUrl}/logo.webp`
-
 export default function About() {
   const meta = [
     { property: 'og:type', content: 'website' },
@@ -25,7 +22,7 @@ export default function About() {
         <meta name="twitter:title" content="About Us | Project Digital Divide" />
         <meta name="twitter:description" content="Meet the five high schoolers in Pearland, Texas running Project Digital Divide. We clean up retired laptops, configure lightweight software, and get them to students who need a computer at home." />
       </Helmet>
-      <section className="relative overflow-hidden pt-16 pb-20 sm:pt-20 sm:pb-28">
+      <section className="relative overflow-hidden pt-16 pb-24 sm:pt-20 sm:pb-32">
         <div className="absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-brand-pale/40 via-brand-pale/20 to-brand-pale/8" aria-hidden="true" />
       <div className="container-content relative">
         <div className="mx-auto mb-12 max-w-3xl text-center">
@@ -39,6 +36,11 @@ export default function About() {
         </div>
       </div>
     </section>
+
+    {/* ---- Team horizon expander ---- */}
+    <div className="container-content relative mt-6 sm:mt-8 mb-8 sm:mb-10">
+      <TeamHorizonExpander />
+    </div>
 
     {/* ---- Testimonial ---- */}
     <section className="bg-canvas py-20 sm:py-28">

@@ -24,10 +24,10 @@ export default function About() {
         <meta name="twitter:title" content="About Us | Project Digital Divide" />
         <meta name="twitter:description" content="Meet the five high schoolers in Pearland, Texas running Project Digital Divide. We clean up retired laptops, configure lightweight software, and get them to students who need a computer at home." />
       </Helmet>
-      <section className="relative overflow-hidden pt-16 pb-24 sm:pt-20 sm:pb-32">
+      <section className="relative overflow-hidden pt-16 pb-12 sm:pt-20 sm:pb-20">
         <div className="absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-brand-pale/40 via-brand-pale/20 to-brand-pale/8" aria-hidden="true" />
       <div className="container-content relative">
-        <div className="mx-auto mb-12 max-w-3xl text-center">
+        <div className="mx-auto mb-6 max-w-3xl text-center">
           <span className="eyebrow eyebrow-small">The Team</span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">
             Who we are
@@ -40,7 +40,7 @@ export default function About() {
     </section>
 
     {/* ---- Team horizon expander ---- */}
-    <div className="container-content relative mt-6 sm:mt-8 mb-8 sm:mb-10">
+    <div className="container-content relative mt-2 sm:mt-4 mb-8 sm:mb-10">
       <TeamHorizonExpander />
     </div>
 

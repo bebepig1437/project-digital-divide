@@ -42,8 +42,8 @@ export default function Footer({ showContact = true }) {
       <footer className="bg-brand-slate dark:bg-[#0B141C] text-white">
         <div className="container-content flex flex-col gap-8 py-12 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.webp" alt="Project Digital Divide logo" className="h-11 w-11 rounded-md bg-white object-contain p-0.5 shadow-sm dark:bg-transparent dark:shadow-none dark:hidden" />
-            <img src="/logo-dark.jpeg" alt="Project Digital Divide logo" className="h-11 w-11 rounded-md object-contain p-0.5 hidden dark:block" />
+            <img src="/PDD2048light.jpg" alt="Project Digital Divide logo" className="h-11 w-11 rounded-md object-cover shadow-sm dark:shadow-none dark:hidden" />
+            <img src="/PDD2048dark.jpeg" alt="Project Digital Divide logo" className="h-11 w-11 rounded-md object-cover hidden dark:block" />
             <div>
               <p className="font-display text-lg font-bold text-white">Project Digital Divide</p>
               <p className="text-sm text-brand-pale/80">Student-led in Pearland, TX · Serving Greater Houston</p>

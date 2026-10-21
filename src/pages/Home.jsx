@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check } from 'lucide-react'
+import { ArrowRight, Bird, Check } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
+import HeroBirds from '../components/HeroBirds'
 import GlassImpactLedger from '../components/GlassImpactLedger'
 import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
@@ -39,28 +40,35 @@ export default function Home() {
       </Helmet>
       {/* ---- Banner (Hero with 6-point sampled horizontal gradient & dot grid) ---- */}
       <section className="hero-banner-bg relative overflow-hidden text-white">
-        <div className="container-content relative py-20 text-center sm:py-28">
+        <div className="container-content relative z-10 py-20 text-center sm:py-28">
 
           <img
-            src="/logo.webp"
+            src="/PDD2048light.jpg"
             alt="Project Digital Divide logo"
-            className="mx-auto mb-8 h-24 w-24 rounded-2xl bg-white dark:bg-transparent object-contain p-1.5 shadow-xl dark:shadow-none transition-transform duration-300 hover:scale-105 dark:hidden"
+            className="hero-reveal hero-logo mx-auto mb-8 h-28 w-28 rounded-2xl object-cover shadow-xl dark:shadow-none transition-transform duration-300 hover:scale-105 dark:hidden"
           />
           <img
-            src="/logo-dark.jpeg"
+            src="/PDD2048dark.jpeg"
             alt="Project Digital Divide logo"
-            className="mx-auto mb-8 h-24 w-24 rounded-2xl dark:bg-transparent object-contain p-1.5 transition-transform duration-300 hover:scale-105 hidden dark:block"
+            className="hero-reveal hero-logo mx-auto mb-8 h-28 w-28 rounded-2xl object-cover transition-transform duration-300 hover:scale-105 hidden dark:block"
           />
-          <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
+          <h1 className="hero-reveal relative mx-auto w-fit max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-2 right-0 hidden select-none items-end sm:-top-3 sm:flex sm:gap-1"
+            >
+              <Bird size={13} className="rotate-[-10deg] text-white/75" />
+              <Bird size={17} className="text-white/95" />
+            </span>
             Project Digital Divide
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">
-            A student-run project in Pearland that sets up retired school laptops, documents what holds up, runs workshops, and deploys the devices at no cost to families across Houston.
+          <p className="hero-reveal mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">
+            A student-run project that deploys reconditioned laptops to families across Houston.
           </p>
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+          <div className="hero-reveal mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/volunteer"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-navy-900 shadow-md transition-all duration-200 hover:bg-brand-pale hover:shadow-lg hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-navy-900 shadow-md transition-all duration-200 hover:bg-brand-pale hover:shadow-lg hover:-translate-y-0.5 dark:bg-brand-cyan dark:text-navy-950 dark:hover:bg-brand-pale"
             >
               Get involved <ArrowRight size={16} />
             </Link>
@@ -72,6 +80,7 @@ export default function Home() {
             </a>
           </div>
         </div>
+        <HeroBirds />
       </section>
 
       {/* ---- Mission & Objectives ---- */}

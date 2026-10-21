@@ -43,6 +43,8 @@ export default {
         line: 'rgb(var(--c-line) / <alpha-value>)',
         ink: 'rgb(var(--c-ink) / <alpha-value>)',
         muted: 'rgb(var(--c-muted) / <alpha-value>)',
+        hero: 'rgb(var(--c-hero) / <alpha-value>)',
+        heroMuted: 'rgb(var(--c-hero-muted) / <alpha-value>)',
       },
       fontFamily: {
         display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],

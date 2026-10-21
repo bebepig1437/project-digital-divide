@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Send, CheckCircle2, RotateCcw } from 'lucide-react'
+import { Send, CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { SUBMIT_ENDPOINT } from '../config'
 
 const reasons = [
@@ -77,21 +78,11 @@ export default function ContactForm() {
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
-        <p className="mt-2 text-sm text-muted">
-          We take any donation that helps the project. If you&apos;d rather pick something specific, our{' '}
-          <a href="https://www.amazon.com/hz/wishlist/ls/2BSB1I7207W2K?ref_=wl_share" target="_blank" rel="noopener noreferrer" className="text-brand-teal hover:underline dark:text-brand-cyan">
-            Amazon wishlist
-          </a>{' '}
-          has the small stuff we go through fastest.
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          Don&apos;t include a student&apos;s name or school in this form. We&apos;ll ask for that by email once we&apos;ve replied.
-        </p>
       </div>
 
       <div>
         <label className="field-label" htmlFor="c-message">Message</label>
-        <textarea id="c-message" name="message" required rows={4} className="field-input resize-y" placeholder="What you have, what you need, and roughly where you are. If you're volunteering, tell us what you'd like to help with and how many hours a week you can give. If you're requesting a device for a student, tell us your role (counselor, teacher, parent) and roughly how many students, but leave names out for now." />
+        <textarea id="c-message" name="message" required rows={4} className="field-input resize-y" placeholder="What you have or need, and roughly where you are. Leave student names out for now." />
       </div>
 
       {status === 'error' && (
@@ -101,8 +92,15 @@ export default function ContactForm() {
       )}
 
       <button type="submit" disabled={status === 'sending'} className="btn-primary w-full sm:w-auto sm:justify-self-start disabled:opacity-60">
-        {status === 'sending' ? 'Sending…' : <>Send message <Send size={16} /></>}
+        {status === 'sending' ? 'Sending…' : <>Send <Send size={16} /></>}
       </button>
+
+      <p className="text-xs text-muted text-center mt-2">
+        <Link to="/volunteer" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
+          Want to help on the bench or at a workshop? Fill out the volunteer form
+          <ArrowRight size={12} />
+        </Link>
+      </p>
     </form>
   )
 }

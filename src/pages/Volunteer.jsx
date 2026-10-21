@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Send, CheckCircle2, Mail, RotateCcw } from 'lucide-react'
+import { Send, CheckCircle2, Mail, RotateCcw, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { SUBMIT_ENDPOINT, site } from '../config'
 import Reveal from '../components/Reveal'
@@ -109,7 +110,7 @@ export default function Volunteer() {
                 </div>
 
                 <div>
-                  <label className="field-label" htmlFor="v-parent-email">Parent or guardian email (if you&apos;re under 18)</label>
+                  <label className="field-label" htmlFor="v-parent-email">Parent or guardian email (if you&apos;re under 18, this speeds up the waiver)</label>
                   <input id="v-parent-email" name="parent_email" type="email" className="field-input" placeholder="parent@email.com" />
                 </div>
 
@@ -144,18 +145,21 @@ export default function Volunteer() {
                 </p>
 
                 <button type="submit" disabled={status === 'sending'} className="btn-primary w-full disabled:opacity-60">
-                  {status === 'sending' ? 'Submitting…' : <>Submit application <Send size={16} /></>}
+                  {status === 'sending' ? 'Sending…' : <>Send <Send size={16} /></>}
                 </button>
+
+                <p className="mt-4 text-xs text-muted text-center">
+                  <Link to="/" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
+                    Just want to donate a device or request one for a student? Use the contact form
+                    <ArrowRight size={12} />
+                  </Link>
+                </p>
+                <p className="text-xs text-muted text-center">
+                  Or email <a href={`mailto:${site.email}`} className="text-brand-teal hover:underline dark:text-brand-cyan">{site.email}</a>
+                </p>
               </form>
             </Reveal>
           )}
-
-          <p className="mt-6 text-center text-sm text-muted">
-            Prefer email? Reach us at{' '}
-            <a href={`mailto:${site.email}`} className="inline-flex items-center gap-1 font-medium text-heading hover:text-brand-teal dark:hover:text-brand-pale transition-colors">
-              <Mail size={14} /> {site.email}
-            </a>
-          </p>
         </div>
       </section>
     </>

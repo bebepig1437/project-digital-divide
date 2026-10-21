@@ -7,11 +7,11 @@ import Reveal from './Reveal'
 const contactCopy = {
   '/about': {
     title: 'Get in touch',
-    body: 'Have a retired laptop, cleaning supplies, or a student who needs one? Send us a note and we&apos;ll reply by email.',
+    body: 'Donate a laptop or supplies, request a device for a student, host a workshop, or volunteer. Anything useful helps. If you&apos;d rather pick something specific, our Amazon wishlist has the small stuff we go through fastest. Tell us what you&apos;ve got and we&apos;ll reply by email.',
   },
   default: {
     title: 'How can you help?',
-    body: 'Donate a laptop or supplies, request a device for a student, host a workshop, or volunteer. Tell us what you&apos;ve got and we&apos;ll reply by email.',
+    body: 'Donate a laptop or supplies, request a device for a student, host a workshop, or volunteer. Anything useful helps. If you&apos;d rather pick something specific, our Amazon wishlist has the small stuff we go through fastest. Tell us what you&apos;ve got and we&apos;ll reply by email.',
   },
 }
 
@@ -32,15 +32,13 @@ export default function Footer({ showContact = true, contactTitle, contactBody, 
               <p className="mt-4 max-w-md text-lg text-muted">
                 {body}
               </p>
-              <p className="mt-4 max-w-md text-lg text-muted">
-                We take any donation that helps the project. If you&apos;d rather pick something specific, our{' '}
-                <a href="https://www.amazon.com/hz/wishlist/ls/2BSB1I7207W2K?ref_=wl_share" target="_blank" rel="noopener noreferrer" className="text-brand-teal hover:underline dark:text-brand-cyan">
-                  Amazon wishlist
-                </a>{' '}
-                has the small stuff we go through fastest.
-              </p>
               <p className="mt-4 max-w-md text-sm text-muted">
                 Don&apos;t include a student&apos;s name or school in this form. We&apos;ll ask for that by email once we&apos;ve replied.
+              </p>
+              <p className="mt-4 max-w-md text-sm text-muted">
+                <a href="https://www.amazon.com/hz/wishlist/ls/2BSB1I7207W2K?ref_=wl_share" target="_blank" rel="noopener noreferrer" className="text-brand-teal hover:underline dark:text-brand-cyan">
+                  Amazon wishlist
+                </a>
               </p>
               <a href={`mailto:${site.email}`} className="mt-6 inline-flex items-center gap-2 font-medium text-heading hover:text-brand-teal dark:hover:text-brand-pale transition-colors">
                 <Mail size={18} /> {site.email}

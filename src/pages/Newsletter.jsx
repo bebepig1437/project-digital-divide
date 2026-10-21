@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Quote } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import { posts, formatDate } from '../lib/posts'
 import { testimonials } from '../data/testimonials'
 import Reveal from '../components/Reveal'
+import Testimonials from '../components/Testimonials'
 
 export default function Newsletter() {
   const meta = [
@@ -74,30 +75,7 @@ export default function Newsletter() {
         </div>
       </section>
 
-      {/* Testimonials: hidden until real ones exist in src/data/testimonials.js */}
-      {testimonials.length > 0 && (
-        <section className="border-t border-line/10 bg-wash py-20">
-          <div className="container-content max-w-4xl">
-            <h2 className="text-center text-3xl sm:text-4xl">In their words</h2>
-            <div className="mt-12 grid gap-8 sm:grid-cols-2">
-              {testimonials.map((t, i) => (
-                <Reveal key={i} delay={i * 80}>
-                  <figure className="h-full rounded-2xl border border-line/10 bg-surface p-7 shadow-sm">
-                    <Quote className="text-teal/40" size={28} />
-                    <blockquote className="mt-3 text-[15px] leading-relaxed text-ink">
-                      "{t.quote}"
-                    </blockquote>
-                    <figcaption className="mt-5 text-sm">
-                      <span className="font-semibold text-navy">{t.name}</span>
-                      {t.role && <span className="text-muted"> · {t.role}</span>}
-                    </figcaption>
-                  </figure>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      <Testimonials items={testimonials} />
     </>
   )
 }

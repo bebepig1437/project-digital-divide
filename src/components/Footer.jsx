@@ -12,7 +12,7 @@ export default function Footer({ showContact = true }) {
           <div className="container-content grid gap-10 lg:grid-cols-2 lg:items-start">
             <Reveal>
               <span className="eyebrow">Get in touch</span>
-              <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">How can you help?</h2>
+              <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">Send us a note</h2>
               <p className="mt-4 max-w-md text-lg text-muted">
                 Donate a laptop or supplies, request a device for a student, host a workshop, or
                 volunteer. Anything useful helps. If you'd rather pick something specific, our{' '}
@@ -31,9 +31,6 @@ export default function Footer({ showContact = true }) {
                 Don't include a student's name or school in this form. We'll ask for that by email
                 once we've replied.
               </p>
-              <a href={`mailto:${site.email}`} className="mt-6 inline-flex items-center gap-2 font-medium text-heading hover:text-brand-teal dark:hover:text-brand-pale transition-colors">
-                <Mail size={18} /> {site.email}
-              </a>
             </Reveal>
             <Reveal delay={100}>
               <ContactForm />

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Send, CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { SUBMIT_ENDPOINT } from '../config'
+import { SUBMIT_ENDPOINT, site } from '../config'
 
 const reasons = [
   'Donate devices or supplies',
@@ -97,12 +97,17 @@ export default function ContactForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-xs text-muted text-center sm:text-left">
-        <Link to="/volunteer" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
-          Want to help on the bench or at a workshop? Fill out the volunteer form
-          <ArrowRight size={12} />
-        </Link>
-      </p>
+      <div className="mt-4 space-y-1.5 text-center text-xs text-muted">
+        <p>
+          <Link to="/volunteer" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
+            Want to help on the bench or at a workshop? Fill out the volunteer form.
+            <ArrowRight size={12} />
+          </Link>
+        </p>
+        <p className="whitespace-nowrap">
+          Or email <a href={`mailto:${site.email}`} className="text-brand-teal hover:underline dark:text-brand-cyan">{site.email}</a>
+        </p>
+      </div>
     </>
   )
 }

@@ -60,8 +60,7 @@ export default function Volunteer() {
       </Helmet>
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-canvas pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
-          <span className="eyebrow">Get Involved</span>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">Join the team</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-heading sm:text-5xl">Join the team</h1>
           <p className="mt-5 text-lg font-medium text-heading/85 sm:text-xl">
             Tell us what you can do and when you&apos;re free. We&apos;ll reply by email.
           </p>
@@ -106,21 +105,23 @@ export default function Volunteer() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label className="field-label" htmlFor="v-grade">Grade or age (optional)</label>
-                    <input id="v-grade" name="grade_or_age" className="field-input" placeholder="e.g. 11th grade, or 17" />
+                    <label className="field-label" htmlFor="v-grade">Grade (if you&apos;re a student)</label>
+                    <input id="v-grade" name="grade_or_age" className="field-input" placeholder="e.g. 11th grade. Leave blank if you&apos;re not a student." />
                   </div>
                   <div>
-                    <label className="field-label" htmlFor="v-availability">Availability</label>
-                    <input id="v-availability" name="availability" className="field-input" placeholder="e.g. weekday afternoons" />
+                    <label className="field-label" htmlFor="v-school">School (if you&apos;re a student)</label>
+                    <input id="v-school" name="school" className="field-input" placeholder="e.g. Shadow Creek High School" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="field-label" htmlFor="v-parent-email">Parent or guardian email</label>
-                  <input id="v-parent-email" name="parent_email" type="email" aria-describedby="v-parent-help" className="field-input" placeholder="parent@email.com" />
-                  <p id="v-parent-help" className="mt-1.5 text-xs text-muted">
-                    Optional — if you&apos;re under 18, this speeds up the waiver.
-                  </p>
+                  <label className="field-label" htmlFor="v-parent-email">Parent or guardian email (optional)</label>
+                  <input id="v-parent-email" name="parent_email" type="email" className="field-input" placeholder="parent@email.com" />
+                </div>
+
+                <div>
+                  <label className="field-label" htmlFor="v-availability">Availability</label>
+                  <input id="v-availability" name="availability" className="field-input" placeholder="e.g. weekday afternoons" />
                 </div>
 
                 <div>
@@ -155,7 +156,7 @@ export default function Volunteer() {
                 <div className="space-y-1.5 text-center text-xs text-muted">
                   <p>
                     <Link to="/#contact" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
-                      Just want to donate a device or request one for a student? Use the contact form
+                      Just want to donate a device or request one for a student? Use the contact form.
                       <ArrowRight size={12} />
                     </Link>
                   </p>

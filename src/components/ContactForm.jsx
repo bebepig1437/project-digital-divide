@@ -3,12 +3,12 @@ import { Send, CheckCircle2, RotateCcw } from 'lucide-react'
 import { SUBMIT_ENDPOINT } from '../config'
 
 const reasons = [
-  'Donate a laptop or parts',
-  'Donate cleaning supplies',
-  'Refer a student or family',
+  'Donate devices or supplies',
+  'Request a laptop for a student',
   'Host a workshop',
   'Volunteer',
-  'Something else',
+  'Partnership',
+  'General inquiry',
 ]
 
 export default function ContactForm() {
@@ -78,13 +78,20 @@ export default function ContactForm() {
           ))}
         </select>
         <p className="mt-2 text-sm text-muted">
-          Supplies we use: isopropyl alcohol (70% or higher), cotton swabs, microfiber cloths, and compressed air.
+          We take any donation that helps the project. If you&apos;d rather pick something specific, our{' '}
+          <a href="https://www.amazon.com/hz/wishlist/ls/2BSB1I7207W2K?ref_=wl_share" target="_blank" rel="noopener noreferrer" className="text-brand-teal hover:underline dark:text-brand-cyan">
+            Amazon wishlist
+          </a>{' '}
+          has the small stuff we go through fastest.
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          Don&apos;t include a student&apos;s name or school in this form. We&apos;ll ask for that by email once we&apos;ve replied.
         </p>
       </div>
 
       <div>
         <label className="field-label" htmlFor="c-message">Message</label>
-        <textarea id="c-message" name="message" required rows={4} className="field-input resize-y" placeholder="What you have, or what you need" />
+        <textarea id="c-message" name="message" required rows={4} className="field-input resize-y" placeholder="What you have, what you need, and roughly where you are. If you're volunteering, tell us what you'd like to help with and how many hours a week you can give. If you're requesting a device for a student, tell us your role (counselor, teacher, parent) and roughly how many students, but leave names out for now." />
       </div>
 
       {status === 'error' && (

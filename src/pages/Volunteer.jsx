@@ -62,7 +62,7 @@ export default function Volunteer() {
           <span className="eyebrow">Get Involved</span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">Join the team</h1>
           <p className="mt-5 text-lg font-medium text-heading/85 sm:text-xl">
-            Whether you want to help test laptops on the bench, mentor students at a build workshop, connect with local schools, or build tracking software, we would love to have you.
+            Tell us what you can do and when you&apos;re free. We&apos;ll reply by email.
           </p>
         </div>
       </section>
@@ -94,7 +94,7 @@ export default function Volunteer() {
                 <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label className="field-label" htmlFor="v-name">Full name</label>
+                    <label className="field-label" htmlFor="v-name">Name</label>
                     <input id="v-name" name="name" required className="field-input" placeholder="Your name" />
                   </div>
                   <div>
@@ -104,8 +104,13 @@ export default function Volunteer() {
                 </div>
 
                 <div>
-                  <label className="field-label" htmlFor="v-grade">Grade / age</label>
-                  <input id="v-grade" name="grade_or_age" required className="field-input" placeholder="e.g. 11th grade, or 16" />
+                  <label className="field-label" htmlFor="v-grade">Grade (if you&apos;re in school)</label>
+                  <input id="v-grade" name="grade_or_age" required className="field-input" placeholder="e.g. 11th grade" />
+                </div>
+
+                <div>
+                  <label className="field-label" htmlFor="v-parent-email">Parent or guardian email (if you&apos;re under 18)</label>
+                  <input id="v-parent-email" name="parent_email" type="email" className="field-input" placeholder="parent@email.com" />
                 </div>
 
                 <div>
@@ -128,16 +133,15 @@ export default function Volunteer() {
                   <input id="v-availability" name="availability" className="field-input" placeholder="e.g. weekday afternoons, ~3 hrs/week" />
                 </div>
 
-                <div>
-                  <label className="field-label" htmlFor="v-why">Why do you want to volunteer?</label>
-                  <textarea id="v-why" name="why_join" rows={4} className="field-input resize-y" placeholder="Tell us what draws you to the mission." />
-                </div>
-
                 {status === 'error' && (
                   <p className="text-sm text-red-600">
                     Something went wrong. Please try again, or email us at {site.email}.
                   </p>
                 )}
+
+                <p className="text-xs text-muted text-center">
+                  If you&apos;re under 18, we&apos;ll email your parent or guardian a waiver before your first shift.
+                </p>
 
                 <button type="submit" disabled={status === 'sending'} className="btn-primary w-full disabled:opacity-60">
                   {status === 'sending' ? 'Submitting…' : <>Submit application <Send size={16} /></>}

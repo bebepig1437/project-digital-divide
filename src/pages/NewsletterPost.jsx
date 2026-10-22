@@ -19,8 +19,8 @@ export default function NewsletterPost() {
     )
   }
 
-  const postUrl = `https://projectdigitaldivide.org/newsletter/${slug}`
-  const imageUrl = post.image || 'https://projectdigitaldivide.org/logo.webp'
+  const postUrl = `https://www.projectdigitaldivide.org/newsletter/${slug}`
+  const imageUrl = post.image || 'https://www.projectdigitaldivide.org/logo.webp'
   const meta = [
     { property: 'og:type', content: 'article' },
     { property: 'og:url', content: postUrl },

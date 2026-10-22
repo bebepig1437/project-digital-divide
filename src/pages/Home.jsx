@@ -27,7 +27,7 @@ const fast = (() => {
   }
 })()
 
-const siteUrl = 'https://projectdigitaldivide.org'
+const siteUrl = 'https://www.projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
 
 const objectives = [
@@ -55,7 +55,7 @@ export default function Home() {
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
-        <link rel="canonical" href="https://projectdigitaldivide.org/" />
+        <link rel="canonical" href="https://www.projectdigitaldivide.org/" />
         <meta name="twitter:title" content="Project Digital Divide | Houston's Student-Run Laptop Program" />
         <meta name="twitter:description" content="Houston-area student-run project in Pearland, Texas, taking laptops retired by school districts, setting them up with lightweight software, and getting them to students who need a computer at home — at no cost to families." />
       </Helmet>

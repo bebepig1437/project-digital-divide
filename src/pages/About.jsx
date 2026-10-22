@@ -6,10 +6,10 @@ import { aboutTestimonials } from '../data/testimonials'
 export default function About() {
   const meta = [
     { property: 'og:type', content: 'website' },
-    { property: 'og:url', content: 'https://projectdigitaldivide.org/about' },
-    { property: 'og:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+    { property: 'og:url', content: 'https://www.projectdigitaldivide.org/about' },
+    { property: 'og:image', content: 'https://www.projectdigitaldivide.org/logo.webp' },
     { name: 'twitter:card', content: 'summary' },
-    { name: 'twitter:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+    { name: 'twitter:image', content: 'https://www.projectdigitaldivide.org/logo.webp' },
   ]
 
   return (
@@ -20,7 +20,7 @@ export default function About() {
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
-        <link rel="canonical" href="https://projectdigitaldivide.org/about" />
+        <link rel="canonical" href="https://www.projectdigitaldivide.org/about" />
         <meta name="twitter:title" content="About Us | Project Digital Divide" />
         <meta name="twitter:description" content="Meet the three high schoolers in Pearland, Texas running Project Digital Divide. We clean up retired laptops, configure lightweight software, and get them to students who need a computer at home." />
       </Helmet>

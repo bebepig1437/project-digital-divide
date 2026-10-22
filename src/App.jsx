@@ -8,7 +8,7 @@ import Newsletter from './pages/Newsletter'
 import NewsletterPost from './pages/NewsletterPost'
 import Volunteer from './pages/Volunteer'
 
-const siteUrl = 'https://projectdigitaldivide.org'
+const siteUrl = 'https://www.projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
 
 const defaultMeta = [

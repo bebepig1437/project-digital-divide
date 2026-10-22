@@ -9,10 +9,10 @@ import Testimonials from '../components/Testimonials'
 export default function Newsletter() {
   const meta = [
     { property: 'og:type', content: 'website' },
-    { property: 'og:url', content: 'https://projectdigitaldivide.org/newsletter' },
-    { property: 'og:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+    { property: 'og:url', content: 'https://www.projectdigitaldivide.org/newsletter' },
+    { property: 'og:image', content: 'https://www.projectdigitaldivide.org/logo.webp' },
     { name: 'twitter:card', content: 'summary' },
-    { name: 'twitter:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+    { name: 'twitter:image', content: 'https://www.projectdigitaldivide.org/logo.webp' },
   ]
 
   return (
@@ -23,7 +23,7 @@ export default function Newsletter() {
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
-        <link rel="canonical" href="https://projectdigitaldivide.org/newsletter" />
+        <link rel="canonical" href="https://www.projectdigitaldivide.org/newsletter" />
         <meta name="twitter:title" content="News & Updates | Project Digital Divide" />
         <meta name="twitter:description" content="Updates on our hardware intake, student build workshops, district partnerships, and what we are learning as we build." />
       </Helmet>

@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Check } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
-import BirdFlock from '../components/BirdFlock'
+import BirdPets from '../components/BirdPets/BirdPets.jsx'
 import GlassImpactLedger from '../components/GlassImpactLedger'
 import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
@@ -22,7 +22,20 @@ export default function Home() {
   const heroRef = useRef(null)
   const h1Ref = useRef(null)
   const { search } = useLocation()
-  const birdCount = new URLSearchParams(search).get('birds') === '4' ? 4 : 2
+  // Flock size: 4 by default; ?birds=N accepts 1–8 (clamped, out-of-range
+  // values log a warning). Small screens clamp to 2 inside BirdPets.
+  let birdCount = 4
+  const birdsParam = new URLSearchParams(search).get('birds')
+  if (birdsParam !== null) {
+    const n = Number.parseInt(birdsParam, 10)
+    if (Number.isNaN(n)) {
+      console.warn(`[birdPets] ?birds=${birdsParam} is not a number; using 4`)
+    } else {
+      const clamped = Math.min(8, Math.max(1, n))
+      if (clamped !== n) console.warn(`[birdPets] ?birds=${n} out of range 1-8; using ${clamped}`)
+      birdCount = clamped
+    }
+  }
 
   const meta = [
     { property: 'og:type', content: 'website' },
@@ -46,7 +59,7 @@ export default function Home() {
       </Helmet>
       {/* ---- Banner (Hero) ---- */}
       <section ref={heroRef} className="hero-banner-bg relative overflow-hidden text-white">
-        <BirdFlock heroRef={heroRef} h1Ref={h1Ref} count={birdCount} />
+        <BirdPets containerRef={heroRef} landmarkRef={h1Ref} count={birdCount} />
         <div className="container-content relative z-10 py-20 text-center sm:py-28">
 
           <img

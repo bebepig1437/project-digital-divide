@@ -228,11 +228,115 @@
     }
   }
 
+  /* Pet polish. Defined AFTER .pdd-perched so these one-shots win the
+     animation property while active; removing the class resumes breathing. */
+
+  /* Landing flare: one 200ms "catching itself" pop right after touchdown. */
+  .pdd-perched.pdd-land-flare {
+    animation: pdd-land-flare 0.2s ease-out;
+  }
+
+  @keyframes pdd-land-flare {
+    0% {
+      transform: scaleY(1);
+    }
+    55% {
+      transform: scaleY(1.15);
+    }
+    100% {
+      transform: scaleY(1);
+    }
+  }
+
+  /* Perched idle variation (every 3-6s, driven by the host loop): head tilt,
+     tail flick, or a wing/body ruffle — static breathing reads as dead. */
+  .pdd-perched.pdd-idle-tilt {
+    animation: pdd-idle-tilt 0.4s ease-in-out;
+  }
+
+  .pdd-perched.pdd-idle-flick {
+    animation: pdd-idle-flick 0.4s ease-in-out;
+  }
+
+  .pdd-perched.pdd-idle-ruffle {
+    animation: pdd-idle-ruffle 0.4s ease-in-out;
+  }
+
+  @keyframes pdd-idle-tilt {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    40% {
+      transform: rotate(-5deg);
+    }
+  }
+
+  @keyframes pdd-idle-flick {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    30% {
+      transform: rotate(3deg);
+    }
+    60% {
+      transform: rotate(-2deg);
+    }
+  }
+
+  @keyframes pdd-idle-ruffle {
+    0%,
+    100% {
+      transform: scaleY(1);
+    }
+    50% {
+      transform: scaleY(0.94);
+    }
+  }
+
+  /* Bounce squash: the smack-and-recover when a bird hits the hero edge or
+     the keep-out pad. Runs on the sprite (.pdd-fly) so the host wrapper's
+     per-frame translate/rotate/bank transform stays intact; the two combine
+     visually as rotate(bank)·scale(sx, sy) while scaleX(-1) (facing) is the
+     tail term of the host transform. The wing flap halves for the same
+     250ms via --pdd-flap-dur (hook-driven BOUNCE_FLAP_FACTOR). */
+  .is-bouncing .pdd-fly {
+    animation: pdd-bounce-squash 0.25s ease-out;
+  }
+
+  @keyframes pdd-bounce-squash {
+    0% {
+      transform: scale(1.15, 0.85);
+    }
+    100% {
+      transform: scale(1, 1);
+    }
+  }
+
+  /* Glider glide pose: wings held out during the perch descent instead of
+     flapping; the transition smooths the handoff from the resting pose. */
+  .pdd-fly.pdd-glide-pose .pdd-bird-wing-near {
+    transition: transform 0.3s ease;
+    transform: rotate(-14deg);
+  }
+
+  .pdd-fly.pdd-glide-pose .pdd-bird-wing-far {
+    transition: transform 0.3s ease;
+    transform: rotate(14deg);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .pdd-fly.is-flapping .pdd-bird-wing-near,
     .pdd-fly.is-flapping .pdd-bird-wing-far,
-    .pdd-perched {
+    .pdd-perched,
+    .pdd-perched.pdd-land-flare,
+    .pdd-perched.pdd-idle-tilt,
+    .pdd-perched.pdd-idle-flick,
+    .pdd-perched.pdd-idle-ruffle,
+    .is-bouncing .pdd-fly {
       animation: none;
+      transition: none;
     }
   }
   .hero-reveal:nth-child(3) {

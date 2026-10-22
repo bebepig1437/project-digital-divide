@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Bird, Check } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
-import HeroBirds from '../components/HeroBirds'
+import AnimatedBird from '../components/AnimatedBird'
 import GlassImpactLedger from '../components/GlassImpactLedger'
 import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
@@ -38,8 +38,8 @@ export default function Home() {
         <meta name="twitter:title" content="Project Digital Divide | Houston's Student-Run Laptop Program" />
         <meta name="twitter:description" content="Houston-area student-run project in Pearland, Texas, taking laptops retired by school districts, setting them up with lightweight software, and getting them to students who need a computer at home — at no cost to families." />
       </Helmet>
-      {/* ---- Banner (Hero with 6-point sampled horizontal gradient & dot grid) ---- */}
-      <section className="hero-banner-bg relative overflow-hidden text-white">
+      {/* ---- Banner (Hero; overflow NOT hidden — exit flights leave through the top) ---- */}
+      <section className="hero-banner-bg relative text-white">
         <div className="container-content relative z-10 py-20 text-center sm:py-28">
 
           <img
@@ -53,12 +53,13 @@ export default function Home() {
             className="hero-reveal hero-logo mx-auto mb-8 h-28 w-28 rounded-2xl object-cover transition-transform duration-300 hover:scale-105 hidden dark:block"
           />
           <h1 className="hero-reveal relative mx-auto w-fit max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute -top-2 right-0 hidden select-none items-end sm:-top-3 sm:flex sm:gap-1"
-            >
-              <Bird size={13} className="rotate-[-10deg] text-white/75" />
-              <Bird size={17} className="text-white/95" />
+            {/* Two hero birds (Tier 3 adds two more opt-in): each hosts itself at the
+                headline's top-left and hops perches on its own variance schedule. */}
+            <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
+              <AnimatedBird id="b17" size={17} state="perched" flightIntervalMs={[20000, 45000]} className="text-white/95" />
+            </span>
+            <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
+              <AnimatedBird id="b13" size={13} state="perched" flightIntervalMs={[8000, 15000]} flightDurationsMs={[[900, 0.4], [1500, 0.5], [2200, 0.1]]} arcLift={[15, 60]} startXFrac={0.9} startY={-5} className="rotate-[-10deg] text-white/75" />
             </span>
             Project Digital Divide
           </h1>
@@ -80,7 +81,6 @@ export default function Home() {
             </a>
           </div>
         </div>
-        <HeroBirds />
       </section>
 
       {/* ---- Mission & Objectives ---- */}

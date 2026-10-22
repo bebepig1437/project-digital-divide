@@ -1,0 +1,400 @@
+/**
+ * AnimatedBird — the hero bird: one design language, zero libraries.
+ *
+ * Byte-identical path data to the lucide `Bird` icon (installed
+ * lucide-react v0.456.0): same viewBox, strokeWidth 2, round caps/joins.
+ * The icon's wing is already a distinct path, so the art is regrouped as
+ *   <g class="pdd-bird-body">  eye, body/head curve, beak, legs
+ *   <g class="pdd-bird-wing">  the wing arc
+ * and CSS articulates the wing around the shoulder joint (7, 18 in
+ * view-box units — set in index.css).
+ *
+ * Idle states (props):
+ *   state 'perched'  wing folded; slow scaleY breathing on the body only.
+ *   state 'flapping' wing rotates -28..+12deg (~0.55s, fast downstroke)
+ *                    with a 1.5deg body counter-rotation.
+ *
+ * Hop flight (flightIntervalMs set; Tier 1+2):
+ *   Every random interval in [min, max] the bird takes off along a CSS
+ *   Motion Path (offset-path / offset-distance), banking with
+ *   `offset-rotate: auto`, and lands on a new perch on the enclosing
+ *   <h1>'s top edge. JS touches takeoff and landing only; the flight is
+ *   one CSS animation whose duration is re-rolled per flight from a
+ *   weighted set. Curve shape per flight: 'arc' | 'swoop' | 's-curve'.
+ *   Wing effort changes phase mid-air via classes toggled by setTimeout
+ *   at 20% / 80% of the flight (all timers created only for moving
+ *   birds; animationend — not timers — is the authoritative landing
+ *   signal). A landing adds a 102% overshoot keyframe before re-perch.
+ *   10% of flights exit through the top of the view (the hero section
+ *   no longer clips); the bird perches off-screen and takes a short
+ *   re-entry hop 3-7s later. prefers-reduced-motion never schedules a
+ *   timer — the bird just stays perched. Falls back to never flying if
+ *   the browser lacks offset-path support.
+ * Never a requestAnimationFrame loop; never a layout-thrashing read.
+ */
+
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+
+const STATE_CLASS = {
+  perched: 'pdd-bird-perched',
+  flapping: 'pdd-bird-flapping',
+}
+
+const EDGE_PAD = 20 // keep perches this far from the headline's L/R edges
+const MIN_HOP = 40 // minimum horizontal hop distance
+const TOUCHDOWN_MS = 90 // overshoot keyframe (offset-distance 100→102→100%)
+
+const DEFAULT_INTERVAL = [20000, 45000]
+const DEFAULT_DURATIONS = [[1000, 0.2], [1800, 0.6], [3200, 0.2]]
+const DEFAULT_CURVES = [['arc', 0.5], ['swoop', 0.3], ['s-curve', 0.2]]
+
+const rand = (a, b) => a + Math.random() * (b - a)
+const randInt = (a, b) => Math.round(rand(a, b))
+const real = (n) => Number(n.toFixed(1))
+const lerp = (a, b, t) => a + (b - a) * t
+
+/** Pick from [value, weight] pairs. */
+const pickWeighted = (pairs = []) => {
+  let r = Math.random()
+  for (const [v, w] of pairs) {
+    r -= w
+    if (r <= 0) return v
+  }
+  return pairs[0]?.[0]
+}
+
+const reducedMotion = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const supportsOffsetPath = () =>
+  typeof CSS !== 'undefined' && CSS.supports('offset-path', 'path("M 0 0 L 1 1")')
+
+/* ---- Path serialization: one writer for every curve shape ---- */
+
+/** 'arc': one quadratic whose control point sits `lift` px above the chord. */
+function arcPath(p0, p1, lift) {
+  return `path("M ${real(p0.x)} ${real(p0.y)} Q ${real((p0.x + p1.x) / 2)} ${real(Math.min(p0.y, p1.y) - lift)} ${real(p1.x)} ${real(p1.y)}")`
+}
+
+/** 'swoop': cubic with both controls `dip` px below the chord (dive & recover). */
+function swoopPath(p0, p1, dip) {
+  return (
+    `path("M ${real(p0.x)} ${real(p0.y)}` +
+    ` C ${real(lerp(p0.x, p1.x, 0.33))} ${real((p0.y + p1.y) / 2 + dip)}` +
+    ` ${real(lerp(p0.x, p1.x, 0.67))} ${real((p0.y + p1.y) / 2 + dip)}` +
+    ` ${real(p1.x)} ${real(p1.y)}")`
+  )
+}
+
+/** 's-curve': two quadratics through the midpoint; one control above, one below. */
+function sCurvePath(p0, p1, lift, dip, flip) {
+  const mx = real((p0.x + p1.x) / 2)
+  const my = real((p0.y + p1.y) / 2)
+  const up = real(my - lift / 2)
+  const down = real(my + dip / 2)
+  const cy1 = flip ? down : up
+  const cy2 = flip ? up : down
+  return (
+    `path("M ${real(p0.x)} ${real(p0.y)}` +
+    ` Q ${real(lerp(p0.x, p1.x, 0.25))} ${cy1} ${mx} ${my}` +
+    ` Q ${real(lerp(p0.x, p1.x, 0.75))} ${cy2} ${real(p1.x)} ${real(p1.y)}")`
+  )
+}
+
+const serialize = (curve, p0, p1, o) =>
+  curve === 'swoop' ? swoopPath(p0, p1, o.dip)
+  : curve === 's-curve' ? sCurvePath(p0, p1, o.lift, o.dip, o.flip)
+  : arcPath(p0, p1, o.lift)
+
+/* ---- Flight planning ---- */
+
+/** Random perch on the headline's top edge, at least MIN_HOP away. */
+function pickPerch(from, maxX) {
+  const minX = EDGE_PAD
+  for (let i = 0; i < 40; i++) {
+    const x = minX + Math.random() * (maxX - minX)
+    const y = real(rand(-9, -3))
+    if (Math.abs(x - from.x) >= MIN_HOP) return { x, y }
+  }
+  return { x: from.x - minX < maxX - from.x ? maxX : minX, y: real(rand(-9, -3)) }
+}
+
+/**
+ * Where a flight ends. Normal flights land on the top edge. With
+ * `exitChance` (default 10%) the destination is past the top of the
+ * viewport — an off-view perch the user never sees, followed (at
+ * landing) by a short re-entry hop back into view.
+ */
+function pickDestination(from, maxX, exitChance, heroClips, exitYMax) {
+  if (Math.random() < exitChance) {
+    return {
+      dest: heroClips
+        ? { x: rand(EDGE_PAD, maxX), y: real(-rand(80, exitYMax)) } // inside hero, dramatic rise
+        : { x: rand(EDGE_PAD, maxX), y: real(-exitYMax - rand(20, 120)) }, // off-view
+      isExit: !heroClips,
+    }
+  }
+  return { dest: pickPerch(from, maxX), isExit: false }
+}
+
+export default function AnimatedBird({
+  size = 17,
+  state = 'perched',
+  className = '',
+  id,
+  flightIntervalMs = 0, // [min, max] or nonzero number; 0 disables flight
+  flightDurationsMs = DEFAULT_DURATIONS,
+  arcLift = [20, 140],
+  curves = DEFAULT_CURVES,
+  curveType = null, // force 'arc' | 'swoop' | 's-curve'
+  exitChance = 0.1,
+  startXFrac = null, // initial perch as fraction of headline width; null = right edge
+  startY = -8,
+}) {
+  const elRef = useRef(null)
+  const posRef = useRef(null)
+  const destRef = useRef(null)
+  const flightRef = useRef(null)
+  const timersRef = useRef([]) // per-bird instances: untied from other birds
+  const scheduledRef = useRef(null)
+  const visibleRef = useRef(true)
+  const earlyRef = useRef(null) // { delayMs } one-shot re-entry override
+  const [pos, setPos] = useState(null)
+  const [flight, setFlight] = useState(null) // { phase, path, durationMs }
+
+  const flightOn = !!flightIntervalMs
+
+  // ---- timers: only these two helpers ever create timeouts ----
+  const clearTimers = () => {
+    timersRef.current.forEach(clearTimeout)
+    timersRef.current = []
+    if (scheduledRef.current) clearTimeout(scheduledRef.current)
+    scheduledRef.current = null
+  }
+  const at = (ms, fn) => {
+    const t = setTimeout(fn, ms)
+    timersRef.current.push(t)
+    return t
+  }
+  const setScheduled = (fn, ms) => {
+    if (scheduledRef.current) clearTimeout(scheduledRef.current)
+    scheduledRef.current = setTimeout(fn, ms)
+  }
+  useEffect(() => clearTimers, []) // unmount: clear this bird's timers only
+
+  // Reduce motion => never create a single timer. Flight CSS is also dead.
+  const canFly = () => flightOn && posRef.current && !reducedMotion() && supportsOffsetPath()
+
+  // ---- scheduling ----
+  const takeoff = (forced) => {
+    if (flightRef.current || !canFly()) return
+    const el = elRef.current
+    const h1 = el?.closest('h1')
+    if (!h1) return
+    const w = h1.getBoundingClientRect().width
+    const maxX = Math.max(EDGE_PAD, w - size - EDGE_PAD)
+
+    // Hero clipping check: only the section itself may clip (we dropped
+    // its overflow-hidden; this stays as a runtime guard if it returns).
+    const section = h1.closest('section')
+    const clips =
+      !!section && getComputedStyle(section).overflow !== 'visible'
+    // Headroom above the h1 when clipped = distance to the section top.
+    let exitYMax = 260
+    if (clips && section) {
+      exitYMax = Math.max(
+        60,
+        h1.getBoundingClientRect().top - section.getBoundingClientRect().top - 30
+      )
+    }
+
+    const from = posRef.current
+    const { dest, isExit } =
+      forced || pickDestination(from, maxX, exitChance, clips, exitYMax)
+    const curve = curveType || pickWeighted(curves)
+    const jitter = { lift: rand(arcLift[0], arcLift[1]), dip: rand(20, 40), flip: Math.random() < 0.5 }
+    const durationMs = forced?.durationMs ?? pickWeighted(flightDurationsMs)
+
+    destRef.current = dest
+    flightRef.current = { dest, isExit }
+    at(0.2 * durationMs, () => setFlightPhase('glide'))
+    at(0.8 * durationMs, () => setFlightPhase('landing'))
+    setFlight({ phase: 'takeoff', path: serialize(curve, from, dest, jitter), durationMs })
+  }
+  const takeoffRef = useRef(null)
+  takeoffRef.current = takeoff
+
+  const setFlightPhase = (phase) =>
+    setFlight((f) => (f ? { ...f, phase } : f))
+
+  const scheduleNext = () => {
+    if (!canFly()) return
+    if (!visibleRef.current) return
+    const [lo, hi] = Array.isArray(flightIntervalMs) ? flightIntervalMs : [flightIntervalMs, flightIntervalMs]
+    const delay = earlyRef.current ?? rand(lo, hi)
+    earlyRef.current = null
+    setScheduled(takeoffRef.current, delay)
+  }
+
+  // ---- initial perch ----
+  useLayoutEffect(() => {
+    if (!flightOn) return
+    const h1 = elRef.current?.closest('h1')
+    if (!h1) return
+    const w = h1.getBoundingClientRect().width
+    const x = startXFrac == null ? w - size - 10 : w * startXFrac - size / 2
+    const p = { x: real(Math.max(EDGE_PAD, x)), y: startY }
+    posRef.current = p
+    setPos(p)
+  }, [flightOn, size, startXFrac, startY])
+
+  // ---- run loop wiring: one IntersectionObserver + resurrection for HMR ----
+  // HOT-RELOAD SAFETY: Fast Refresh recreates the svg element mid-flight,
+  // which cancels the running CSS animation; no animationend fires and the
+  // bird would stay in is-landing forever (blocking all later flights).
+  // heal-zombie: if we think we are flying but no animation is live, land.
+  const healZombie = () => {
+    if (!flightRef.current) return
+    const anims = elRef.current?.getAnimations?.() || []
+    if (!anims.some((a) => a.playState === 'running')) {
+      const dest = flightRef.current.dest
+      clearTimers()
+      flightRef.current = null
+      setFlight(null)
+      if (dest) {
+        posRef.current = dest
+        setPos(dest)
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (!flightOn) return undefined
+    const h1 = elRef.current?.closest('h1')
+    if (!h1) return undefined
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry.isIntersecting
+        if (entry.isIntersecting) {
+          healZombie()
+          if (!flightRef.current) scheduleNext()
+        } else {
+          // Scroll-away mid-flight: kill pending timers; the running CSS
+          // animation finishes on its own and lands via animationend.
+          timersRef.current.forEach(clearTimeout)
+          timersRef.current = []
+          if (scheduledRef.current) clearTimeout(scheduledRef.current)
+          scheduledRef.current = null
+        }
+      },
+      { threshold: 0.1 }
+    )
+    io.observe(h1)
+    return () => io.disconnect()
+  }, [flightOn, flight !== null, flight?.path])
+
+  // prefers-reduced-motion toggled mid-session: on → kill every pending
+  // timer (canFly() will refuse future takeoffs); off → re-arm the idle
+  // schedule. Without this, a timer that fires while reduce is on
+  // consumes itself and the bird never flies again.
+  useEffect(() => {
+    if (!flightOn) return undefined
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const onChange = () => {
+      if (mq.matches) {
+        clearTimers()
+      } else if (!flightRef.current) {
+        scheduleNext()
+      }
+    }
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flightOn])
+
+  // Resize mid-flight: cancel in place (snap home), recompute next takeoff.
+  useEffect(() => {
+    if (!flightOn) return undefined
+    const onResize = () => {
+      if (flightRef.current) {
+        clearTimers()
+        flightRef.current = null
+        setFlight(null)
+      }
+      const h1 = elRef.current?.closest('h1')
+      const p = posRef.current
+      if (!h1 || !p) return
+      const w = h1.getBoundingClientRect().width
+      const clamped = {
+        x: Math.min(Math.max(EDGE_PAD, p.x), Math.max(EDGE_PAD, w - size - EDGE_PAD)),
+        y: Math.max(p.y, -9),
+      }
+      posRef.current = clamped
+      setPos(clamped)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [flightOn, size])
+
+  // ---- landing: animationend is authoritative ----
+  const onAnimationEnd = (e) => {
+    if (e.animationName === 'pdd-bird-flight') {
+      setFlight((f) => (f ? { ...f, phase: 'touchdown' } : f))
+    } else if (e.animationName === 'pdd-bird-touchdown') {
+      const cur = flightRef.current
+      clearTimers()
+      flightRef.current = null
+      setFlight(null)
+      if (cur?.dest) {
+        const clamped = { ...cur.dest }
+        posRef.current = clamped
+        setPos(clamped)
+        // Exits land off-view: come back quickly instead of waiting a full interval.
+        earlyRef.current = cur.isExit ? rand(3000, 7000) : null
+        if (earlyRef.current) scheduleNext()
+      }
+    }
+  }
+
+  const wrapperStyle = flightOn
+    ? {
+        transform: flight || !pos ? 'translate(0, 0)' : `translate(${pos.x}px, ${pos.y}px)`,
+        visibility: pos ? 'visible' : 'hidden',
+        ...(flight ? { '--flight-path': flight.path, '--flight-dur': `${flight.durationMs}ms` } : {}),
+      }
+    : undefined
+
+  const flightClass =
+    flight === null ? '' : `is-flying is-${flight.phase}` // takeoff|glide|landing|touchdown
+
+  return (
+    <svg
+      ref={elRef}
+      data-bird={id || undefined}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`pdd-bird ${STATE_CLASS[state] ?? STATE_CLASS.perched} ${flightClass} ${className}`}
+      style={wrapperStyle}
+      onAnimationEnd={onAnimationEnd}
+      aria-hidden="true"
+    >
+      <g className="pdd-bird-body">
+        <path d="M16 7h.01" />
+        <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+        <path d="m20 7 2 .5-2 .5" />
+        <path d="M10 18v3" />
+        <path d="M14 17.75V21" />
+      </g>
+      <g className="pdd-bird-wing">
+        <path d="M7 18a6 6 0 0 0 3.84-10.61" />
+      </g>
+    </svg>
+  )
+}

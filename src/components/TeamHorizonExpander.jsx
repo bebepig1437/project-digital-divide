@@ -3,6 +3,8 @@ import { team } from '../data/team'
 import PhotoPlaceholder from './PhotoPlaceholder'
 
 export default function TeamHorizonExpander() {
+  // The About roster shows active leads only; inactive members stay out.
+  const roster = team.filter((m) => m.active !== false)
   const [active, setActive] = useState(1) // Default to Joseph Hu (index 1)
 
   return (
@@ -10,7 +12,7 @@ export default function TeamHorizonExpander() {
       <div className="mx-auto max-w-6xl">
         {/* Panoramic Horizontal Expander */}
         <div className="flex w-full flex-col gap-4 sm:gap-5 overflow-hidden rounded-3xl border border-line/15 bg-surface p-3 shadow-sm md:h-[620px] md:flex-row md:gap-3.5 md:p-3.5">
-          {team.map((member, i) => {
+          {roster.map((member, i) => {
             const isExpanded = active === i
 
             return (

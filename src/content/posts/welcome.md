@@ -1,7 +1,7 @@
 ---
 title: Welcome to Project Digital Divide
 date: 2026-06-13
-excerpt: How five high schoolers in Pearland secured 100 retired laptops from Alvin ISD, set up a hardware bench, and started building a logistics bridge for local students.
+excerpt: How three high schoolers in Pearland secured 100 retired laptops from Alvin ISD, set up a hardware bench, and started building a logistics bridge for local students.
 image:
 ---
 

@@ -81,7 +81,7 @@ project-digital-divide/
 │   ├── config.js          # site email, socials, submit endpoint
 │   ├── index.css          # Tailwind base styles
 │   ├── data/
-│   │   ├── team.js        # team bios (Michelle, Joseph, Joshua, Sahil, Kaleb)
+│   │   ├── team.js        # team bios (Michelle, Joseph, Joshua active; Sahil, Kaleb inactive)
 │   │   ├── metrics.js     # impact metrics
 │   │   └── testimonials.js
 │   ├── content/posts/     # newsletter posts (one Markdown file per event)

@@ -37,7 +37,8 @@
  * below sm (CSS); personalities + hue filters kept.
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import useLayoutMetrics from './useLayoutMetrics'
 import {
   ARRIVE_RADIUS,
   ARRIVE_SAFETY_MS,
@@ -47,11 +48,14 @@ import {
   BOOST_MS,
   BOUNCE_ANIM_MS,
   BOUNCE_COOLDOWN_MS,
-  BOUNCE_FLAP_FACTOR,
   BOUNCE_RESTITUTION,
   DART_DECAY_MS,
   DART_SPEED,
-  DT_MAX,
+  DT_CAP_MS,
+  FEATHER_CAP,
+  FEATHER_LIFE_MS,
+  FEATHER_MAX,
+  FEATHER_MIN,
   FLARE_DIST,
   FLARE_FAST_FACTOR,
   FLOCK_ORDER,
@@ -65,8 +69,16 @@ import {
   IDLE_GAP_MIN,
   INSET,
   LAND_FLARE_MS,
+  RECOIL_MS,
   PERCH_COMMIT_FRAMES,
   PERCH_RETRY_MS,
+  PATROL_CLEAR_PAD,
+  PATROL_DUR_MS,
+  PATROL_DRIFT,
+  PATROL_EVERY_N_PICKS,
+  PATROL_ORBIT_REVS,
+  PATROL_R,
+  PATROL_SHAPES,
   PERSONALITIES,
   REPULSION_PAD,
   STUCK_FRAMES,
@@ -91,7 +103,13 @@ export function useBirdPets({
   hostRefs,
   flyRefs,
   perchRefs,
+  featherLayerRef,
 }) {
+  const onUpdateRef = useRef(null)
+  // Cached layout metrics (per-line headline rects, logo rect, hero size,
+  // breakpoint perch points) — refreshed live by useLayoutMetrics; the RAF
+  // loop reads this ref every frame and never measures the DOM itself.
+  const metrics = useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef })
   useEffect(() => {
     const heroEl = containerRef?.current
     if (!heroEl) return undefined
@@ -100,27 +118,39 @@ export function useBirdPets({
     let inView = true
     let reduced = isReducedMotion()
 
-    // ---- geometry --------------------------------------------------------
-    const measureGeometry = () => {
-      const heroRect = heroEl.getBoundingClientRect()
-      const markEl = landmarkRef?.current || heroEl.querySelector('h1')
-      const markRect = markEl ? markEl.getBoundingClientRect() : null
+    // ---- geometry (from useLayoutMetrics) ----------------------------------
+    // All rects come cached from the metrics ref — re-measured by the
+    // lifecycle in useLayoutMetrics (mount, fonts.ready, img decode,
+    // debounced resize, ResizeObserver, breakpoint change), never per-frame.
+    // Coordinates are hero-relative; the landmark is measured PER TEXT LINE
+    // so birds can fly between two headline lines. The RAF loop never
+    // measures the DOM itself.
+    const geom = () => {
+      const m = metrics.current
+      if (!m) return null
+      const h1 = m.headlineRects
+        ? {
+            left: Math.min(...m.headlineRects.map((r) => r.left)),
+            right: Math.max(...m.headlineRects.map((r) => r.right)),
+            top: Math.min(...m.headlineRects.map((r) => r.top)),
+            bottom: Math.max(...m.headlineRects.map((r) => r.bottom)),
+            lines: m.headlineRects,
+          }
+        : null
+      // perchSrc: breakpoint perch points from the first rendered line (no
+      // points until the headline has measurable lines — birds keep flying
+      // and perching retries instead).
       return {
-        w: heroRect.width,
-        h: heroRect.height,
-        h1: markRect
-          ? {
-              left: markRect.left - heroRect.left,
-              right: markRect.right - heroRect.left,
-              top: markRect.top - heroRect.top,
-              bottom: markRect.bottom - heroRect.top,
-            }
-          : null,
+        w: m.heroW,
+        h: m.heroH,
+        h1,
+        logo: m.logoRect,
+        perchSrc: m.perchPoints,
       }
     }
 
-    const geom0 = measureGeometry()
-    if (geom0.w <= 0 || geom0.h <= 0) return undefined
+    const geom0 = geom()
+    if (!geom0 || geom0.w <= 0 || geom0.h <= 0) return undefined
     const W0 = Math.max(geom0.w, 320)
     const H0 = Math.max(geom0.h, 240)
     const now0 = performance.now()
@@ -161,6 +191,9 @@ export function useBirdPets({
         bank: null,
         bounceCoolUntil: 0,
         bounceAnimUntil: 0,
+        recoUntil: 0,
+        recoVx: 0,
+        recoVy: 0,
         noProgressFrames: 0,
         commitFrames: 0,
       }
@@ -171,6 +204,38 @@ export function useBirdPets({
       const dx = Math.max(r.left - px, 0, px - r.right)
       const dy = Math.max(r.top - py, 0, py - r.bottom)
       return Math.hypot(dx, dy)
+    }
+
+    // Proximity to the landmark = MIN distance over its per-line rects (not
+    // the aggregate band): a bird flying in the gap between two headline
+    // lines isn't near text.
+    const distToLandmark = (px, py, g) => {
+      if (!g.h1) return Infinity
+      let min = Infinity
+      for (const line of g.h1.lines) {
+        const d = distToRect(px, py, line)
+        if (d < min) min = d
+      }
+      return min
+    }
+
+    // Straight-path blocking against PER-LINE rects expanded by pad: a path
+    // may thread the gap between two lines, but a path through any line of
+    // text is blocked.
+    const crossesH1Lines = (x1, y1, x2, y2, g, pad) => {
+      if (!g.h1) return false
+      for (const line of g.h1.lines) {
+        if (crossesH1(
+          x1, y1, x2, y2,
+          {
+            left: line.left - pad,
+            right: line.right + pad,
+            top: line.top - pad,
+            bottom: line.bottom + pad,
+          },
+        )) return true
+      }
+      return false
     }
 
     const samplePoint = (b, g) => {
@@ -206,22 +271,32 @@ export function useBirdPets({
     }
 
     const pickTarget = (b, g, now) => {
+      // Patrol trigger: every 4th target selection (~25%) starts a loop —
+      // but only in 'flying' and never while committed to a perch; if the
+      // startPatrol geometry check fails, normal selection falls through.
+      b.pickCount = (b.pickCount || 0) + 1
+      if (
+        b.state === 'flying' &&
+        b.perchIdx < 0 &&
+        b.pickCount % PATROL_EVERY_N_PICKS === 0 &&
+        startPatrol(b, g, now)
+      ) {
+        b.waypointQueue = []
+        b.target = patrolPoint(0, b.patrolLoop)
+        return
+      }
+
       let best = null
       let bestScore = -1
       for (let i = 0; i < SAMPLE_TRIES; i++) {
         const p = samplePoint(b, g)
         let ok = true
-        if (g.h1 && distToRect(p.x, p.y, g.h1) < H1_REJECT_DIST) ok = false
+        if (g.h1 && distToLandmark(p.x, p.y, g) < H1_REJECT_DIST) ok = false
         if (ok && Math.hypot(p.x - b.x, p.y - b.y) < SELF_REJECT_DIST) ok = false
         // A candidate whose straight path crosses the keep-out pad strands the
         // bird in the pad-boundary equilibrium cycle (diagnosed bug 1), so
         // only pick candidates reachable without entering the keep-out box.
-        if (ok && g.h1 && crossesH1(b.x, b.y, p.x, p.y, {
-          left: g.h1.left - REPULSION_PAD,
-          right: g.h1.right + REPULSION_PAD,
-          top: g.h1.top - REPULSION_PAD,
-          bottom: g.h1.bottom + REPULSION_PAD,
-        })) ok = false
+        if (ok && crossesH1Lines(b.x, b.y, p.x, p.y, g, REPULSION_PAD)) ok = false
         if (ok) {
           best = p
           break
@@ -229,7 +304,7 @@ export function useBirdPets({
         // Best-effort candidate: farthest from BOTH the landmark and the bird,
         // so a degenerate fallback can't park the bird on itself.
         const score =
-          (g.h1 ? distToRect(p.x, p.y, g.h1) : Infinity) +
+          (g.h1 ? distToLandmark(p.x, p.y, g) : Infinity) +
           Math.hypot(p.x - b.x, p.y - b.y)
         if (score > bestScore) {
           bestScore = score
@@ -241,7 +316,7 @@ export function useBirdPets({
       // landmark pad, where the repulsion bend reaches equilibrium and parks
       // the bird in a hover until the liveness guard rescues it. Force a
       // guaranteed-far target below (or above) the landmark band instead.
-      if (g.h1 && distToRect(best.x, best.y, g.h1) < H1_REJECT_DIST) {
+      if (g.h1 && distToLandmark(best.x, best.y, g) < H1_REJECT_DIST) {
         const belowY = g.h1.bottom + H1_REJECT_DIST + 10
         const aboveY = g.h1.top - H1_REJECT_DIST - 10
         best = {
@@ -271,7 +346,7 @@ export function useBirdPets({
         }
         // Same pad-safety rule as the fallback: a far target inside the pad
         // equilibrium-parks the bird.
-        if (g.h1 && distToRect(far.x, far.y, g.h1) < H1_REJECT_DIST) {
+        if (g.h1 && distToLandmark(far.x, far.y, g) < H1_REJECT_DIST) {
           const belowY = g.h1.bottom + H1_REJECT_DIST + 10
           far.y = clamp(
             belowY <= g.h - INSET ? belowY : g.h1.top - H1_REJECT_DIST - 10,
@@ -305,35 +380,28 @@ export function useBirdPets({
       }
     }
 
-    // ---- perch points (10) -------------------------------------------------
-    // Landmark top-left (-8,-8), landmark top-right (+8,-8), container TL
-    // (+16,+16), container TR (-16,+16), plus 6 points evenly along the
-    // landmark top edge (1/7 width spacing, offset -8 above). occupancy
-    // tracks which bird holds each point.
+    // ---- perch points -------------------------------------------------------
+    // Breakpoint-aware headline perching, computed in useLayoutMetrics from
+    // the FIRST rendered line's rects: desktop 6 points at fractions
+    // [0.08..0.92] of the line, mobile 3 points at [0.15, 0.5, 0.85] (only 2
+    // birds fly below sm). p.y is the LINE TOP — pickPerch lifts the anchor
+    // by the landing bird's size * FOOT_FRAC so the perched sprite's feet sit
+    // exactly on the letter tops. No headline (fonts still loading) → no
+    // points → pickPerch retries on its 3-5s timer while birds keep flying.
+    // occupancy tracks which bird holds each point.
     let perchPts = []
     const buildPerches = () => {
-      const g = measureGeometry()
+      const g = geom()
+      if (!g) return g
       const oldOccupancy = perchPts.map((p) => p.occupiedBy)
-      const pts = []
-      if (g.h1) {
-        pts.push({ x: g.h1.left - 8, y: g.h1.top - 8 })
-        pts.push({ x: g.h1.right + 8, y: g.h1.top - 8 })
-      }
-      pts.push({ x: 16, y: 16 })
-      pts.push({ x: g.w - 16, y: 16 })
-      if (g.h1) {
-        // g.h1 only carries left/right/top/bottom (no width): using .width
-        // produced NaN perch scatter points that poisoned commits + birds.
-        const span = (g.h1.right - g.h1.left) / 7
-        for (let k = 1; k <= 6; k++) {
-          pts.push({ x: g.h1.left + k * span, y: g.h1.top - 8 })
-        }
-      }
-      // Rebuild at the same indices so occupancy carries across resizes.
-      perchPts = pts.map((p, i) => ({
+      const src = g.perchSrc || []
+      // Carry occupancy only across rebuilds with the SAME point count (a
+      // breakpoint flip drops perches and takes perched birds back to flight).
+      const keepOld = src.length > 0 && src.length === perchPts.length
+      perchPts = src.map((p, i) => ({
         x: clamp(p.x, 4, Math.max(4, g.w - 4)),
         y: clamp(p.y, 4, Math.max(4, g.h - 4)),
-        occupiedBy: oldOccupancy[i] ?? null,
+        occupiedBy: keepOld ? oldOccupancy[i] ?? null : null,
       }))
       // Drop occupancy held by birds that are no longer perched.
       const perchedIds = new Set(
@@ -357,23 +425,23 @@ export function useBirdPets({
       const flying = b.state === 'flying' || b.state === 'arriving'
       // Glider spreads its wings during the perch descent instead of flapping.
       const gliding = b.key === 'glider' && b.state === 'arriving'
-      // Bounce squash: the host wrapper carries the class; the keyframes run
+      // Recoil squash: the host wrapper carries the class; the keyframes run
       // on the sprite so the per-frame translate/rotate/bank transform on the
       // host stays intact (a CSS animation on the same element would
       // overwrite it).
-      const bouncing = b.state === 'flying' && now < b.bounceAnimUntil
-      host.classList.toggle('is-bouncing', bouncing)
+      const recoiling = b.state === 'flying' && now < b.bounceAnimUntil
+      host.classList.toggle('is-recoiling', recoiling)
       if (fly) {
         fly.classList.toggle('is-flapping', flying && !reduced && !gliding)
         fly.classList.toggle('hidden', b.state === 'perched')
         fly.classList.toggle('pdd-glide-pose', gliding)
-        // Flap cadence: speed-up near a perch (approach flare) and during the
-        // bounce-recovery window.
-        const wantDur = bouncing
-          ? `${Math.round(parseInt(b.cfg.wingDur, 10) * BOUNCE_FLAP_FACTOR)}ms`
-          : b.fastFlap
-            ? `${Math.round(parseInt(b.cfg.wingDur, 10) * FLARE_FAST_FACTOR)}ms`
-            : b.cfg.wingDur
+        // Flap cadence: speed-up near a perch (approach flare). During the
+        // recoil window the wings are HELD mid-flap by CSS
+        // (animation-play-state: paused under .is-recoiling) and keep their
+        // normal duration.
+        const wantDur = b.fastFlap
+          ? `${Math.round(parseInt(b.cfg.wingDur, 10) * FLARE_FAST_FACTOR)}ms`
+          : b.cfg.wingDur
         if (fly.style.getPropertyValue('--pdd-flap-dur') !== wantDur) {
           fly.style.setProperty('--pdd-flap-dur', wantDur)
         }
@@ -464,12 +532,7 @@ export function useBirdPets({
       const ox = clamp(p.x, 8, Math.max(8, g.w - 8))
       const oy = clamp(p.y - GLIDE_OVERHEAD, 8, Math.max(8, g.h - 8))
       const exPad = 20
-      if (!g.h1 || !crossesH1(b.x, b.y, ox, oy, {
-        left: g.h1.left - exPad,
-        right: g.h1.right + exPad,
-        top: g.h1.top - exPad,
-        bottom: g.h1.bottom + exPad,
-      })) return [{ x: ox, y: oy }]
+      if (!g.h1 || !crossesH1Lines(b.x, b.y, ox, oy, g, exPad)) return [{ x: ox, y: oy }]
 
       const leftExit = Math.abs(b.x - g.h1.left) <= Math.abs(g.h1.right - b.x)
       const exitX = clamp(leftExit ? g.h1.left - REPULSION_PAD - 30 : g.h1.right + REPULSION_PAD + 30, 8, Math.max(8, g.w - 8))
@@ -503,8 +566,10 @@ export function useBirdPets({
       chosen.p.occupiedBy = b.id
       b.perchIdx = chosen.i
       b.committedAt = now
-      // Aim the flight at where the PERCHED CENTER will sit, so the sprite
-      // swap at landing involves zero positional jump.
+      // Aim the flight at where the PERCHED CENTER will sit: the perch point
+      // is ON the first line's top edge, and the anchor sits size*FOOT_FRAC
+      // above it so the sprite swap at landing is pixel-stable AND the feet
+      // rest exactly on the letter tops (never a fixed pixel offset).
       const perchTarget = { x: chosen.p.x, y: chosen.p.y - b.cfg.size * FOOT_FRAC }
       const route = perchRoute(b, chosen.p, g)
       if (route.length === 1) {
@@ -549,12 +614,53 @@ export function useBirdPets({
     const losClearToTarget = (b, g) => {
       const t = b.target
       if (!t || !g.h1) return true
-      return !crossesH1(b.x, b.y, t.x, t.y, {
-        left: g.h1.left - REPULSION_PAD,
-        right: g.h1.right + REPULSION_PAD,
-        top: g.h1.top - REPULSION_PAD,
-        bottom: g.h1.bottom + REPULSION_PAD,
-      })
+      return !crossesH1Lines(b.x, b.y, t.x, t.y, g, REPULSION_PAD)
+    }
+
+    // ---- feathers ------------------------------------------------------------
+    // Spawned ONLY when the colliding surface is the logo — the hero's one
+    // object that visibly sheds on impact. Hero edge, headline and other
+    // collisions still recoil + squash, they just don't spawn particles
+    // (cheaper on the DOM, and consistent with the button/text hitboxes that
+    // never spawn). Logo collisions are detected against the cached logoRect
+    // from useLayoutMetrics, checked separately from headline/hero edges.
+    // Spawned on collision at the bird position, flying away from the impact
+    // in the reflected direction ± 40°. Purely CSS-animated: initial
+    // velocity + rotation are inline custom properties feeding one keyframe,
+    // and animationend removes each span — no per-feather JS loop. The
+    // 30-feather cap prevents runaway accumulation on rapid collisions.
+    const spawnFeathers = (b, i, angle, surface) => {
+      if (surface !== 'logo') return
+      if (reduced) return
+      const layer = featherLayerRef?.current
+      if (!layer) return
+      if (layer.childElementCount >= FEATHER_CAP) return
+      const host = hostRefs.current[i]
+      const color = host ? getComputedStyle(host).color : 'currentColor'
+      const n = Math.round(rand(FEATHER_MIN, FEATHER_MAX))
+      for (let k = 0; k < n; k++) {
+        const span = document.createElement('span')
+        span.className = 'pdd-feather'
+        const a = angle + rand((-40 * Math.PI) / 180, (40 * Math.PI) / 180)
+        const speed = rand(2, 4) // px/frame away from the surface
+        const life = rand(FEATHER_LIFE_MS[0], FEATHER_LIFE_MS[1])
+        const frames = life / 16.7
+        // Keyframe end-point: velocity damped over the flight + the gravity
+        // pull (0.15px/frame²) baked into the destination offset.
+        const dx = Math.cos(a) * speed * frames * 0.6
+        const dy = Math.sin(a) * speed * frames * 0.6 + 0.075 * frames * frames
+        span.style.left = `${b.x + b.cfg.size / 2}px`
+        span.style.top = `${b.y + b.cfg.size / 2}px`
+        span.style.setProperty('--pdd-life', `${Math.round(life)}ms`)
+        span.style.setProperty('--fdx', `${dx.toFixed(1)}px`)
+        span.style.setProperty('--fdy', `${dy.toFixed(1)}px`)
+        span.style.setProperty('--fstart', `${rand(-60, 60).toFixed(0)}deg`)
+        span.style.setProperty('--frot', `${rand(-240, 240).toFixed(0)}deg`)
+        span.style.color = color
+        span.style.filter = `brightness(${rand(0.85, 1.15).toFixed(2)})`
+        span.addEventListener('animationend', () => span.remove(), { once: true })
+        layer.appendChild(span)
+      }
     }
 
     const takeOff = (b, i, now) => {
@@ -569,13 +675,124 @@ export function useBirdPets({
       b.boostUntil = now + BOOST_MS
       b.nextPerchAt = now + rand(b.cfg.perchEvery[0], b.cfg.perchEvery[1])
       if (b.cfg.dart) b.nextDartAt = now + rand(b.cfg.dart[0], b.cfg.dart[1])
-      pickTarget(b, measureGeometry(), now)
+      pickTarget(b, geom(), now)
       renderBird(b, i, now)
+    }
+
+    // ---- patrol loops -------------------------------------------------------
+    // Every 4th target selection (25%), a flying bird traces a closed
+    // parametric pattern for 2-4s instead of seeking a plain waypoint, so
+    // flight has visible structure instead of pure random drift. Steering
+    // forces stay physical: the hook computes the path point every frame and
+    // the bird is PULLED toward it — never snapped to it.
+    const patrolPoint = (s, L) => {
+      const R = L.R
+      switch (L.shape) {
+        case 'figure8': {
+          // Two connected circles: a real figure-eight, closed so the exit
+          // heading matches the entry heading.
+          const u = Math.PI * 2 * s
+          return { x: L.cx + R * Math.sin(2 * u), y: L.cy + R * Math.sin(u) }
+        }
+        case 'loopDeLoop': {
+          // Single vertical circle entered from below; y starts at the
+          // bottom of the arc, closes level so entry/exit headings match.
+          const u = Math.PI * 2 * s
+          return { x: L.cx + R * Math.sin(u), y: L.cy + R * Math.cos(u) }
+        }
+        case 'orbit': {
+          // Tight circular orbit around a fixed point.
+          const u = Math.PI * 2 * s * L.revs
+          return { x: L.cx + R * Math.cos(u), y: L.cy + R * Math.sin(u) }
+        }
+        default: {
+          // corkscrew: horizontal circle that MIGRATES across the hero at
+          // constant speed — the bird spirals while drifting.
+          const u = Math.PI * 2 * s * L.revs
+          return {
+            x: L.cx + L.drift * s + R * Math.cos(u),
+            y: L.cy + R * Math.sin(u),
+          }
+        }
+      }
+    }
+
+    const startPatrol = (b, g, now) => {
+      if (!g) return false
+      const shape = PATROL_SHAPES[Math.floor(Math.random() * PATROL_SHAPES.length)]
+      const R = rand(PATROL_R[0], PATROL_R[1])
+      const dir = b.vx >= 0 ? 1 : -1
+      const drift =
+        shape === 'corkscrew' ? dir * rand(PATROL_DRIFT[0], PATROL_DRIFT[1]) : 0
+      const revs =
+        shape === 'orbit' || shape === 'corkscrew'
+          ? Math.round(rand(PATROL_ORBIT_REVS[0], PATROL_ORBIT_REVS[1]))
+          : 1
+      // The whole path stays within (R + |drift|/2) of the drift-adjusted
+      // center, so first pick a center whose bounding circle clears every
+      // headline keep-out line (and the hero edges). Never starts inside the
+      // headline force field; if no candidate clears, no patrol this pick.
+      const bound = R + Math.abs(drift) / 2
+      const need = bound + REPULSION_PAD + PATROL_CLEAR_PAD
+      const ysList = g.h1
+        ? [b.y, g.h1.top - need - 8, g.h1.bottom + need + 8]
+        : [b.y]
+      for (const cy0 of ysList) {
+        const cy = clamp(cy0, bound + 6, Math.max(bound + 7, g.h - bound - 6))
+        const cxMid = clamp(b.x, bound + 6, Math.max(bound + 7, g.w - bound - 6))
+        let clear = true
+        if (g.h1) {
+          for (const line of g.h1.lines) {
+            if (
+              distToRect(cxMid, cy, {
+                left: line.left - REPULSION_PAD,
+                right: line.right + REPULSION_PAD,
+                top: line.top - REPULSION_PAD,
+                bottom: line.bottom + REPULSION_PAD,
+              }) < need
+            ) {
+              clear = false
+              break
+            }
+          }
+        }
+        if (clear) {
+          b.patrolLoop = {
+            shape,
+            R,
+            drift,
+            revs,
+            cx: cxMid - drift / 2,
+            cy,
+            start: now,
+            duration: rand(PATROL_DUR_MS[0], PATROL_DUR_MS[1]),
+          }
+          b.waypointQueue = []
+          b.hardApproach = false
+          return true
+        }
+      }
+      return false
     }
 
     // ---- steering integration for flying/arriving ---------------------------
     const steer = (b, now, dt, g, i) => {
       b.steerCount = (b.steerCount || 0) + 1
+      // Patrol: while a loop is active it overrides waypoint selection —
+      // the target is recomputed every frame from the parametric path so
+      // normal steering forces carry the bird around it. Patrols only live
+      // in 'flying'; on exit the normal selection resumes (this pick IS the
+      // next target pick).
+      if (b.patrolLoop) {
+        const L = b.patrolLoop
+        const s = (now - L.start) / L.duration
+        if (b.state !== 'flying' || s >= 1) {
+          b.patrolLoop = null
+          if (b.state === 'flying' && !b.target) pickTarget(b, g, now)
+        } else {
+          b.target = patrolPoint(clamp(s, 0, 1), L)
+        }
+      }
       const t = b.target
       if (!t) {
         // Never let a flying bird have nowhere to go.
@@ -585,6 +802,16 @@ export function useBirdPets({
       const dx = t.x - b.x
       const dy = t.y - b.y
       const dist = Math.hypot(dx, dy)
+
+      // Recoil: the collision parked the velocity and froze position for
+      // RECOIL_MS; on expiry the reflected velocity resumes. A bird never
+      // out-lives its parked velocity silently.
+      if (b.recoUntil && now >= b.recoUntil) {
+        b.vx = b.recoVx
+        b.vy = b.recoVy
+        b.recoUntil = 0
+      }
+      if (now < b.recoUntil) return
 
       // Hard approach (safety-timeout path): deterministic direct velocity,
       // no steering, no repulsion, no darts. Monotonic approach, no teleport.
@@ -605,8 +832,9 @@ export function useBirdPets({
         return
       }
 
-      if (dist < TARGET_ARRIVE_RADIUS) {
-        // reached the current target
+      if (dist < TARGET_ARRIVE_RADIUS && !b.patrolLoop) {
+        // reached the current target (patrol targets move every frame — no
+        // waypoint advancement logic may fire mid-loop)
         if (b.state === 'arriving') {
           if (dist < ARRIVE_RADIUS && Math.hypot(b.vx, b.vy) < ARRIVE_SPEED) {
             land(b, now)
@@ -659,7 +887,7 @@ export function useBirdPets({
 
       // Hummer: dart overrides velocity; hover dampens it. No darts while a
       // bird is committed to a perch.
-      if (b.cfg.dart && b.perchIdx < 0) {
+      if (b.cfg.dart && b.perchIdx < 0 && !b.patrolLoop) {
         if (now < b.hoverUntil) {
           const f = Math.pow(HOVER_DECAY, dt)
           b.vx *= f
@@ -685,31 +913,39 @@ export function useBirdPets({
       // bounce the target is kept if it's still reachable, otherwise
       // re-picked. Only the velocity component travelling INTO the surface
       // is inverted, so grazing contact keeps its tangential motion.
-      if (b.state === 'flying' && now >= b.bounceCoolUntil) {
+      if (b.state === 'flying' && now >= b.bounceCoolUntil && now >= b.recoUntil) {
         const half = b.cfg.size / 2
         let hitX = false
         let hitY = false
+        let hitSurface = null
         // Hero edges (correction: park the sprite half-body on the surface).
         if (b.x < half && b.vx < 0) {
           hitX = true
+          hitSurface = 'edge'
           b.x = half
         } else if (b.x > g.w - half && b.vx > 0) {
           hitX = true
+          hitSurface = 'edge'
           b.x = g.w - half
         }
         if (b.y < half && b.vy < 0) {
           hitY = true
+          hitSurface = 'edge'
           b.y = half
         } else if (b.y > g.h - half && b.vy > 0) {
           hitY = true
+          hitSurface = 'edge'
           b.y = g.h - half
         }
-        // Keep-out pad around the landmark: nearest-face collision.
-        if (!hitX && !hitY && g.h1) {
-          const pl = g.h1.left - REPULSION_PAD
-          const pr = g.h1.right + REPULSION_PAD
-          const pt = g.h1.top - REPULSION_PAD
-          const pb = g.h1.bottom + REPULSION_PAD
+        // Logo keep-out: the logo image as a solid collider (checked
+        // separately from headline + hero edges). Feathers spawn ONLY here —
+        // the logo is the hero's one surface that sheds on impact.
+        if (g.logo && !hitX && !hitY) {
+          const lg = g.logo
+          const pl = lg.left - half
+          const pr = lg.right + half
+          const pt = lg.top - half
+          const pb = lg.bottom + half
           if (b.x > pl && b.x < pr && b.y > pt && b.y < pb) {
             const dL = b.x - pl
             const dR = pr - b.x
@@ -718,24 +954,73 @@ export function useBirdPets({
             const minD = Math.min(dL, dR, dT, dB)
             if (minD === dL && b.vx < 0) {
               hitX = true
+              hitSurface = 'logo'
               b.x = pl
             } else if (minD === dR && b.vx > 0) {
               hitX = true
+              hitSurface = 'logo'
               b.x = pr
             } else if (minD === dT && b.vy < 0) {
               hitY = true
+              hitSurface = 'logo'
               b.y = pt
             } else if (minD === dB && b.vy > 0) {
               hitY = true
+              hitSurface = 'logo'
               b.y = pb
             }
           }
         }
-        if (hitX) b.vx = -b.vx * BOUNCE_RESTITUTION
-        if (hitY) b.vy = -b.vy * BOUNCE_RESTITUTION
+        // Keep-out pad around the headline text LINES: nearest-face
+        // collision per line, so a bird can thread the gap between two lines
+        // but still slams into any line of text it actually flies through.
+        if (!hitX && !hitY && g.h1) {
+          for (const line of g.h1.lines) {
+            const pl = line.left - REPULSION_PAD
+            const pr = line.right + REPULSION_PAD
+            const pt = line.top - REPULSION_PAD
+            const pb = line.bottom + REPULSION_PAD
+            if (b.x > pl && b.x < pr && b.y > pt && b.y < pb) {
+              const dL = b.x - pl
+              const dR = pr - b.x
+              const dT = b.y - pt
+              const dB = pb - b.y
+              const minD = Math.min(dL, dR, dT, dB)
+              if (minD === dL && b.vx < 0) {
+                hitX = true
+                hitSurface = 'text'
+                b.x = pl
+              } else if (minD === dR && b.vx > 0) {
+                hitX = true
+                hitSurface = 'text'
+                b.x = pr
+              } else if (minD === dT && b.vy < 0) {
+                hitY = true
+                hitSurface = 'text'
+                b.y = pt
+              } else if (minD === dB && b.vy > 0) {
+                hitY = true
+                hitSurface = 'text'
+                b.y = pb
+              }
+              if (hitX || hitY) break
+            }
+          }
+        }
         if (hitX || hitY) {
+          // Recoil: park the reflected velocity, freeze the position for
+          // 150ms (squash + wings held mid-flap), then resume with the
+          // reflected velocity at BOUNCE_RESTITUTION energy. Cooldown (300ms)
+          // > recoil (150ms) and the velocity-parked guard mean a collision
+          // during recoil can never stack a second pause.
+          b.recoVx = hitX ? -b.vx * BOUNCE_RESTITUTION : b.vx
+          b.recoVy = hitY ? -b.vy * BOUNCE_RESTITUTION : b.vy
+          b.vx = 0
+          b.vy = 0
+          b.recoUntil = now + RECOIL_MS
           b.bounceCoolUntil = now + BOUNCE_COOLDOWN_MS
           b.bounceAnimUntil = now + BOUNCE_ANIM_MS
+          spawnFeathers(b, i, Math.atan2(b.recoVy, b.recoVx), hitSurface)
           if (!losClearToTarget(b, g)) pickTarget(b, g, now)
         }
       }
@@ -779,7 +1064,7 @@ export function useBirdPets({
       //    (v oscillating while parked at the pad edge, dot < 0 the whole
       //    time). Only this failure re-picks — normal flight that merely
       //    curves keeps its target.
-      if (b.state === 'flying') {
+      if (b.state === 'flying' && !b.patrolLoop) {
         const t = b.target
         const dot = t ? b.vx * (t.x - b.x) + b.vy * (t.y - b.y) : 1
         if (dot < 0) {
@@ -804,11 +1089,16 @@ export function useBirdPets({
       }
       rafId = requestAnimationFrame(tick)
 
-      const dt = clamp((now - lastTime) / (1000 / 60), 0.2, DT_MAX)
+      // Delta-time spike cap: a long frame (tab wake-up, GC pause) can never
+      // move the flock further than 2 frames @60fps — no giant-dt teleports.
+      const dt = Math.max(
+        Math.min(now - lastTime, DT_CAP_MS) / (1000 / 60),
+        0.2
+      )
       lastTime = now
 
-      const g = measureGeometry()
-      if (g.w <= 0 || g.h <= 0) return
+      const g = geom()
+      if (!g || g.w <= 0 || g.h <= 0) return
 
       birds.forEach((b, i) => {
         if (b.state === 'perched') {
@@ -836,7 +1126,12 @@ export function useBirdPets({
         } else {
           liveness(b, now, g)
           steer(b, now, dt, g, i)
-          if (b.state === 'flying' && now >= b.nextPerchAt) pickPerch(b, now, g)
+          if (
+            b.state === 'flying' &&
+            !b.patrolLoop &&
+            now >= b.nextPerchAt
+          )
+            pickPerch(b, now, g)
         }
         renderBird(b, i, now)
       })
@@ -888,19 +1183,48 @@ export function useBirdPets({
     }
     mq.addEventListener?.('change', onMotionChange)
 
-    // Perch points follow window resizes (no teleport: recompute + re-anchor)
-    const onResize = () => {
+    // ---- metrics-update handler ---------------------------------------------
+    // useLayoutMetrics fires after every recompute (fonts, images, resize,
+    // breakpoint flip). Positions clamp into the new hero rect; flying
+    // targets that now sit outside the hero or inside the headline keep-out
+    // are cleared (re-picked on the next tick); active patrols abort; perched
+    // birds re-anchor to the rebuilt perch points; on a BREAKPOINT flip every
+    // perched bird takes off and re-lands on the new breakpoint's points
+    // naturally. Nothing here teleports a flying bird mid-hero.
+    const handleMetricsUpdate = (_m, info) => {
       buildPerches()
+      const g = geom()
+      if (!g || g.w <= 0 || g.h <= 0) return
       birds.forEach((b, i) => {
-        if (b.state === 'perched' && b.perchIdx >= 0 && perchPts[b.perchIdx]) {
-          b.x = perchPts[b.perchIdx].x
-          b.y = perchPts[b.perchIdx].y
+        b.patrolLoop = null
+        if (b.state === 'perched') {
+          const p = b.perchIdx >= 0 ? perchPts[b.perchIdx] : null
+          if (info.breakpointChanged || !p || p.occupiedBy !== b.id) {
+            takeOff(b, i, performance.now())
+          } else {
+            b.x = p.x
+            b.y = p.y
+          }
+        } else {
+          b.x = clamp(b.x, 4, Math.max(4, g.w - 4))
+          b.y = clamp(b.y, 4, Math.max(4, g.h - 4))
+          const t = b.target
+          if (
+            b.state === 'flying' &&
+            (!t ||
+              t.x < 0 ||
+              t.x > g.w ||
+              t.y < 0 ||
+              t.y > g.h ||
+              (g.h1 && distToLandmark(t.x, t.y, g) < REPULSION_PAD + 4))
+          ) {
+            b.target = null
+            b.waypointQueue = []
+          }
         }
-        b.x = clamp(b.x, 0, Math.max(0, measureGeometry().w - b.cfg.size))
         renderBird(b, i, performance.now())
       })
     }
-    window.addEventListener('resize', onResize)
 
     // Sprite anchor offsets: both SVGs render centered on the host anchor so
     // the perched/flying swap is pixel-stable (no jump on landing).
@@ -923,7 +1247,7 @@ export function useBirdPets({
       b.nextPerchAt = now0 + rand(b.cfg.perchEvery[0], b.cfg.perchEvery[1])
       if (b.cfg.dart) b.nextDartAt = now0 + rand(b.cfg.dart[0], b.cfg.dart[1])
       b.target = null
-      pickTarget(b, measureGeometry(), now0)
+      pickTarget(b, geom(), now0)
       if (reduced) {
         // static perched birds only
         b.state = 'perched'
@@ -937,13 +1261,15 @@ export function useBirdPets({
       renderBird(b, i, now0)
     })
 
+    onUpdateRef.current = handleMetricsUpdate
+
     if (!reduced && inView) startLoop()
 
     return () => {
       stopLoop()
       io.disconnect()
       mq.removeEventListener?.('change', onMotionChange)
-      window.removeEventListener('resize', onResize)
+      onUpdateRef.current = null
     }
   }, [containerRef, landmarkRef, count, hostRefs, flyRefs, perchRefs])
 }

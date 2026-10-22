@@ -13,8 +13,8 @@ export const MAX_BIRDS = 8
 export const PERSONALITIES = {
   wanderer: {
     size: 24,
-    maxSpeed: 2.2,
-    steerStrength: 0.06,
+    maxSpeed: 1.55,
+    steerStrength: 0.085,
     wingDur: '450ms',
     maxBank: 40,
     perchEvery: [12000, 20000],
@@ -23,8 +23,8 @@ export const PERSONALITIES = {
   },
   hummer: {
     size: 20,
-    maxSpeed: 3.6,
-    steerStrength: 0.12,
+    maxSpeed: 2.5,
+    steerStrength: 0.17,
     wingDur: '220ms',
     maxBank: 50,
     perchEvery: [12000, 20000],
@@ -34,8 +34,8 @@ export const PERSONALITIES = {
   },
   glider: {
     size: 28,
-    maxSpeed: 1.4,
-    steerStrength: 0.04,
+    maxSpeed: 1.2,
+    steerStrength: 0.056,
     wingDur: '600ms',
     maxBank: 30,
     perchEvery: [15000, 25000],
@@ -77,18 +77,18 @@ export const SAMPLE_TRIES = 10
 export const SUBROUTE_CHANCE = 0.3
 export const SUBROUTE_WAYPOINTS = [1, 2]
 export const SUBROUTE_OFFSET = 80 // px perpendicular offset for mid-flight direction changes
-export const REPULSION_PAD = 50 // px: keep-out box around the landmark (targets/text never crossed)
+export const REPULSION_PAD = 10 // px: keep-out box around the landmark text lines (tight: birds may read as 'near the text', never clipping letters)
 export const ARRIVE_RADIUS = 6 // px: close enough to land
 export const ARRIVE_SPEED = 0.3 // px/frame: slow enough to land
 export const ARRIVE_SAFETY_MS = 4000
-export const ARRIVE_TERM_FACTOR = 0.1 // desiredSpeed = min(maxSpeed, dist * factor)
+export const ARRIVE_TERM_FACTOR = 0.12 // desiredSpeed = min(maxSpeed, dist * factor)
 export const DART_SPEED = 4.5
 export const DART_DECAY_MS = 1500 // overspeed allowed while dart velocity bleeds off
 export const HOVER_DECAY = 0.92 // per-frame velocity decay while hovering
 export const HOVER_MS = 500
 export const TAKEOFF_START_SPEED = 0.5 // first-frame launch speed (see takeOff push)
 export const BOOST_MS = 300 // extra steering push after takeoff (launch arc)
-export const DT_MAX = 1.33 // caps per-frame displacement at DART_SPEED * 1.33 ≈ 6px
+export const DT_CAP_MS = 33 // delta-time spike cap: a long frame never moves the flock more than 2 frames @60fps
 export const FOOT_FRAC = 0.42 // distance from perched bird center down to its feet
 
 // ---- perch + stuck detection ----------------------------------------------
@@ -108,10 +108,26 @@ export const GLIDE_OVERHEAD = 90 // px above a perch where the glide descent beg
 
 // ---- bounce physics --------------------------------------------------------
 export const BANK_SMOOTH = 0.15 // per-frame lerp factor for the rendered bank angle
-export const BOUNCE_RESTITUTION = 0.5 // energy kept after a boundary/keep-out bounce
+export const BOUNCE_RESTITUTION = 0.7 // energy kept after a boundary/keep-out bounce (resume speed)
 export const BOUNCE_COOLDOWN_MS = 300 // no re-collide with the same surface while cooling
-export const BOUNCE_ANIM_MS = 250 // squash animation window (matches the CSS)
-export const BOUNCE_FLAP_FACTOR = 0.5 // wing flap halved while recovering from a hit
+export const BOUNCE_ANIM_MS = 250 // squash window: 150ms hold + 100ms ease back (matches the CSS)
+export const RECOIL_MS = 150 // collision recoil: position frozen (velocity parked), then resumes
+export const FEATHER_MIN = 4 // feathers spawned per collision
+export const FEATHER_MAX = 6
+export const FEATHER_CAP = 30 // max feathers on screen (runaway accumulation guard)
+export const FEATHER_LIFE_MS = [700, 900] // fade lifetime range
+
+// ---- patrol loops ---------------------------------------------------------
+// Every PATROL_EVERY_N_PICKS-th target selection (25%), a flying bird traces
+// a closed parametric loop for 2-4s before steering normally again. Shapes:
+// figure8, loopDeLoop, corkscrew (horizontal circle + lateral drift), orbit.
+export const PATROL_EVERY_N_PICKS = 4
+export const PATROL_SHAPES = ['figure8', 'loopDeLoop', 'corkscrew', 'orbit']
+export const PATROL_DUR_MS = [2000, 4000]
+export const PATROL_R = [30, 40] // loop radius (px): paths stay within this of their center
+export const PATROL_DRIFT = [50, 90] // corkscrew horizontal migration over the full loop (px)
+export const PATROL_ORBIT_REVS = [2, 3]
+export const PATROL_CLEAR_PAD = 10 // extra clearance (px) required between a loop and the headline keep-out
 
 // ---- helpers ---------------------------------------------------------------
 export const rand = (min, max) => min + Math.random() * (max - min)

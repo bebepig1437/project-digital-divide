@@ -31,6 +31,7 @@ export default function BirdPets({
   const hostRefs = useRef([])
   const flyRefs = useRef([])
   const perchRefs = useRef([])
+  const featherLayerRef = useRef(null)
 
   const smallScreen =
     typeof window !== 'undefined' && !window.matchMedia('(min-width: 640px)').matches
@@ -47,6 +48,7 @@ export default function BirdPets({
     hostRefs,
     flyRefs,
     perchRefs,
+    featherLayerRef,
   })
 
   return (
@@ -82,6 +84,14 @@ export default function BirdPets({
           </span>
         )
       })}
+      {/* Feather particles from collisions. One fixed container inside the
+          flock layer (which is pointer-events-none), so feathers never block
+          clicks; spans are self-removing via animationend. */}
+      <div
+        ref={featherLayerRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      />
     </div>
   )
 }

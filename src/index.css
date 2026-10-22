@@ -295,23 +295,30 @@
     }
   }
 
-  /* Bounce squash: the smack-and-recover when a bird hits the hero edge or
-     the keep-out pad. Runs on the sprite (.pdd-fly) so the host wrapper's
+  /* Recoil squash: the smack-and-recover when a bird hits the hero edge or
+     a headline text line. Runs on the sprite (.pdd-fly) so the host wrapper's
      per-frame translate/rotate/bank transform stays intact; the two combine
      visually as rotate(bank)·scale(sx, sy) while scaleX(-1) (facing) is the
-     tail term of the host transform. The wing flap halves for the same
-     250ms via --pdd-flap-dur (hook-driven BOUNCE_FLAP_FACTOR). */
-  .is-bouncing .pdd-fly {
+     tail term of the host transform. Timeline matches the hook's recoil:
+     150ms held at scale(1.15, 0.85) (0–60% of 250ms), then 100ms back to
+     1 (60–100%). During recoil the wings HOLD mid-flap (paused) so the bird
+     reads as stunned, not still flapping after a bounce. */
+  .is-recoiling .pdd-fly {
     animation: pdd-bounce-squash 0.25s ease-out;
   }
 
   @keyframes pdd-bounce-squash {
-    0% {
+    0%,
+    60% {
       transform: scale(1.15, 0.85);
     }
     100% {
       transform: scale(1, 1);
     }
+  }
+
+  .is-recoiling .pdd-bird-wing {
+    animation-play-state: paused;
   }
 
   /* Glider glide pose: wings held out during the perch descent instead of
@@ -326,6 +333,33 @@
     transform: rotate(14deg);
   }
 
+  /* Collision feathers: tiny curved slivers thrown from the impact point.
+     Purely CSS-driven — the hook sets per-feather custom properties
+     (--fdx/--fdy destination incl. gravity, --fstart initial spin, --frot
+     total spin) and each animationend removes the span. no per-feather JS. */
+  .pdd-feather {
+    position: absolute;
+    width: 7px;
+    height: 2.5px;
+    border-radius: 60% 100% 60% 100% / 60% 60% 100% 100%;
+    background: currentColor;
+    transform-origin: 50% 50%;
+    opacity: 0.9;
+    animation: pdd-feather-fly var(--pdd-life, 850ms) ease-out forwards;
+  }
+
+  @keyframes pdd-feather-fly {
+    from {
+      transform: rotate(var(--fstart, 0deg)) translate(0, 0);
+      opacity: 0.9;
+    }
+    to {
+      transform: rotate(calc(var(--fstart, 0deg) + var(--frot, 240deg)))
+        translate(var(--fdx, 0px), var(--fdy, 0px));
+      opacity: 0;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .pdd-fly.is-flapping .pdd-bird-wing-near,
     .pdd-fly.is-flapping .pdd-bird-wing-far,
@@ -334,7 +368,7 @@
     .pdd-perched.pdd-idle-tilt,
     .pdd-perched.pdd-idle-flick,
     .pdd-perched.pdd-idle-ruffle,
-    .is-bouncing .pdd-fly {
+    .is-recoiling .pdd-fly {
       animation: none;
       transition: none;
     }

@@ -42,6 +42,8 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
 
     let disposed = false
     let debounceId = 0
+    let lastLogoBoundKey = null
+    let lastHeadlineKey = null
     const mq = window.matchMedia(DESKTOP_MQ)
     let isDesktop = mq.matches
 
@@ -66,24 +68,103 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
       // Headline: one rect per RENDERED LINE, not one block box.
       const markEl = landmarkRef?.current || heroEl.querySelector('h1')
       let headlineRects = null
+      let capTrim = 0
       if (markEl) {
         const range = document.createRange()
         range.selectNodeContents(markEl)
-        const rects = [...range.getClientRects()]
+        const raw = [...range.getClientRects()]
           .filter((r) => r.width > 1 && r.height > 1)
           .map((r) => toHeroRect(r, heroBox))
-        if (rects.length) headlineRects = rects
+        // rects and perches would sit on the line box again).
+        // Cap trim: Range rects hug the font's em box (font ascent..descent),
+        // not the INK — the visible cap tops sit fontAscent − capHeight BELOW
+        // the rect top. Measure that gap per measure pass via canvas metrics
+        // for the actually rendered font ('PH' ink ascent = cap height),
+        // trimming the rects' tops so the perch anchor puts feet exactly on
+        // the glyph tops and the keep-out hugs the caps. Falls back to 0.
+        try {
+          const st = getComputedStyle(markEl)
+          const ctx2d = document.createElement('canvas').getContext('2d')
+          ctx2d.font = `${st.fontStyle} ${st.fontWeight} ${st.fontSize} ${st.fontFamily}`
+          const mt = ctx2d.measureText('PH')
+          const fontAsc = mt.fontBoundingBoxAscent
+          const inkAsc = mt.actualBoundingBoxAscent
+          if (
+            typeof fontAsc === 'number' &&
+            typeof inkAsc === 'number' &&
+            fontAsc > inkAsc &&
+            inkAsc > 0
+          ) {
+            capTrim = Math.max(0, fontAsc - inkAsc)
+          }
+        } catch {
+          capTrim = 0
+        }
+        const rects = raw.map((r) => ({ ...r, top: r.top + capTrim }))
+        if (rects.length) {
+          // Change-keyed log: the element rect top is the LINE BOX (includes
+          // half-leading above the glyphs); the first Range rect hugs the text
+          // content box. The delta must be non-zero (~8-16px at display font
+          // sizes) — equal values mean the Range API didn't produce tighter
+          // rects and perches would sit on the line box again.
+          const rangeKey = `${rects.length}L ${rects[0].top.toFixed(1)}/${rects[0].bottom - rects[0].top}`
+          if (rangeKey !== lastHeadlineKey) {
+            lastHeadlineKey = rangeKey
+            const elTop = markEl.getBoundingClientRect().top - heroBox.top
+            console.info(
+              `[BirdPets] headline tops: line-box(el)=${elTop.toFixed(1)} range(raw)=${(rects[0].top - capTrim).toFixed(1)} capTrim=${capTrim.toFixed(1)} glyphTop(range+trim)=${rects[0].top.toFixed(1)} halfLeadingDelta=${(elTop - (rects[0].top - capTrim)).toFixed(1)}px lines=${rects.length}`
+            )
+          }
+          headlineRects = rects
+        }
       }
 
       // Logo: the first hero image that actually renders (light/dark pair —
       // one of them is display:none and must not be treated as a collider).
       let logoRect = null
+      let logoEl = null
       for (const img of [...heroEl.querySelectorAll('img')]) {
         const r = img.getBoundingClientRect()
         if (r.width > 4 && r.height > 4 && img.getClientRects().length > 0) {
           logoRect = toHeroRect(r, heroBox)
+          logoEl = img
           break
         }
+      }
+
+      // Solid collision surfaces: visible styled CTAs (a/button) inside the
+      // hero. Requires real padding AND a visual affordance (background,
+      // border, or shadow) — plain text links beside a button are not walls.
+      const buttonRects = [...heroEl.querySelectorAll('a, button')]
+        .filter((el) => {
+          if (!el.getClientRects().length) return false
+          const r = el.getBoundingClientRect()
+          if (r.width <= 20 || r.height <= 16) return false
+          const s = getComputedStyle(el)
+          const pad =
+            parseFloat(s.paddingTop) + parseFloat(s.paddingBottom) || 0
+          const hasBg = s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)'
+          const hasBorder = (parseFloat(s.borderTopWidth) || 0) > 0
+          const hasShadow = s.boxShadow && s.boxShadow !== 'none'
+          return pad >= 16 && (hasBg || hasBorder || hasShadow)
+        })
+        .map((el) => toHeroRect(el.getBoundingClientRect(), heroBox))
+
+      // On change-only bounds log: the measured rect must be the TIGHT
+      // bounds of the visible logo art. The hero logos are bare <img>
+      // elements (no wrapper div) with object-cover, so the element rect IS
+      // the painted bounds — verified here rather than assumed.
+      const boundKey = logoRect
+        ? `${logoRect.left.toFixed(1)},${logoRect.top.toFixed(1)} ${(logoRect.right - logoRect.left).toFixed(1)}x${(logoRect.bottom - logoRect.top).toFixed(1)}`
+        : 'none'
+      if (boundKey !== lastLogoBoundKey) {
+        lastLogoBoundKey = boundKey
+        console.info(
+          `[BirdPets] logo bounds measured=${boundKey}` +
+            ` elementRect=${logoEl ? `${logoEl.getBoundingClientRect().width.toFixed(1)}x${logoEl.getBoundingClientRect().height.toFixed(1)}` : 'n/a'}` +
+            ` natural=${logoEl ? `${logoEl.naturalWidth}x${logoEl.naturalHeight}` : 'n/a'}` +
+            ' (hero logo is a bare object-cover <img>: element rect == painted bounds unless the source has transparent padding)'
+        )
       }
 
       // Perch points: fractions along the first rendered line's top edge. The
@@ -105,6 +186,8 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
         heroH: heroBox.height,
         headlineRects,
         logoRect,
+        buttonRects,
+        capTrim,
         perchPoints,
         isDesktop,
         updatedAt: performance.now(),

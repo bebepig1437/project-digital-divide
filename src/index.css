@@ -295,30 +295,90 @@
     }
   }
 
-  /* Recoil squash: the smack-and-recover when a bird hits the hero edge or
-     a headline text line. Runs on the sprite (.pdd-fly) so the host wrapper's
-     per-frame translate/rotate/bank transform stays intact; the two combine
-     visually as rotate(bank)·scale(sx, sy) while scaleX(-1) (facing) is the
-     tail term of the host transform. Timeline matches the hook's recoil:
-     150ms held at scale(1.15, 0.85) (0–60% of 250ms), then 100ms back to
-     1 (60–100%). During recoil the wings HOLD mid-flap (paused) so the bird
-     reads as stunned, not still flapping after a bounce. */
-  .is-recoiling .pdd-fly {
-    animation: pdd-bounce-squash 0.25s ease-out;
+  /* Bounce choreography ("hit fence, pause confused, fly away") — three
+     phases toggled by the hook on the HOST wrapper as is-impacting /
+     is-confused / is-recovering, derived from now - recoil.start so RAF
+     suspension can never desync them. All three run ON the sprite (.pdd-fly)
+     so the host wrapper's per-frame translate/rotate/bank transform stays
+     intact; the two combine visually as rotate(bank)·scale(sx, sy) while
+     scaleX(-1) (facing) is the tail term of the host transform.
+     Phase A impact 0-80ms: hard squash hold, wings frozen mid-flap.
+     Phase B confusion 80-350ms: ±8° 6Hz wobble over the held squash, one
+       near-wing twitch at ~200ms (delayed keyframe, fill both = frozen pose
+       until it fires, then holds the end pose).
+     Phase C recovery 350-450ms: release to scale(1,1) in 100ms; wings resume
+     the personality flap cadence. */
+  .is-impacting .pdd-fly {
+    animation: pdd-impact-squash 0.08s ease-in-out;
   }
 
-  @keyframes pdd-bounce-squash {
+  @keyframes pdd-impact-squash {
     0%,
-    60% {
-      transform: scale(1.15, 0.85);
+    100% {
+      transform: scale(1.2, 0.8);
+    }
+  }
+
+  .is-confused .pdd-fly {
+    animation: pdd-confused-wobble 0.27s linear;
+  }
+
+  @keyframes pdd-confused-wobble {
+    0%,
+    100% {
+      transform: scale(0.95, 1.05) rotate(0deg);
+    }
+    16% {
+      transform: scale(0.95, 1.05) rotate(-8deg);
+    }
+    34% {
+      transform: scale(0.95, 1.05) rotate(8deg);
+    }
+    52% {
+      transform: scale(0.95, 1.05) rotate(-8deg);
+    }
+    68% {
+      transform: scale(0.95, 1.05) rotate(8deg);
+    }
+    84% {
+      transform: scale(0.95, 1.05) rotate(-4deg);
+    }
+  }
+
+  .is-recovering .pdd-fly {
+    animation: pdd-recover-release 0.1s ease-out;
+  }
+
+  @keyframes pdd-recover-release {
+    0% {
+      transform: scale(0.95, 1.05);
     }
     100% {
       transform: scale(1, 1);
     }
   }
 
-  .is-recoiling .pdd-bird-wing {
+  /* Wings: frozen mid-flap through impact + confusion (paused flap);
+     recovery releases them back to the personality cadence. */
+  .is-impacting .pdd-bird-wing,
+  .is-confused .pdd-bird-wing,
+  .is-recovering .pdd-bird-wing {
     animation-play-state: paused;
+  }
+
+  .is-confused .pdd-bird-wing-near {
+    animation: pdd-wing-twitch 0.08s 0.12s 1 both;
+    animation-play-state: running;
+  }
+
+  @keyframes pdd-wing-twitch {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    50% {
+      transform: rotate(24deg);
+    }
   }
 
   /* Glider glide pose: wings held out during the perch descent instead of
@@ -339,8 +399,8 @@
      total spin) and each animationend removes the span. no per-feather JS. */
   .pdd-feather {
     position: absolute;
-    width: 7px;
-    height: 2.5px;
+    width: 4.9px;
+    height: 1.75px;
     border-radius: 60% 100% 60% 100% / 60% 60% 100% 100%;
     background: currentColor;
     transform-origin: 50% 50%;
@@ -368,7 +428,10 @@
     .pdd-perched.pdd-idle-tilt,
     .pdd-perched.pdd-idle-flick,
     .pdd-perched.pdd-idle-ruffle,
-    .is-recoiling .pdd-fly {
+    .is-impacting .pdd-fly,
+    .is-confused .pdd-fly,
+    .is-confused .pdd-bird-wing-near,
+    .is-recovering .pdd-fly {
       animation: none;
       transition: none;
     }

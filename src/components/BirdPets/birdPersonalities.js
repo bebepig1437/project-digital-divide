@@ -78,6 +78,18 @@ export const SUBROUTE_CHANCE = 0.3
 export const SUBROUTE_WAYPOINTS = [1, 2]
 export const SUBROUTE_OFFSET = 80 // px perpendicular offset for mid-flight direction changes
 export const REPULSION_PAD = 10 // px: keep-out box around the landmark text lines (tight: birds may read as 'near the text', never clipping letters)
+
+// Sprite collision half-extents, ANISOTROPIC: the 24-unit art box is wider
+// than it is tall (body+tail span x2.4..21.4, body+wing span y3.3..17.7), so
+// padded obstacles use width/2 horizontally and height/2 vertically. A
+// uniform half-size pad under-protects the long axis and over-protects the
+// short one.
+export const BIRD_HALF_W_FRAC = 0.4 // art half-width as a fraction of `size`
+export const BIRD_HALF_H_FRAC = 0.3 // art half-height (incl. flap span) as a fraction of `size`
+
+// Logo perches: two top-edge slots at these width fractions of the logo
+// rect, uniform members of the same selection pool as the headline slots.
+export const LOGO_PERCH_FRACS = [0.25, 0.75]
 export const ARRIVE_RADIUS = 6 // px: close enough to land
 export const ARRIVE_SPEED = 0.3 // px/frame: slow enough to land
 export const ARRIVE_SAFETY_MS = 4000
@@ -109,25 +121,51 @@ export const GLIDE_OVERHEAD = 90 // px above a perch where the glide descent beg
 // ---- bounce physics --------------------------------------------------------
 export const BANK_SMOOTH = 0.15 // per-frame lerp factor for the rendered bank angle
 export const BOUNCE_RESTITUTION = 0.7 // energy kept after a boundary/keep-out bounce (resume speed)
-export const BOUNCE_COOLDOWN_MS = 300 // no re-collide with the same surface while cooling
-export const BOUNCE_ANIM_MS = 250 // squash window: 150ms hold + 100ms ease back (matches the CSS)
-export const RECOIL_MS = 150 // collision recoil: position frozen (velocity parked), then resumes
-export const FEATHER_MIN = 4 // feathers spawned per collision
-export const FEATHER_MAX = 6
-export const FEATHER_CAP = 30 // max feathers on screen (runaway accumulation guard)
-export const FEATHER_LIFE_MS = [700, 900] // fade lifetime range
+export const BOUNCE_COOLDOWN_MS = 300 // choreography gate: no NEW bounce choreography while cooling (position fixes are never gated)
+// Sticky recoil phases — the "hit fence, pause confused, fly away" sequence:
+//   A impact 0..IMPACT: velocity zero, squash hold, wings frozen
+//   B confusion IMPACT..HOLD_END: velocity stays zero, 6Hz wobble, wing twitch
+//   C recovery HOLD_END..: reflected velocity applied once, squash releases
+// Recoil CLEARS on time alone at HOLD_END (the circular movement/dot checks
+// can never pass while velocity is zero); the reflected velocity carries the
+// bird away, so a post-clear re-collision is a legitimate fresh hit, not the
+// old triple-ram (whose interval was < 250ms vs the 350ms frozen floor).
+export const RECOIL_IMPACT_MS = 80 // phase A end
+export const RECOIL_HOLD_END_MS = 350 // phase B end = clear time + phase C start
+export const RECOIL_END_MS = 450 // phase C release end (matches the CSS timings)
+export const RECOIL_CLEAR_MAX_MS = 500 // safety force-clear: a wedged bird never sits longer than this
+export const RECOIL_CLEAR_AWAY_SPEED = 1.2 // px/frame velocity granted by the force-clear
+// Feather burst — logo hits only; reads as "a couple knocked loose.", not an explosion.
+export const FEATHER_MIN = 2 // feathers spawned per collision
+export const FEATHER_MAX = 3
+export const FEATHER_CAP = 18 // max feathers on screen (runaway accumulation guard)
+export const FEATHER_LIFE_MS = [500, 650] // fade lifetime range
+export const FEATHER_CONE_DEG = 22 // half-cone around the reflected direction
+export const FEATHER_SPEED = [1.2, 2.2] // px/frame away from the surface
 
 // ---- patrol loops ---------------------------------------------------------
 // Every PATROL_EVERY_N_PICKS-th target selection (25%), a flying bird traces
 // a closed parametric loop for 2-4s before steering normally again. Shapes:
-// figure8, loopDeLoop, corkscrew (horizontal circle + lateral drift), orbit.
+// figure8, loopDeLoop, corkscrew (horizontal circle + lateral drift), orbit,
+// and sweep (L→R→L patrol: 3-4s per direction at a fixed Y, 200ms hang at
+// each edge, never through the headline/logo/button airspace).
 export const PATROL_EVERY_N_PICKS = 4
-export const PATROL_SHAPES = ['figure8', 'loopDeLoop', 'corkscrew', 'orbit']
+export const PATROL_SHAPES = [
+  'figure8',
+  'loopDeLoop',
+  'corkscrew',
+  'orbit',
+  'sweep',
+]
 export const PATROL_DUR_MS = [2000, 4000]
 export const PATROL_R = [30, 40] // loop radius (px): paths stay within this of their center
 export const PATROL_DRIFT = [50, 90] // corkscrew horizontal migration over the full loop (px)
 export const PATROL_ORBIT_REVS = [2, 3]
 export const PATROL_CLEAR_PAD = 10 // extra clearance (px) required between a loop and the headline keep-out
+
+// ---- sweep patrol (L→R→L) ---------------------------------------------------
+export const PATROL_SWEEP_LEG_MS = [3000, 4000] // one direction's crossing (full cycle 6-9s incl. pauses)
+export const PATROL_SWEEP_EDGE_PAUSE_MS = 200 // hang at each edge before the hard reverse
 
 // ---- helpers ---------------------------------------------------------------
 export const rand = (min, max) => min + Math.random() * (max - min)

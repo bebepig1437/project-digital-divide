@@ -153,18 +153,72 @@
     animation-delay: 0.15s;
   }
 
-  /* ---- Articulated hero birds (lucide Bird, body + wing groups) ---- */
+  /* ---- Flying + perched hero birds (side-view FlyingBird, swapped with PerchedBird) ---- */
   .pdd-bird-wing {
-    /* Shoulder joint: where the wing arc meets the body, in view-box units. */
-    transform-origin: 7px 18px;
+    /* Shoulder hinge: each wing rotates about its own joint, not the body center. */
+    transform-box: view-box;
+    will-change: transform;
   }
 
-  /* Perched: wing folded at 0deg, slow breathing on the body only. */
-  .pdd-bird-perched .pdd-bird-body {
-    animation: pdd-bird-breathe 4s ease-in-out infinite;
+  .pdd-bird-wing-near {
+    transform-origin: 12px 11.4px;
   }
 
-  @keyframes pdd-bird-breathe {
+  .pdd-bird-wing-far {
+    transform-origin: 10.9px 11.6px;
+  }
+
+  /* Rest pose: wings hold the glide line (no animation until .is-flapping). */
+  /* Flap: near wing sweeps 0deg -> +55deg (fast downstroke) -> -40deg (up
+     overshoot) -> 0deg; far wing mirrored. Downstroke occupies ~38% of the
+     cycle; duration is per-personality via --pdd-flap-dur (inline, BirdFlock). */
+  .pdd-fly.is-flapping .pdd-bird-wing-near {
+    animation: pdd-wing-near-flap var(--pdd-flap-dur, 450ms)
+      cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+
+  .pdd-fly.is-flapping .pdd-bird-wing-far {
+    animation: pdd-wing-far-flap var(--pdd-flap-dur, 450ms)
+      cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+
+  @keyframes pdd-wing-near-flap {
+    0% {
+      transform: rotate(0deg);
+    }
+    38% {
+      transform: rotate(55deg);
+    }
+    62% {
+      transform: rotate(-40deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+
+  @keyframes pdd-wing-far-flap {
+    0% {
+      transform: rotate(0deg);
+    }
+    38% {
+      transform: rotate(-55deg);
+    }
+    62% {
+      transform: rotate(40deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+
+  /* Perched: wings folded, subtle contented breathing (scaleY 0.98, 4s loop). */
+  .pdd-perched {
+    animation: pdd-breathe 4s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+
+  @keyframes pdd-breathe {
     0%,
     100% {
       transform: scaleY(1);
@@ -174,133 +228,10 @@
     }
   }
 
-  /* Flapping: downstroke fast, upstroke slow, body counter-rotates a hair. */
-  .pdd-bird-flapping .pdd-bird-wing {
-    animation: pdd-bird-flap 0.55s infinite;
-  }
-
-  /* Stage A hop flight (CSS Motion Path; the JS only touches takeoff/landing) */
-  .is-flying {
-    offset-path: var(--flight-path);
-    offset-rotate: auto;
-    offset-distance: 0%;
-    animation: pdd-bird-flight var(--flight-dur, 1800ms) ease-in-out forwards;
-  }
-
-  /* Wing effort phases, toggled by JS at 20% / 80% of the flight.
-     animationend — not these timers — is the authoritative landing signal. */
-  .is-flying.is-takeoff .pdd-bird-wing {
-    animation: pdd-bird-flap 0.38s infinite;
-  }
-
-  .is-flying.is-glide .pdd-bird-wing {
-    animation: pdd-bird-glide 1.1s ease-in-out infinite;
-  }
-
-  .is-flying.is-landing .pdd-bird-wing {
-    animation: pdd-bird-land 0.7s ease-in-out forwards;
-  }
-
-  /* Landing: 40ms overshoot (offset-distance 100→102→100%) before re-perch. */
-  .is-flying.is-touchdown {
-    animation: pdd-bird-touchdown 90ms ease-out forwards;
-  }
-
-  @keyframes pdd-bird-flight {
-    from {
-      offset-distance: 0%;
-    }
-    to {
-      offset-distance: 100%;
-    }
-  }
-
-  @keyframes pdd-bird-glide {
-    0%,
-    100% {
-      transform: rotate(-6deg);
-    }
-    50% {
-      transform: rotate(6deg);
-    }
-  }
-
-  @keyframes pdd-bird-land {
-    0% {
-      transform: rotate(6deg);
-    }
-    55% {
-      transform: rotate(-18deg);
-    }
-    80% {
-      transform: rotate(16deg);
-    }
-    100% {
-      transform: rotate(-2deg);
-    }
-  }
-
-  @keyframes pdd-bird-touchdown {
-    0% {
-      offset-distance: 100%;
-    }
-    45% {
-      offset-distance: 102%;
-    }
-    100% {
-      offset-distance: 100%;
-    }
-  }
-
-  .pdd-bird-flapping .pdd-bird-body {
-    animation: pdd-bird-counter 0.55s infinite;
-  }
-
-  @keyframes pdd-bird-flap {
-    0% {
-      transform: rotate(-28deg);
-      animation-timing-function: cubic-bezier(0.55, 0, 0.68, 0.19);
-    }
-    38% {
-      transform: rotate(12deg);
-    }
-    52% {
-      transform: rotate(12deg);
-      animation-timing-function: ease-in-out;
-    }
-    100% {
-      transform: rotate(-28deg);
-    }
-  }
-
-  @keyframes pdd-bird-counter {
-    0% {
-      transform: rotate(0deg);
-      animation-timing-function: cubic-bezier(0.55, 0, 0.68, 0.19);
-    }
-    38% {
-      transform: rotate(1.5deg);
-    }
-    52% {
-      transform: rotate(1.5deg);
-      animation-timing-function: ease-in-out;
-    }
-    100% {
-      transform: rotate(0deg);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .pdd-bird-perched .pdd-bird-body,
-    .pdd-bird-flapping .pdd-bird-wing,
-    .pdd-bird-flapping .pdd-bird-body {
-      animation: none;
-    }
-    .is-flying {
-      offset-path: none;
-      animation: none;
-    }
-    .is-flying .pdd-bird-wing {
+    .pdd-fly.is-flapping .pdd-bird-wing-near,
+    .pdd-fly.is-flapping .pdd-bird-wing-far,
+    .pdd-perched {
       animation: none;
     }
   }

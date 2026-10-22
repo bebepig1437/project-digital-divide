@@ -1,31 +1,11 @@
-import { Link } from 'react-router-dom'
+import { useRef } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Check } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
-import AnimatedBird from '../components/AnimatedBird'
+import BirdFlock from '../components/BirdFlock'
 import GlassImpactLedger from '../components/GlassImpactLedger'
 import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
-
-// Tier 3 opt-in: ?birds=4 adds b15 (independent hopper) and b19 (b17's
-// formation follower). Default stays 2 so Tier 1+2 can be verified alone.
-const birds4 = (() => {
-  try {
-    return new URLSearchParams(window.location.search).get('birds') === '4'
-  } catch {
-    return false
-  }
-})()
-
-// Dev-only observation speedup: ?fast=1 shortens the takeoff intervals so a
-// 4-flight cross-flight cycle (and formation pairs) can be watched without
-// waiting minutes. It changes no logic; production intervals are the default.
-const fast = (() => {
-  try {
-    return new URLSearchParams(window.location.search).get('fast') === '1'
-  } catch {
-    return false
-  }
-})()
 
 const siteUrl = 'https://www.projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
@@ -39,6 +19,11 @@ const objectives = [
 ]
 
 export default function Home() {
+  const heroRef = useRef(null)
+  const h1Ref = useRef(null)
+  const { search } = useLocation()
+  const birdCount = new URLSearchParams(search).get('birds') === '4' ? 4 : 2
+
   const meta = [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: siteUrl },
@@ -59,8 +44,9 @@ export default function Home() {
         <meta name="twitter:title" content="Project Digital Divide | Houston's Student-Run Laptop Program" />
         <meta name="twitter:description" content="Houston-area student-run project in Pearland, Texas, taking laptops retired by school districts, setting them up with lightweight software, and getting them to students who need a computer at home — at no cost to families." />
       </Helmet>
-      {/* ---- Banner (Hero; overflow NOT hidden — exit flights leave through the top) ---- */}
-      <section className="hero-banner-bg relative text-white">
+      {/* ---- Banner (Hero) ---- */}
+      <section ref={heroRef} className="hero-banner-bg relative overflow-hidden text-white">
+        <BirdFlock heroRef={heroRef} h1Ref={h1Ref} count={birdCount} />
         <div className="container-content relative z-10 py-20 text-center sm:py-28">
 
           <img
@@ -73,25 +59,10 @@ export default function Home() {
             alt="Project Digital Divide logo"
             className="hero-reveal hero-logo mx-auto mb-8 h-28 w-28 rounded-2xl object-cover transition-transform duration-300 hover:scale-105 hidden dark:block"
           />
-          <h1 className="hero-reveal relative mx-auto w-fit max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
-            {/* Two hero birds (Tier 3 adds two more opt-in): each hosts itself at the
-                headline's top-left and hops perches on its own variance schedule. */}
-            <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
-              <AnimatedBird id="b17" size={17} state="perched" flightIntervalMs={fast ? [2500, 5000] : [20000, 45000]} crossFlights className="text-white/95" />
-            </span>
-            <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
-              <AnimatedBird id="b13" size={13} state="perched" flightIntervalMs={fast ? [1600, 3000] : [8000, 15000]} flightDurationsMs={[[900, 0.4], [1500, 0.5], [2200, 0.1]]} arcLift={[15, 60]} startXFrac={0.9} startY={-5} className="rotate-[-10deg] text-white/75" />
-            </span>
-            {birds4 && (
-              <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
-                <AnimatedBird id="b15" size={15} state="perched" flightIntervalMs={fast ? [2000, 4000] : [12000, 25000]} flightDurationsMs={[[1000, 0.3], [1600, 0.5], [2400, 0.2]]} arcLift={[20, 90]} startXFrac={0.35} startY={-6} className="rotate-[6deg] text-white/80" />
-              </span>
-            )}
-            {birds4 && (
-              <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
-                <AnimatedBird id="b19" size={12} state="perched" flightIntervalMs={fast ? [6000, 12000] : [30000, 60000]} followOf="b17" followChance={0.85} followDelayMs={400} startXFrac={0.05} startY={-7} className="rotate-[8deg] text-white/60" />
-              </span>
-            )}
+          <h1
+            ref={h1Ref}
+            className="hero-reveal relative mx-auto w-fit max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl"
+          >
             Project Digital Divide
           </h1>
           <p className="hero-reveal mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">

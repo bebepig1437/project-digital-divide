@@ -164,6 +164,33 @@ function pickDestination(from, maxX, exitChance, heroClips, exitYMax) {
   return { dest: pickPerch(from, maxX), isExit: false }
 }
 
+/**
+ * Tier 4 cross-flight: one wide two-quadratic path from edge to edge that
+ * passes exactly through `mid` (the CTA-clearance waypoint). The dip is a
+ * waypoint in the curve, never a flight segment or a landing spot, so the
+ * bird cannot fold its wings or re-take off mid-arc.
+ */
+function crossPath(p0, p1, mid) {
+  const c1 = { x: real(lerp(p0.x, mid.x, 0.62)), y: real(mid.y + 12) } // dive in
+  const c2 = { x: real(lerp(mid.x, p1.x, 0.45)), y: real(Math.max(mid.y * 0.45, p1.y + 6)) } // rise out
+  return (
+    `path("M ${real(p0.x)} ${real(p0.y)}` +
+    ` Q ${c1.x} ${c1.y} ${real(mid.x)} ${real(mid.y)}` +
+    ` Q ${c2.x} ${c2.y} ${real(p1.x)} ${real(p1.y)}")`
+  )
+}
+
+/** First CTA anchor below the h1 (next-sibling walk, ≤4 hops). */
+function findCtaAnchor(h1) {
+  let n = h1.nextElementSibling
+  for (let i = 0; n && i < 4; i++) {
+    const a = n.querySelector?.('a')
+    if (a) return a
+    n = n.nextElementSibling
+  }
+  return null
+}
+
 export default function AnimatedBird({
   size = 17,
   state = 'perched',
@@ -180,6 +207,9 @@ export default function AnimatedBird({
   followOf = null, // Tier 3: the bird whose takeoff we may shadow
   followChance = 0.85, // probability we take a published plan
   followDelayMs = 400, // hop after the leader departs
+  crossFlights = false, // Tier 4: every 4th-5th flight, cross the whole headline
+  crossDurationMs = 3800,
+  crossDipPx = 40, // clearance above the CTA row at the dip
 }) {
   const elRef = useRef(null)
   const posRef = useRef(null)
@@ -190,6 +220,7 @@ export default function AnimatedBird({
   const visibleRef = useRef(true)
   const earlyRef = useRef(null) // { delayMs } one-shot re-entry override
   const publishedRef = useRef(null) // flight plan this bird published (leader)
+  const crossStateRef = useRef({ count: 0, every: 4 }) // Tier 4 counter
   const [pos, setPos] = useState(null)
   const [flight, setFlight] = useState(null) // { phase, path, durationMs }
 
@@ -289,6 +320,44 @@ export default function AnimatedBird({
     }
 
     const from = posRef.current
+
+    // Tier 4: every 4th-5th self-scheduled flight, a wide cross-flight —
+    // edge to edge over the CTAs, dipping crossDipPx above them at the
+    // midpoint. CTA box is measured fresh at takeoff (it can move on
+    // scroll/resize); hidden/zero-rect CTA => normal hop, count sticks.
+    if (!forced && crossFlights) {
+      const cs = crossStateRef.current
+      cs.count += 1
+      if (cs.count >= cs.every) {
+        const ctaAnchor = findCtaAnchor(h1)
+        if (ctaAnchor) {
+          const cta = ctaAnchor.getBoundingClientRect()
+          const h1r = h1.getBoundingClientRect()
+          if (cta.width > 0 && cta.top > h1r.top) {
+            const dipY = real(cta.top - h1r.top - crossDipPx)
+            const dipX = real(w / 2 + rand(-40, 40))
+            // Land on a random headline letter on the opposite half.
+            const leftStart = from.x < w / 2
+            const lo = leftStart ? w / 2 + 30 : EDGE_PAD + 10
+            const hi = leftStart ? maxX - 10 : w / 2 - 30
+            const dest = { x: real(Math.max(lo, Math.min(hi, rand(lo, hi)))), y: real(rand(-9, -3)) }
+            cs.count = 0
+            cs.every = Math.random() < 0.5 ? 4 : 5
+            destRef.current = dest
+            flightRef.current = { dest, isExit: false }
+            at(0.2 * crossDurationMs, () => setFlightPhase('glide'))
+            at(0.8 * crossDurationMs, () => setFlightPhase('landing'))
+            setFlight({
+              phase: 'takeoff',
+              path: crossPath(from, dest, { x: dipX, y: dipY }),
+              durationMs: crossDurationMs,
+            })
+            return
+          }
+        }
+      }
+    }
+
     const { dest, isExit } =
       forced || pickDestination(from, maxX, exitChance, clips, exitYMax)
     const curve = curveType || pickWeighted(curves)

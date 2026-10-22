@@ -6,6 +6,16 @@ import GlassImpactLedger from '../components/GlassImpactLedger'
 import HardwareAcceptanceMatrix from '../components/HardwareAcceptanceMatrix'
 import Reveal from '../components/Reveal'
 
+// Tier 3 opt-in: ?birds=4 adds b15 (independent hopper) and b19 (b17's
+// formation follower). Default stays 2 so Tier 1+2 can be verified alone.
+const birds4 = (() => {
+  try {
+    return new URLSearchParams(window.location.search).get('birds') === '4'
+  } catch {
+    return false
+  }
+})()
+
 const siteUrl = 'https://projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
 
@@ -61,6 +71,16 @@ export default function Home() {
             <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
               <AnimatedBird id="b13" size={13} state="perched" flightIntervalMs={[8000, 15000]} flightDurationsMs={[[900, 0.4], [1500, 0.5], [2200, 0.1]]} arcLift={[15, 60]} startXFrac={0.9} startY={-5} className="rotate-[-10deg] text-white/75" />
             </span>
+            {birds4 && (
+              <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
+                <AnimatedBird id="b15" size={15} state="perched" flightIntervalMs={[12000, 25000]} flightDurationsMs={[[1000, 0.3], [1600, 0.5], [2400, 0.2]]} arcLift={[20, 90]} startXFrac={0.35} startY={-6} className="rotate-[6deg] text-white/80" />
+              </span>
+            )}
+            {birds4 && (
+              <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 hidden select-none sm:block">
+                <AnimatedBird id="b19" size={12} state="perched" flightIntervalMs={[30000, 60000]} followOf="b17" followChance={0.85} followDelayMs={400} startXFrac={0.05} startY={-7} className="rotate-[8deg] text-white/60" />
+              </span>
+            )}
             Project Digital Divide
           </h1>
           <p className="hero-reveal mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">

@@ -52,6 +52,32 @@ const rand = (a, b) => a + Math.random() * (b - a)
 const randInt = (a, b) => Math.round(rand(a, b))
 const real = (n) => Number(n.toFixed(1))
 const lerp = (a, b, t) => a + (b - a) * t
+/* ---- birdBus: formation flying (Tier 3) ----
+ * Module-level by design so a leader and its follower — separate component
+ * instances — share one flight plan. Leader publishes the serialized plan at
+ * takeoff; the follower copies the curve shape and lands offset from the
+ * leader's destination, so both arcs are congruent and never cross.
+ * Guards against the classic overlaps:
+ *   - followerIsBusy: a follower mid-flight ignores a second leader takeoff
+ *   - the plan is cleared on landing so nothing stale is ever followed
+ *   - resetBirdBus() wipes ghost state after Fast Refresh in dev
+ */
+const birdBus = { plan: null, followerBusy: false }
+export const resetBirdBus = () => {
+  birdBus.plan = null
+  birdBus.followerBusy = false
+}
+// Dev helper: hot reload leaves ghost bus state; expose a reset hook.
+if (import.meta.env?.DEV && typeof window !== 'undefined') {
+  window.__resetBirdBus = resetBirdBus
+}
+/** Leader side. */
+function publishFlightPlan(plan) {
+  birdBus.plan = plan
+}
+function clearFlightPlan() {
+  birdBus.plan = null
+}
 
 /** Pick from [value, weight] pairs. */
 const pickWeighted = (pairs = []) => {
@@ -151,6 +177,9 @@ export default function AnimatedBird({
   exitChance = 0.1,
   startXFrac = null, // initial perch as fraction of headline width; null = right edge
   startY = -8,
+  followOf = null, // Tier 3: the bird whose takeoff we may shadow
+  followChance = 0.85, // probability we take a published plan
+  followDelayMs = 400, // hop after the leader departs
 }) {
   const elRef = useRef(null)
   const posRef = useRef(null)
@@ -160,10 +189,62 @@ export default function AnimatedBird({
   const scheduledRef = useRef(null)
   const visibleRef = useRef(true)
   const earlyRef = useRef(null) // { delayMs } one-shot re-entry override
+  const publishedRef = useRef(null) // flight plan this bird published (leader)
   const [pos, setPos] = useState(null)
   const [flight, setFlight] = useState(null) // { phase, path, durationMs }
 
   const flightOn = !!flightIntervalMs
+
+  // Reduce motion => never create a single timer. Flight CSS is also dead.
+  const canFly = () => flightOn && posRef.current && !reducedMotion() && supportsOffsetPath()
+
+  // ---- followers: poll the bus; only act while idle ----
+  const checkFlightPlan = () => {
+    if (!followOf || !birdBus.plan || birdBus.followerBusy || flightRef.current) return
+    // Only the assigned leader's plan — never an unrelated bird's — and only
+    // while it is fresh: a plan older than ~1.2s is the leader already mid-air.
+    if (birdBus.plan.leaderId !== followOf) return
+    if (Date.now() - birdBus.plan.t > 1200) return
+    if (Math.random() > followChance) return
+    if (!canFly()) return
+    const el = elRef.current
+    const h1 = el?.closest('h1')
+    if (!h1) return
+    const w = h1.getBoundingClientRect().width
+    const maxX = Math.max(EDGE_PAD, w - size - EDGE_PAD)
+    // Formation vector: destination rides +24px, -10px off the leader's
+    // landing point; the curve shape (jitter) is copied verbatim so both
+    // arcs are congruent and never cross. Out of bounds => don't follow.
+    const dest = { x: real(birdBus.plan.dest.x + 24), y: real(birdBus.plan.dest.y - 10) }
+    if (dest.x < EDGE_PAD || dest.x > maxX) return
+    const plan = birdBus.plan
+    birdBus.plan = null // consume: one follower, one use
+    birdBus.followerBusy = true
+    flightRef.current = { dest, isExit: false }
+    destRef.current = dest
+    at(followDelayMs, () => {
+      if (flightRef.current && canFly()) {
+        at(0.2 * plan.durationMs, () => setFlightPhase('glide'))
+        at(0.8 * plan.durationMs, () => setFlightPhase('landing'))
+        setFlight({
+          phase: 'takeoff',
+          path: serialize(plan.curve, posRef.current, dest, plan.jitter),
+          durationMs: plan.durationMs,
+        })
+      } else {
+        // Leader landed / conditions changed before our delayed hop: release.
+        birdBus.followerBusy = false
+        flightRef.current = null
+      }
+    })
+  }
+  // One bounded poller per follower (no RAF; cheap at N=1 follower).
+  useEffect(() => {
+    if (!flightOn || !followOf) return undefined
+    const iv = setInterval(checkFlightPlan, 150)
+    return () => clearInterval(iv)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flightOn, followOf, followChance, followDelayMs, size])
 
   // ---- timers: only these two helpers ever create timeouts ----
   const clearTimers = () => {
@@ -181,10 +262,8 @@ export default function AnimatedBird({
     if (scheduledRef.current) clearTimeout(scheduledRef.current)
     scheduledRef.current = setTimeout(fn, ms)
   }
-  useEffect(() => clearTimers, []) // unmount: clear this bird's timers only
 
-  // Reduce motion => never create a single timer. Flight CSS is also dead.
-  const canFly = () => flightOn && posRef.current && !reducedMotion() && supportsOffsetPath()
+  useEffect(() => clearTimers, []) // unmount: clear this bird's timers only
 
   // ---- scheduling ----
   const takeoff = (forced) => {
@@ -218,6 +297,13 @@ export default function AnimatedBird({
 
     destRef.current = dest
     flightRef.current = { dest, isExit }
+    if (!followOf) {
+      // Tier 3: leaders publish their plan for their follower to ride.
+      // leaderId ties the plan to this bird so followOf never matches a stranger.
+      const pub = { curve, jitter, durationMs, dest, t: Date.now(), leaderId: id }
+      publishedRef.current = pub
+      publishFlightPlan(pub)
+    }
     at(0.2 * durationMs, () => setFlightPhase('glide'))
     at(0.8 * durationMs, () => setFlightPhase('landing'))
     setFlight({ phase: 'takeoff', path: serialize(curve, from, dest, jitter), durationMs })
@@ -262,6 +348,11 @@ export default function AnimatedBird({
       clearTimers()
       flightRef.current = null
       setFlight(null)
+      if (publishedRef.current) {
+        clearFlightPlan()
+        publishedRef.current = null
+      }
+      if (followOf) birdBus.followerBusy = false // was the follower: release
       if (dest) {
         posRef.current = dest
         setPos(dest)
@@ -321,6 +412,11 @@ export default function AnimatedBird({
         clearTimers()
         flightRef.current = null
         setFlight(null)
+        if (publishedRef.current) {
+          clearFlightPlan()
+          publishedRef.current = null
+        }
+        if (followOf) birdBus.followerBusy = false
       }
       const h1 = elRef.current?.closest('h1')
       const p = posRef.current
@@ -346,6 +442,11 @@ export default function AnimatedBird({
       clearTimers()
       flightRef.current = null
       setFlight(null)
+      if (publishedRef.current) {
+        clearFlightPlan()
+        publishedRef.current = null
+      }
+      if (followOf) birdBus.followerBusy = false // was the follower: release
       if (cur?.dest) {
         const clamped = { ...cur.dest }
         posRef.current = clamped

@@ -1,14 +1,15 @@
 import { useState } from 'react'
-import { Send, CheckCircle2, RotateCcw } from 'lucide-react'
-import { SUBMIT_ENDPOINT } from '../config'
+import { Send, CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { SUBMIT_ENDPOINT, site } from '../config'
 
 const reasons = [
-  'Donate a laptop or parts',
-  'Donate cleaning supplies',
-  'Refer a student or family',
+  'Donate devices or supplies',
+  'Request a laptop for a student',
   'Host a workshop',
   'Volunteer',
-  'Something else',
+  'Partnership',
+  'General inquiry',
 ]
 
 export default function ContactForm() {
@@ -55,47 +56,58 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 rounded-3xl border border-line/15 bg-brand-pale/10 p-6 shadow-sm sm:p-8">
-      {/* Honeypot: hidden from people, catches bots */}
-      <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="field-label" htmlFor="c-name">Name</label>
-          <input id="c-name" name="name" required className="field-input" placeholder="Your name" />
+    <>
+      <form onSubmit={handleSubmit} className="grid gap-4 rounded-3xl border border-line/15 bg-brand-pale/10 p-6 shadow-sm sm:p-8">
+        {/* Honeypot: hidden from people, catches bots */}
+        <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="field-label" htmlFor="c-name">Name</label>
+            <input id="c-name" name="name" required className="field-input" placeholder="Your name" />
+          </div>
+          <div>
+            <label className="field-label" htmlFor="c-email">Email</label>
+            <input id="c-email" name="email" type="email" required className="field-input" placeholder="you@email.com" />
+          </div>
         </div>
-        <div>
-          <label className="field-label" htmlFor="c-email">Email</label>
-          <input id="c-email" name="email" type="email" required className="field-input" placeholder="you@email.com" />
-        </div>
-      </div>
 
-      <div>
-        <label className="field-label" htmlFor="c-reason">Reason for contact</label>
-        <select id="c-reason" name="reason" required defaultValue="" className="field-input">
-          <option value="" disabled>Select a reason…</option>
-          {reasons.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-        <p className="mt-2 text-sm text-muted">
-          Supplies we use: isopropyl alcohol (70% or higher), cotton swabs, microfiber cloths, and compressed air.
+        <div>
+          <label className="field-label" htmlFor="c-reason">Reason for contact</label>
+          <select id="c-reason" name="reason" required defaultValue="" className="field-input">
+            <option value="" disabled>Select a reason…</option>
+            {reasons.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="field-label" htmlFor="c-message">Message</label>
+          <textarea id="c-message" name="message" required rows={4} className="field-input resize-y" placeholder="What you have or need, and roughly where you are. Leave student names out for now." />
+        </div>
+
+        {status === 'error' && (
+          <p aria-live="polite" className="text-sm text-red-600">
+            Something went wrong. Please try again, or email us directly.
+          </p>
+        )}
+
+        <button type="submit" disabled={status === 'sending'} className="btn-primary w-full sm:w-auto sm:justify-self-start disabled:opacity-60">
+          {status === 'sending' ? 'Sending…' : <>Send <Send size={16} /></>}
+        </button>
+      </form>
+
+      <div className="mt-4 space-y-1.5 text-center text-xs text-muted">
+        <p>
+          <Link to="/volunteer" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
+            Want to help on the bench or at a workshop? Fill out the volunteer form.
+            <ArrowRight size={12} />
+          </Link>
+        </p>
+        <p className="whitespace-nowrap">
+          Or email <a href={`mailto:${site.email}`} className="text-brand-teal hover:underline dark:text-brand-cyan">{site.email}</a>
         </p>
       </div>
-
-      <div>
-        <label className="field-label" htmlFor="c-message">Message</label>
-        <textarea id="c-message" name="message" required rows={4} className="field-input resize-y" placeholder="What you have, or what you need" />
-      </div>
-
-      {status === 'error' && (
-        <p className="text-sm text-red-600">
-          Something went wrong. Please try again, or email us directly.
-        </p>
-      )}
-
-      <button type="submit" disabled={status === 'sending'} className="btn-primary w-full sm:w-auto sm:justify-self-start disabled:opacity-60">
-        {status === 'sending' ? 'Sending…' : <>Send message <Send size={16} /></>}
-      </button>
-    </form>
+    </>
   )
 }

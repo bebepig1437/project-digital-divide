@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Send, CheckCircle2, Mail, RotateCcw } from 'lucide-react'
+import { Send, CheckCircle2, Mail, RotateCcw, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { SUBMIT_ENDPOINT, site } from '../config'
 import Reveal from '../components/Reveal'
@@ -59,10 +60,9 @@ export default function Volunteer() {
       </Helmet>
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-canvas pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
-          <span className="eyebrow">Get Involved</span>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">Join the team</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-heading sm:text-5xl">Join the team</h1>
           <p className="mt-5 text-lg font-medium text-heading/85 sm:text-xl">
-            Whether you want to help test laptops on the bench, mentor students at a build workshop, connect with local schools, or build tracking software, we would love to have you.
+            Tell us what you can do and when you&apos;re free. We&apos;ll reply by email.
           </p>
         </div>
       </section>
@@ -71,11 +71,11 @@ export default function Volunteer() {
         <div className="container-content max-w-2xl">
           {status === 'success' ? (
             <Reveal>
-              <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-teal/20 bg-brand-pale/10 p-12 text-center shadow-sm">
+              <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-teal/20 bg-brand-pale/10 p-10 text-center shadow-sm">
                 <CheckCircle2 className="text-brand-teal" size={44} />
-                <h2 className="text-2xl font-bold text-heading">Application received!</h2>
+                <h2 className="text-2xl font-bold text-heading">Thanks — we got it.</h2>
                 <p className="max-w-sm text-muted">
-                  Thanks for wanting to help bridge the divide. We'll reach out to you soon.
+                  Thanks for wanting to help bridge the divide. We'll reply by email soon.
                 </p>
                 <button
                   type="button"
@@ -83,18 +83,18 @@ export default function Volunteer() {
                   className="mt-4 inline-flex items-center gap-2 rounded-full border border-line/20 bg-surface px-6 py-2.5 text-sm font-semibold text-heading shadow-xs transition hover:border-brand-teal hover:bg-brand-pale/15 hover:text-brand-teal"
                 >
                   <RotateCcw size={15} />
-                  Submit another application
+                  Send another
                 </button>
               </div>
             </Reveal>
           ) : (
             <Reveal>
-              <form onSubmit={handleSubmit} className="grid gap-5 rounded-3xl border border-line/15 bg-brand-pale/10 p-7 shadow-sm sm:p-10">
+              <form onSubmit={handleSubmit} className="grid gap-5 rounded-3xl border border-line/15 bg-brand-pale/10 p-6 shadow-sm sm:p-8">
                 {/* Honeypot: hidden from people, catches bots */}
                 <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label className="field-label" htmlFor="v-name">Full name</label>
+                    <label className="field-label" htmlFor="v-name">Name</label>
                     <input id="v-name" name="name" required className="field-input" placeholder="Your name" />
                   </div>
                   <div>
@@ -103,9 +103,25 @@ export default function Volunteer() {
                   </div>
                 </div>
 
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label className="field-label" htmlFor="v-grade">Grade (if you&apos;re a student)</label>
+                    <input id="v-grade" name="grade_or_age" className="field-input" placeholder="e.g. 11th grade. Leave blank if you&apos;re not a student." />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="v-school">School (if you&apos;re a student)</label>
+                    <input id="v-school" name="school" className="field-input" placeholder="e.g. Shadow Creek High School" />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="field-label" htmlFor="v-grade">Grade / age</label>
-                  <input id="v-grade" name="grade_or_age" required className="field-input" placeholder="e.g. 11th grade, or 16" />
+                  <label className="field-label" htmlFor="v-parent-email">Parent or guardian email (optional)</label>
+                  <input id="v-parent-email" name="parent_email" type="email" className="field-input" placeholder="parent@email.com" />
+                </div>
+
+                <div>
+                  <label className="field-label" htmlFor="v-availability">Availability</label>
+                  <input id="v-availability" name="availability" className="field-input" placeholder="e.g. weekday afternoons" />
                 </div>
 
                 <div>
@@ -123,35 +139,34 @@ export default function Volunteer() {
                   <textarea id="v-skills" name="skills_experience" rows={3} className="field-input resize-y" placeholder="e.g. laptop hardware, software setup, student mentoring, community outreach" />
                 </div>
 
-                <div>
-                  <label className="field-label" htmlFor="v-availability">Availability</label>
-                  <input id="v-availability" name="availability" className="field-input" placeholder="e.g. weekday afternoons, ~3 hrs/week" />
-                </div>
-
-                <div>
-                  <label className="field-label" htmlFor="v-why">Why do you want to volunteer?</label>
-                  <textarea id="v-why" name="why_join" rows={4} className="field-input resize-y" placeholder="Tell us what draws you to the mission." />
-                </div>
-
                 {status === 'error' && (
-                  <p className="text-sm text-red-600">
+                  <p aria-live="polite" className="text-sm text-red-600">
                     Something went wrong. Please try again, or email us at {site.email}.
                   </p>
                 )}
 
+                <p className="text-xs text-muted text-center">
+                  If you&apos;re under 18, we&apos;ll email your parent or guardian a waiver before your first shift.
+                </p>
+
                 <button type="submit" disabled={status === 'sending'} className="btn-primary w-full disabled:opacity-60">
-                  {status === 'sending' ? 'Submitting…' : <>Submit application <Send size={16} /></>}
+                  {status === 'sending' ? 'Sending…' : <>Send <Send size={16} /></>}
                 </button>
+
+                <div className="space-y-1.5 text-center text-xs text-muted">
+                  <p>
+                    <Link to="/#contact" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
+                      Just want to donate a device or request one for a student? Use the contact form.
+                      <ArrowRight size={12} />
+                    </Link>
+                  </p>
+                  <p className="whitespace-nowrap">
+                    Or email <a href={`mailto:${site.email}`} className="text-brand-teal hover:underline dark:text-brand-cyan">{site.email}</a>
+                  </p>
+                </div>
               </form>
             </Reveal>
           )}
-
-          <p className="mt-6 text-center text-sm text-muted">
-            Prefer email? Reach us at{' '}
-            <a href={`mailto:${site.email}`} className="inline-flex items-center gap-1 font-medium text-heading hover:text-brand-teal dark:hover:text-brand-pale transition-colors">
-              <Mail size={14} /> {site.email}
-            </a>
-          </p>
         </div>
       </section>
     </>

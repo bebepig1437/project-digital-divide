@@ -62,7 +62,8 @@ export default async function handler(req, res) {
     rows = [
       ['Name', name],
       ['Email', email],
-      ['Grade / age', body.grade_or_age],
+      ['Grade', body.grade_or_age],
+      ['School', body.school],
       ['Interest area', body.interest_area],
       ['Skills & experience', body.skills_experience],
       ['Availability', body.availability],

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 
-// Returns [ref, inView]. `inView` updates dynamically when the element
-// enters and exits the viewport so reveals re-trigger smoothly on scroll up and down.
-export function useInView(options = { threshold: 0.12, rootMargin: '0px 0px -50px 0px' }) {
+// Returns [ref, inView]. Reveals fire once when the element first scrolls
+// into view and stay revealed afterwards, so content does not re-fade
+// every time it scrolls back on screen.
+export function useInView(options = { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }) {
   const ref = useRef(null)
   const [inView, setInView] = useState(false)
 
@@ -17,7 +18,10 @@ export function useInView(options = { threshold: 0.12, rootMargin: '0px 0px -50p
     }
 
     const observer = new IntersectionObserver(([entry]) => {
-      setInView(entry.isIntersecting)
+      if (entry.isIntersecting) {
+        setInView(true)
+        observer.unobserve(node) // one-shot: no re-fade on scroll-up
+      }
     }, options)
 
     observer.observe(node)

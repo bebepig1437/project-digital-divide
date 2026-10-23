@@ -153,18 +153,72 @@
     animation-delay: 0.15s;
   }
 
-  /* ---- Articulated hero birds (lucide Bird, body + wing groups) ---- */
+  /* ---- Flying + perched hero birds (side-view FlyingBird, swapped with PerchedBird) ---- */
   .pdd-bird-wing {
-    /* Shoulder joint: where the wing arc meets the body, in view-box units. */
-    transform-origin: 7px 18px;
+    /* Shoulder hinge: each wing rotates about its own joint, not the body center. */
+    transform-box: view-box;
+    will-change: transform;
   }
 
-  /* Perched: wing folded at 0deg, slow breathing on the body only. */
-  .pdd-bird-perched .pdd-bird-body {
-    animation: pdd-bird-breathe 4s ease-in-out infinite;
+  .pdd-bird-wing-near {
+    transform-origin: 12px 11.4px;
   }
 
-  @keyframes pdd-bird-breathe {
+  .pdd-bird-wing-far {
+    transform-origin: 10.9px 11.6px;
+  }
+
+  /* Rest pose: wings hold the glide line (no animation until .is-flapping). */
+  /* Flap: near wing sweeps 0deg -> +55deg (fast downstroke) -> -40deg (up
+     overshoot) -> 0deg; far wing mirrored. Downstroke occupies ~38% of the
+     cycle; duration is per-personality via --pdd-flap-dur (inline, BirdFlock). */
+  .pdd-fly.is-flapping .pdd-bird-wing-near {
+    animation: pdd-wing-near-flap var(--pdd-flap-dur, 450ms)
+      cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+
+  .pdd-fly.is-flapping .pdd-bird-wing-far {
+    animation: pdd-wing-far-flap var(--pdd-flap-dur, 450ms)
+      cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+
+  @keyframes pdd-wing-near-flap {
+    0% {
+      transform: rotate(0deg);
+    }
+    38% {
+      transform: rotate(55deg);
+    }
+    62% {
+      transform: rotate(-40deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+
+  @keyframes pdd-wing-far-flap {
+    0% {
+      transform: rotate(0deg);
+    }
+    38% {
+      transform: rotate(-55deg);
+    }
+    62% {
+      transform: rotate(40deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+
+  /* Perched: wings folded, subtle contented breathing (scaleY 0.98, 4s loop). */
+  .pdd-perched {
+    animation: pdd-breathe 4s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+
+  @keyframes pdd-breathe {
     0%,
     100% {
       transform: scaleY(1);
@@ -174,134 +228,216 @@
     }
   }
 
-  /* Flapping: downstroke fast, upstroke slow, body counter-rotates a hair. */
-  .pdd-bird-flapping .pdd-bird-wing {
-    animation: pdd-bird-flap 0.55s infinite;
+  /* Pet polish. Defined AFTER .pdd-perched so these one-shots win the
+     animation property while active; removing the class resumes breathing. */
+
+  /* Landing flare: one 200ms "catching itself" pop right after touchdown. */
+  .pdd-perched.pdd-land-flare {
+    animation: pdd-land-flare 0.2s ease-out;
   }
 
-  /* Stage A hop flight (CSS Motion Path; the JS only touches takeoff/landing) */
-  .is-flying {
-    offset-path: var(--flight-path);
-    offset-rotate: auto;
-    offset-distance: 0%;
-    animation: pdd-bird-flight var(--flight-dur, 1800ms) ease-in-out forwards;
-  }
-
-  /* Wing effort phases, toggled by JS at 20% / 80% of the flight.
-     animationend — not these timers — is the authoritative landing signal. */
-  .is-flying.is-takeoff .pdd-bird-wing {
-    animation: pdd-bird-flap 0.38s infinite;
-  }
-
-  .is-flying.is-glide .pdd-bird-wing {
-    animation: pdd-bird-glide 1.1s ease-in-out infinite;
-  }
-
-  .is-flying.is-landing .pdd-bird-wing {
-    animation: pdd-bird-land 0.7s ease-in-out forwards;
-  }
-
-  /* Landing: 40ms overshoot (offset-distance 100→102→100%) before re-perch. */
-  .is-flying.is-touchdown {
-    animation: pdd-bird-touchdown 90ms ease-out forwards;
-  }
-
-  @keyframes pdd-bird-flight {
-    from {
-      offset-distance: 0%;
-    }
-    to {
-      offset-distance: 100%;
-    }
-  }
-
-  @keyframes pdd-bird-glide {
-    0%,
-    100% {
-      transform: rotate(-6deg);
-    }
-    50% {
-      transform: rotate(6deg);
-    }
-  }
-
-  @keyframes pdd-bird-land {
+  @keyframes pdd-land-flare {
     0% {
-      transform: rotate(6deg);
+      transform: scaleY(1);
     }
     55% {
-      transform: rotate(-18deg);
-    }
-    80% {
-      transform: rotate(16deg);
+      transform: scaleY(1.15);
     }
     100% {
+      transform: scaleY(1);
+    }
+  }
+
+  /* Perched idle variation (every 3-6s, driven by the host loop): head tilt,
+     tail flick, or a wing/body ruffle — static breathing reads as dead. */
+  .pdd-perched.pdd-idle-tilt {
+    animation: pdd-idle-tilt 0.4s ease-in-out;
+  }
+
+  .pdd-perched.pdd-idle-flick {
+    animation: pdd-idle-flick 0.4s ease-in-out;
+  }
+
+  .pdd-perched.pdd-idle-ruffle {
+    animation: pdd-idle-ruffle 0.4s ease-in-out;
+  }
+
+  @keyframes pdd-idle-tilt {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    40% {
+      transform: rotate(-5deg);
+    }
+  }
+
+  @keyframes pdd-idle-flick {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    30% {
+      transform: rotate(3deg);
+    }
+    60% {
       transform: rotate(-2deg);
     }
   }
 
-  @keyframes pdd-bird-touchdown {
-    0% {
-      offset-distance: 100%;
-    }
-    45% {
-      offset-distance: 102%;
-    }
+  @keyframes pdd-idle-ruffle {
+    0%,
     100% {
-      offset-distance: 100%;
+      transform: scaleY(1);
+    }
+    50% {
+      transform: scaleY(0.94);
     }
   }
 
-  .pdd-bird-flapping .pdd-bird-body {
-    animation: pdd-bird-counter 0.55s infinite;
+  /* Bounce choreography ("hit fence, pause confused, fly away") — three
+     phases toggled by the hook on the HOST wrapper as is-impacting /
+     is-confused / is-recovering, derived from now - recoil.start so RAF
+     suspension can never desync them. All three run ON the sprite (.pdd-fly)
+     so the host wrapper's per-frame translate/rotate/bank transform stays
+     intact; the two combine visually as rotate(bank)·scale(sx, sy) while
+     scaleX(-1) (facing) is the tail term of the host transform.
+     Phase A impact 0-80ms: hard squash hold, wings frozen mid-flap.
+     Phase B confusion 80-350ms: ±8° 6Hz wobble over the held squash, one
+       near-wing twitch at ~200ms (delayed keyframe, fill both = frozen pose
+       until it fires, then holds the end pose).
+     Phase C recovery 350-450ms: release to scale(1,1) in 100ms; wings resume
+     the personality flap cadence. */
+  .is-impacting .pdd-fly {
+    animation: pdd-impact-squash 0.08s ease-in-out;
   }
 
-  @keyframes pdd-bird-flap {
-    0% {
-      transform: rotate(-28deg);
-      animation-timing-function: cubic-bezier(0.55, 0, 0.68, 0.19);
+  @keyframes pdd-impact-squash {
+    0%,
+    100% {
+      transform: scale(1.2, 0.8);
     }
-    38% {
-      transform: rotate(12deg);
+  }
+
+  .is-confused .pdd-fly {
+    animation: pdd-confused-wobble 0.27s linear;
+  }
+
+  @keyframes pdd-confused-wobble {
+    0%,
+    100% {
+      transform: scale(0.95, 1.05) rotate(0deg);
+    }
+    16% {
+      transform: scale(0.95, 1.05) rotate(-8deg);
+    }
+    34% {
+      transform: scale(0.95, 1.05) rotate(8deg);
     }
     52% {
-      transform: rotate(12deg);
-      animation-timing-function: ease-in-out;
+      transform: scale(0.95, 1.05) rotate(-8deg);
     }
-    100% {
-      transform: rotate(-28deg);
+    68% {
+      transform: scale(0.95, 1.05) rotate(8deg);
+    }
+    84% {
+      transform: scale(0.95, 1.05) rotate(-4deg);
     }
   }
 
-  @keyframes pdd-bird-counter {
+  .is-recovering .pdd-fly {
+    animation: pdd-recover-release 0.1s ease-out;
+  }
+
+  @keyframes pdd-recover-release {
     0% {
-      transform: rotate(0deg);
-      animation-timing-function: cubic-bezier(0.55, 0, 0.68, 0.19);
-    }
-    38% {
-      transform: rotate(1.5deg);
-    }
-    52% {
-      transform: rotate(1.5deg);
-      animation-timing-function: ease-in-out;
+      transform: scale(0.95, 1.05);
     }
     100% {
+      transform: scale(1, 1);
+    }
+  }
+
+  /* Wings: frozen mid-flap through impact + confusion (paused flap);
+     recovery releases them back to the personality cadence. */
+  .is-impacting .pdd-bird-wing,
+  .is-confused .pdd-bird-wing,
+  .is-recovering .pdd-bird-wing {
+    animation-play-state: paused;
+  }
+
+  .is-confused .pdd-bird-wing-near {
+    animation: pdd-wing-twitch 0.08s 0.12s 1 both;
+    animation-play-state: running;
+  }
+
+  @keyframes pdd-wing-twitch {
+    0%,
+    100% {
       transform: rotate(0deg);
+    }
+    50% {
+      transform: rotate(24deg);
+    }
+  }
+
+  /* Glider glide pose: wings held out during the perch descent instead of
+     flapping; the transition smooths the handoff from the resting pose. */
+  .pdd-fly.pdd-glide-pose .pdd-bird-wing-near {
+    transition: transform 0.3s ease;
+    transform: rotate(-14deg);
+  }
+
+  .pdd-fly.pdd-glide-pose .pdd-bird-wing-far {
+    transition: transform 0.3s ease;
+    transform: rotate(14deg);
+  }
+
+  /* Collision feathers: tiny curved slivers thrown from the impact point.
+     Purely CSS-driven — the hook sets per-feather custom properties
+     (--fdx/--fdy destination incl. gravity, --fstart initial spin, --frot
+     total spin) and each animationend removes the span. no per-feather JS. */
+  .pdd-feather {
+    position: absolute;
+    width: 4.9px;
+    height: 1.75px;
+    border-radius: 60% 100% 60% 100% / 60% 60% 100% 100%;
+    background: currentColor;
+    transform-origin: 50% 50%;
+    opacity: 0.9;
+    animation: pdd-feather-fly var(--pdd-life, 1250ms) ease-out forwards;
+  }
+
+  @keyframes pdd-feather-fly {
+    from {
+      transform: rotate(var(--fstart, 0deg)) translate(0, 0);
+      opacity: 0.9;
+    }
+    /* Hold most of the flight opaque; only the last ~third fades out. */
+    70% {
+      opacity: 0.75;
+    }
+    to {
+      transform: rotate(calc(var(--fstart, 0deg) + var(--frot, 240deg)))
+        translate(var(--fdx, 0px), var(--fdy, 0px));
+      opacity: 0;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .pdd-bird-perched .pdd-bird-body,
-    .pdd-bird-flapping .pdd-bird-wing,
-    .pdd-bird-flapping .pdd-bird-body {
+    .pdd-fly.is-flapping .pdd-bird-wing-near,
+    .pdd-fly.is-flapping .pdd-bird-wing-far,
+    .pdd-perched,
+    .pdd-perched.pdd-land-flare,
+    .pdd-perched.pdd-idle-tilt,
+    .pdd-perched.pdd-idle-flick,
+    .pdd-perched.pdd-idle-ruffle,
+    .is-impacting .pdd-fly,
+    .is-confused .pdd-fly,
+    .is-confused .pdd-bird-wing-near,
+    .is-recovering .pdd-fly {
       animation: none;
-    }
-    .is-flying {
-      offset-path: none;
-      animation: none;
-    }
-    .is-flying .pdd-bird-wing {
-      animation: none;
+      transition: none;
     }
   }
   .hero-reveal:nth-child(3) {

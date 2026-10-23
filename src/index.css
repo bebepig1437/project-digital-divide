@@ -405,13 +405,17 @@
     background: currentColor;
     transform-origin: 50% 50%;
     opacity: 0.9;
-    animation: pdd-feather-fly var(--pdd-life, 850ms) ease-out forwards;
+    animation: pdd-feather-fly var(--pdd-life, 1250ms) ease-out forwards;
   }
 
   @keyframes pdd-feather-fly {
     from {
       transform: rotate(var(--fstart, 0deg)) translate(0, 0);
       opacity: 0.9;
+    }
+    /* Hold most of the flight opaque; only the last ~third fades out. */
+    70% {
+      opacity: 0.75;
     }
     to {
       transform: rotate(calc(var(--fstart, 0deg) + var(--frot, 240deg)))

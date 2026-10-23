@@ -68,7 +68,9 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
       // Headline: one rect per RENDERED LINE, not one block box.
       const markEl = landmarkRef?.current || heroEl.querySelector('h1')
       let headlineRects = null
+      let headlineGlyphs = null
       let capTrim = 0
+      let rawFirstTop = null
       if (markEl) {
         const range = document.createRange()
         range.selectNodeContents(markEl)
@@ -101,6 +103,7 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
           capTrim = 0
         }
         const rects = raw.map((r) => ({ ...r, top: r.top + capTrim }))
+        rawFirstTop = raw.length ? raw[0].top : null
         if (rects.length) {
           // Change-keyed log: the element rect top is the LINE BOX (includes
           // half-leading above the glyphs); the first Range rect hugs the text
@@ -116,6 +119,38 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
             )
           }
           headlineRects = rects
+          // Letter-by-letter hitboxes: per-character rects from the landmark's
+          // text node(s). Each glyph rect hugs that character's tint box with
+          // the same cap trim as the line rects, so the headline obstacle
+          // field is the actual ink: a bird bounces off an individual letter
+          // (true face normal, corners included) instead of an invisible
+          // full-line wall, and the gaps left of/right of the line open up.
+          // Measured on every recompute pass of this same lifecycle
+          // (mount/fonts/decode/settle/resize), never per frame; the rendered
+          // headline is a few dozen characters at most.
+          const glyphs = []
+          const collectGlyphs = (node) => {
+            ;[...node.childNodes].forEach((n) => {
+              if (n.nodeType === Node.TEXT_NODE) {
+                const txt = n.nodeValue
+                for (let ci = 0; ci < txt.length; ci++) {
+                  if (/\s/.test(txt[ci])) continue
+                  const cr = document.createRange()
+                  cr.setStart(n, ci)
+                  cr.setEnd(n, ci + 1)
+                  const pr = cr.getClientRects()[0]
+                  if (pr && pr.width > 0.5 && pr.height > 0.5) {
+                    const hr = toHeroRect(pr, heroBox)
+                    glyphs.push({ ...hr, top: hr.top + capTrim }) // ink-top trim, per glyph
+                  }
+                }
+              } else if (n.nodeType === Node.ELEMENT_NODE) {
+                collectGlyphs(n)
+              }
+            })
+          }
+          collectGlyphs(markEl)
+          headlineGlyphs = glyphs.length ? glyphs : null
         }
       }
 
@@ -181,13 +216,25 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
         }))
       }
 
+      // Diagnostic chain for the perch-anchor forensics: the RAW (untrimmed)
+      // first-line Range top and the element line-box top live alongside the
+      // trimmed rects so a perched bird's feet position can be attributed to
+      // exactly one of: stale snapshot, wrong slot, capTrim, or Range-vs-rect.
+      const rawFirstLineTop = rawFirstTop
+      const headlineElTop = markEl
+        ? markEl.getBoundingClientRect().top - heroBox.top
+        : null
+
       const metrics = {
         heroW: heroBox.width,
         heroH: heroBox.height,
         headlineRects,
+        headlineGlyphs,
         logoRect,
         buttonRects,
         capTrim,
+        rawFirstLineTop,
+        headlineElTop,
         perchPoints,
         isDesktop,
         updatedAt: performance.now(),

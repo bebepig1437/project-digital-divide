@@ -85,7 +85,7 @@ export const REPULSION_PAD = 10 // px: keep-out box around the landmark text lin
 // uniform half-size pad under-protects the long axis and over-protects the
 // short one.
 export const BIRD_HALF_W_FRAC = 0.4 // art half-width as a fraction of `size`
-export const BIRD_HALF_H_FRAC = 0.3 // art half-height (incl. flap span) as a fraction of `size`
+export const BIRD_HALF_H_FRAC = 0.4 // art half-height as a fraction of `size` (art truly spans y3.3..21.6: tucked legs + flap span; 0.3 let leg tips sink into wall faces)
 
 // Logo perches: two top-edge slots at these width fractions of the logo
 // rect, uniform members of the same selection pool as the headline slots.
@@ -135,13 +135,15 @@ export const RECOIL_HOLD_END_MS = 350 // phase B end = clear time + phase C star
 export const RECOIL_END_MS = 450 // phase C release end (matches the CSS timings)
 export const RECOIL_CLEAR_MAX_MS = 500 // safety force-clear: a wedged bird never sits longer than this
 export const RECOIL_CLEAR_AWAY_SPEED = 1.2 // px/frame velocity granted by the force-clear
+export const MIN_BOUNCE_NORM = 0.8 // px/frame floor on the OUTGOING normal component after any bounce
+export const LAUNCH_GRACE_MS = 280 // takeoff arc: choreography suppressed (position fixes never)
 // Feather burst — logo hits only; reads as "a couple knocked loose.", not an explosion.
-export const FEATHER_MIN = 2 // feathers spawned per collision
-export const FEATHER_MAX = 3
+export const FEATHER_MIN = 1 // feathers spawned per collision (1-2: a knock-loose, not a burst)
+export const FEATHER_MAX = 2
 export const FEATHER_CAP = 18 // max feathers on screen (runaway accumulation guard)
-export const FEATHER_LIFE_MS = [500, 650] // fade lifetime range
+export const FEATHER_LIFE_MS = [1100, 1400] // fade lifetime range (opaque ~70% of the flight — see the 70% keyframe)
 export const FEATHER_CONE_DEG = 22 // half-cone around the reflected direction
-export const FEATHER_SPEED = [1.2, 2.2] // px/frame away from the surface
+export const FEATHER_SPEED = [0.55, 1.0] // px/frame away from the surface (slow float, not a burst)
 
 // ---- patrol loops ---------------------------------------------------------
 // Every PATROL_EVERY_N_PICKS-th target selection (25%), a flying bird traces
@@ -167,9 +169,77 @@ export const PATROL_CLEAR_PAD = 10 // extra clearance (px) required between a lo
 export const PATROL_SWEEP_LEG_MS = [3000, 4000] // one direction's crossing (full cycle 6-9s incl. pauses)
 export const PATROL_SWEEP_EDGE_PAUSE_MS = 200 // hang at each edge before the hard reverse
 
+// ---- proactive routing model -------------------------------------------------
+// Targets come from a DISCRETE VALID POOL built from the metric snapshot, not
+// from per-pick random sampling. Every pool cell is pre-cleared against the
+// obstacles and edges; a pick only succeeds when a SIGHT-LINE-CLEARED route to
+// it exists (direct, or via 1-2 ring waypoints around the first blocker).
+// Collision then becomes a rare, choreographed event instead of the steering
+// model's steering-into-walls-and-bouncing routine.
+export const POOL_CELL_MIN_PX = 30 // lattice cell size floor (mobile-ish worlds)
+export const POOL_CELL_MAX_PX = 60 // lattice cell size ceiling (desktop worlds)
+export const POOL_COLS = 20 // target lattice resolution (desktop)
+export const POOL_ROWS = 15
+export const POOL_EDGE_INSET = 40 // px: cells this close to a hero edge are invalid
+export const POOL_CLEAR_RADIUS = 24 // px circle around a cell center that must be obstacle-free
+export const POOL_SAMPLE_N = 30 // weighted samples per target pick
+export const ROUTE_WP_RING = 60 // px: candidate waypoints ring the blocking obstacle's center
+export const ROUTE_WP_STEP = 10 // px kept INSIDE-shy when pushing a candidate out of an obstacle pad
+export const ROUTE_PAIR_LIMIT = 12 // two-waypoint candidate pairs tried per pick
+export const ROUTE_POP_RADIUS = 15 // px: intermediate waypoint considered reached
+export const MIN_PICK_DIST = 70 // px: a pool target closer than this to the picker is skipped
+
+// Zone classification + weights: the picker prefers interesting airspace
+// (above the headline, the margins) over the plain open bands.
+export const ZONE_WEIGHTS = {
+  'top-band': 2.5,
+  'above-headline': 3.0,
+  'left-margin': 2.0,
+  'right-margin': 2.0,
+  'below-headline': 1.5,
+  'bottom-band': 1.0,
+  'center-open': 0.8,
+}
+
+// Speed modulation: distance-to-hazard replaces constant max speed. The live
+// multiplier lerps at SPEED_LERP toward the highest-restriction applicable.
+export const SPEED_OPEN = 1.0
+export const SPEED_NEAR_OBSTACLE = 0.55 // < 80px from any obstacle rect
+export const SPEED_NEAR_CORNER = 0.7 // < 100px from the current route corner
+export const SPEED_FINAL = 0.6 // < 80px to the final target
+export const SPEED_LONG = 1.15 // open space with a > 300px leg
+export const SPEED_OBSTACLE_DIST = 80
+export const SPEED_CORNER_DIST = 100
+export const SPEED_FINAL_DIST = 80
+export const SPEED_LONG_DIST = 300
+export const SPEED_LERP = 0.08 // per-frame lerp toward the target multiplier
+
+// ---- rare ramming ---------------------------------------------------------
+// Ramming is CHOREOGRAPHED: every RAM_MIN..RAM_MAX wall-ms, when clear of all
+// obstacles, a bird overrides its route for 1.5s, steering straight into the
+// nearest obstacle. The hit runs the normal sweep + sticky-recoil path (same
+// feather/squash behavior as an accidental collision) and the route is
+// regenerated after recovery.
+export const RAM_MIN_MS = 60000
+export const RAM_MAX_MS = 120000
+export const RAM_WINDOW_MS = 1500
+export const RAM_CLEAR_DIST = 100 // px: minimum clearance from every obstacle to arm a ram
+export const RAM_FAR_PICK = 400 // px: nearest obstacle beyond this → pick at random
+
+// ---- flip + bank hygiene ----------------------------------------------------
+export const FLIP_SPEED_GUARD = 0.3 // px/frame: facing only flips above this |vx|
+export const ROUTE_CORNER_FRAMES = 72 // ~1.2 sim-s wedged at an obstacle before escaping
+export const ROUTE_CORNER_DIST = 30 // obstacle clearance defining "wedged"
+export const ROUTE_CORNER_MOVE = 10 // px of progress below which the wedged window trips
+
 // ---- helpers ---------------------------------------------------------------
 export const rand = (min, max) => min + Math.random() * (max - min)
 export const clamp = (val, min, max) => Math.max(min, Math.min(max, val))
+// Wrap-aware angular lerp — never snaps, never crosses the long way around.
+export const lerpAngle = (prev, target, k) => {
+  const delta = ((target - prev + 540) % 360) - 180
+  return prev + delta * k
+}
 export const clampMag = (vx, vy, max) => {
   const m = Math.hypot(vx, vy)
   if (m <= max || m === 0) return [vx, vy]

@@ -5,7 +5,7 @@
 
 **Project Digital Divide** is a student-run project that deploys reconditioned laptops to families across Houston. We are based in Pearland, Texas, and serve the Greater Houston area.
 
-**Mission:** A student-led nonprofit in Pearland, TX, refurbishing computers and bridging the digital divide across Greater Houston. We take laptops school districts are retiring, set them up with operating systems, basic tools, and guardrails, and deploy them at no cost to students who do not have a computer at home. We document every step so the next team has a data-backed precedent to work from, and we plan to develop workshops on computer engineering to increase STEM opportunities in underserved areas.
+**Mission:** Mission: Project Digital Divide is a student-run project focused on educational equity surrounding STEM. After receiving a generous donation of 100 retired laptops from our AlvinISD’s technology department, we've started building the setup process for the devices: installing operating systems, basic tools, and guardrails before they reach students who don't have a computer at home. We're documenting every step along the way, so the next team has a data-backed precedent to work from. Additionally, we plan to develop workshops on computer engineering to increase STEM opportunities in underserved areas, ultimately bridging the digital and educational divide.
 
 Our website: https://projectdigitaldivide.org
 

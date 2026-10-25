@@ -18,10 +18,10 @@ export default function Volunteer() {
 
   const meta = [
     { property: 'og:type', content: 'website' },
-    { property: 'og:url', content: 'https://projectdigitaldivide.org/volunteer' },
-    { property: 'og:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+    { property: 'og:url', content: 'https://www.projectdigitaldivide.org/volunteer' },
+    { property: 'og:image', content: 'https://www.projectdigitaldivide.org/logo.webp' },
     { name: 'twitter:card', content: 'summary' },
-    { name: 'twitter:image', content: 'https://projectdigitaldivide.org/logo.webp' },
+    { name: 'twitter:image', content: 'https://www.projectdigitaldivide.org/logo.webp' },
   ]
 
   async function handleSubmit(e) {
@@ -54,7 +54,7 @@ export default function Volunteer() {
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
-        <link rel="canonical" href="https://projectdigitaldivide.org/volunteer" />
+        <link rel="canonical" href="https://www.projectdigitaldivide.org/volunteer" />
         <meta name="twitter:title" content="Volunteer | Project Digital Divide" />
         <meta name="twitter:description" content="Join our student-led team bridging the digital divide in Houston. Help test laptops, mentor students at build workshops, connect with local schools, or build tracking software." />
       </Helmet>

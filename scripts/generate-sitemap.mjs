@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
-const SITE = 'https://projectdigitaldivide.org'
+const SITE = 'https://www.projectdigitaldivide.org'
 const POSTS_DIR = join(process.cwd(), 'src/content/posts')
 const OUT = join(process.cwd(), 'public/sitemap.xml')
 

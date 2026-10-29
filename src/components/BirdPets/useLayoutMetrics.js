@@ -152,6 +152,10 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
     let lastLogoBoundKey = null
     let lastHeadlineKey = null
     let lastPadsKey = null
+    const params = new URLSearchParams(window.location.search)
+    const debugPads = params.has('birds-debug-pads')
+    const logPads = debugPads || params.has('birds-debug')
+    let padOverlay = null
     const mq = window.matchMedia(DESKTOP_MQ)
     let isDesktop = mq.matches
 
@@ -176,7 +180,7 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
       // Headline: one rect per RENDERED LINE, not one block box.
       const markEl = landmarkRef?.current || heroEl.querySelector('h1')
       let headlineRects = null
-      let headlineGlyphs = null
+      let headlineCollisionRects = null
       let capTrim = 0
       let rawFirstTop = null
       if (markEl) {
@@ -210,7 +214,18 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
         } catch {
           capTrim = 0
         }
-        const rects = raw.map((r) => ({ ...r, top: r.top + capTrim }))
+        // A Range can emit multiple fragments for inline elements on one
+        // visual line. Merge only fragments with the same vertical band.
+        const lines = []
+        for (const r of raw) {
+          const line = lines.find((l) => Math.abs(l.top - r.top) < 1 && Math.abs(l.bottom - r.bottom) < 1)
+          if (line) {
+            line.left = Math.min(line.left, r.left)
+            line.right = Math.max(line.right, r.right)
+            line.width = line.right - line.left
+          } else lines.push({ ...r })
+        }
+        const rects = lines.map((r) => ({ ...r, top: r.top + capTrim, height: r.height - capTrim }))
         rawFirstTop = raw.length ? raw[0].top : null
         if (rects.length) {
           // Change-keyed log: the element rect top is the LINE BOX (includes
@@ -227,38 +242,36 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
             )
           }
           headlineRects = rects
-          // Letter-by-letter hitboxes: per-character rects from the landmark's
-          // text node(s). Each glyph rect hugs that character's tint box with
-          // the same cap trim as the line rects, so the headline obstacle
-          // field is the actual ink: a bird bounces off an individual letter
-          // (true face normal, corners included) instead of an invisible
-          // full-line wall, and the gaps left of/right of the line open up.
-          // Measured on every recompute pass of this same lifecycle
-          // (mount/fonts/decode/settle/resize), never per frame; the rendered
-          // headline is a few dozen characters at most.
-          const glyphs = []
-          const collectGlyphs = (node) => {
-            ;[...node.childNodes].forEach((n) => {
-              if (n.nodeType === Node.TEXT_NODE) {
-                const txt = n.nodeValue
-                for (let ci = 0; ci < txt.length; ci++) {
-                  if (/\s/.test(txt[ci])) continue
-                  const cr = document.createRange()
-                  cr.setStart(n, ci)
-                  cr.setEnd(n, ci + 1)
-                  const pr = cr.getClientRects()[0]
-                  if (pr && pr.width > 0.5 && pr.height > 0.5) {
-                    const hr = toHeroRect(pr, heroBox)
-                    glyphs.push({ ...hr, top: hr.top + capTrim }) // ink-top trim, per glyph
-                  }
+          // Preserve the original line/perch anchors. Only collision geometry
+          // loses unused font descent and receives the 4px per-side inset.
+          const inkBottoms = lines.map((r) => r.top)
+          const st = getComputedStyle(markEl)
+          const ctx = document.createElement('canvas').getContext('2d')
+          if (ctx) {
+            ctx.font = `${st.fontStyle} ${st.fontWeight} ${st.fontSize} ${st.fontFamily}`
+            const walker = document.createTreeWalker(markEl, NodeFilter.SHOW_TEXT)
+            let node
+            while ((node = walker.nextNode())) {
+              for (let ci = 0; ci < node.length; ci++) {
+                if (/\s/.test(node.data[ci])) continue
+                const cr = document.createRange()
+                cr.setStart(node, ci)
+                cr.setEnd(node, ci + 1)
+                const pr = cr.getClientRects()[0]
+                if (!pr) continue
+                const hr = toHeroRect(pr, heroBox)
+                const li = lines.findIndex((r) => Math.abs(r.top - hr.top) < 1)
+                const mt = ctx.measureText(node.data[ci])
+                if (li >= 0 && Number.isFinite(mt.fontBoundingBoxAscent) && Number.isFinite(mt.actualBoundingBoxDescent)) {
+                  inkBottoms[li] = Math.max(inkBottoms[li], hr.top + mt.fontBoundingBoxAscent + mt.actualBoundingBoxDescent)
                 }
-              } else if (n.nodeType === Node.ELEMENT_NODE) {
-                collectGlyphs(n)
               }
-            })
+            }
           }
-          collectGlyphs(markEl)
-          headlineGlyphs = glyphs.length ? glyphs : null
+          headlineCollisionRects = rects.map((r, i) => {
+            const tight = { ...r, bottom: inkBottoms[i] > r.top ? Math.min(r.bottom, inkBottoms[i]) : r.bottom }
+            return expandRect(tight, -Math.min(4, (tight.right - tight.left - 1) / 2, (tight.bottom - tight.top - 1) / 2))
+          })
         }
       }
 
@@ -370,15 +383,12 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
       // use); routeRect = the routing view (colRect + ROUTING_PAD_EXTRA)
       // — EXCEPT the logo, whose routing view is the FULL element rect + pad
       // (full height, top to bottom: routes must plan around the whole box,
-      // not graze under its bottom face), and headline glyph rects, which
+      // not graze under its bottom face), and headline line rects, which
       // additionally keep their REPULSION_PAD keep-out. Hero edges join as
       // inward-facing pads so transit routes are rejected near the boundary
       // (terminal legs are exempted in the planner — pool targets
       // legitimately sit POOL_EDGE_INSET px from an edge).
-      const textRects =
-        Array.isArray(headlineGlyphs) && headlineGlyphs.length
-          ? headlineGlyphs
-          : headlineRects || []
+      const textRects = headlineCollisionRects || []
       const W = heroBox.width
       const H = heroBox.height
       const BAND = ROUTING_PAD_EXTRA
@@ -433,11 +443,79 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
         )
       }
 
+      if (debugPads) {
+        if (!padOverlay) {
+          padOverlay = document.createElement('div')
+          padOverlay.className = 'pdd-headline-pads'
+          padOverlay.setAttribute('aria-hidden', 'true')
+          padOverlay.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:31'
+          heroEl.appendChild(padOverlay)
+        }
+        padOverlay.replaceChildren(...textRects.map((r, i) => {
+          const el = document.createElement('div')
+          el.dataset.headlinePad = `line-${i}`
+          el.style.cssText = `position:absolute;box-sizing:border-box;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border:1px solid red`
+          return el
+        }))
+      }
+      if (logPads && markEl) {
+        // Debug-only, layout-time raster estimate; DOM rects are not ink.
+        const st = getComputedStyle(markEl)
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.ceil(heroBox.width)
+        canvas.height = Math.ceil(heroBox.height)
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
+        ctx.font = `${st.fontStyle} ${st.fontWeight} ${st.fontSize} ${st.fontFamily}`
+        ctx.fillStyle = '#fff'
+        ctx.letterSpacing = st.letterSpacing
+        const walker = document.createTreeWalker(markEl, NodeFilter.SHOW_TEXT)
+        let node
+        while ((node = walker.nextNode())) {
+          for (let i = 0; i < node.length; i++) {
+            if (/\s/.test(node.data[i])) continue
+            const range = document.createRange()
+            range.setStart(node, i)
+            range.setEnd(node, i + 1)
+            const r = range.getBoundingClientRect()
+            const ascent = ctx.measureText(node.data[i]).fontBoundingBoxAscent
+            ctx.fillText(node.data[i], r.left - heroBox.left, r.top - heroBox.top + ascent)
+          }
+        }
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+        const headlinePads = obstaclePads.filter((p) => p.kind === 'text')
+        let unionArea = 0
+        let inkInPads = 0
+        let inkArea = 0
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = 0; x < canvas.width; x++) {
+            const ink = pixels[(y * canvas.width + x) * 4 + 3] / 255
+            inkArea += ink
+            if (headlinePads.some(({ colRect: r }) => x + 0.5 >= r.left && x + 0.5 < r.right && y + 0.5 >= r.top && y + 0.5 < r.bottom)) {
+              unionArea++
+              inkInPads += ink
+            }
+          }
+        }
+        const bounds = toHeroRect(markEl.getBoundingClientRect(), heroBox)
+        const diagnostic = {
+          viewport: { width: innerWidth, height: innerHeight }, cause,
+          pads: headlinePads.map(({ id, colRect: r }) => ({ id, rect: { top: r.top, bottom: r.bottom, left: r.left, right: r.right }, width: r.right - r.left, height: r.bottom - r.top, kind: 'line' })),
+          count: headlinePads.length,
+          padArea: headlinePads.reduce((sum, { colRect: r }) => sum + (r.right - r.left) * (r.bottom - r.top), 0),
+          rasterUnionArea: unionArea, bounds, renderedLines: headlineRects?.length || 0,
+          estimatedInkArea: inkArea,
+          estimatedDeadSpacePercent: unionArea ? 100 * (1 - inkInPads / unionArea) : null,
+          headlineBoxEmptyPercent: 100 * (1 - inkArea / (bounds.width * bounds.height)),
+        }
+        window.__birdPads = diagnostic
+        console.info('[bird-pads] ' + JSON.stringify(diagnostic))
+      }
+
       const metrics = {
         heroW: heroBox.width,
         heroH: heroBox.height,
         headlineRects,
-        headlineGlyphs,
+        headlineCollisionRects,
         logoRect,
         buttonRects,
         capTrim,
@@ -482,6 +560,8 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
 
     return () => {
       disposed = true
+      padOverlay?.remove()
+      if (logPads) delete window.__birdPads
       clearTimeout(debounceId)
       clearTimeout(settleId)
       ro?.disconnect()

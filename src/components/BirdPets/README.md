@@ -29,14 +29,26 @@ const h1Ref = useRef(null)
 
 | Prop           | Type      | Default                        | Notes                                                        |
 | -------------- | --------- | ------------------------------ | ------------------------------------------------------------ |
-| `count`        | number    | `4`                            | 1–8 birds (personality cycle: wanderer, hummer, glider).      |
+| `count`        | number    | `2`                            | 1–8 birds (personality cycle: wanderer, hummer, glider).      |
 | `containerRef` | React ref | —                              | Element the birds fly inside. **Required.**                   |
 | `landmarkRef`  | React ref | —                              | Element birds avoid with a 50px force pad and perch on (pass the `h1`). |
 | `className`    | string    | hero position classes          | Override when mounting outside a hero (keep `pointer-events-none`). |
 
-Under `(min-width: 640px)` the count is clamped to 2, and the whole layer is
-hidden below `sm` — four birds on a phone is too busy. `prefers-reduced-motion`
-renders 4 static perched birds and never starts the RAF loop.
+Two birds are shown by default at both breakpoints. Below 640px the count
+is capped at two; desktop `?birds=2`, `?birds=4`, and `?birds=6` override the
+Home page count. `prefers-reduced-motion` renders the configured flock as
+static perched birds and never starts the RAF loop.
+
+Headline collisions use one 4px-inset rectangle per rendered line, with cap-top
+and unused font-descent trim. Perch anchors retain the original line geometry.
+`?birds-debug-pads=1` draws red 1px headline collision borders and logs layout-time
+pad measurements, including raster-estimated ink coverage. These estimates are
+not pixel-exact measurements of the rendered bird/text overlap.
+
+The legacy planner remains the default. Grid A* is opt-in via
+`?birds-route=grid`; rams are enabled unless `?birds-rams=off` is supplied.
+The measured ship pass reduced text hits, but did not eliminate headline dwells
+or establish clipping-free mobile flight. See the [verification report](../../../screenshots/birds-ship-report.md).
 
 ## Files
 

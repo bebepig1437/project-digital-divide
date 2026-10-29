@@ -22,14 +22,14 @@ export default function Home() {
   const heroRef = useRef(null)
   const h1Ref = useRef(null)
   const { search } = useLocation()
-  // Flock size: 4 by default; ?birds=N accepts 1–8 (clamped, out-of-range
+  // Flock size: 2 by default; ?birds=N accepts 1–8 (clamped, out-of-range
   // values log a warning). Small screens clamp to 2 inside BirdPets.
-  let birdCount = 4
+  let birdCount = 2
   const birdsParam = new URLSearchParams(search).get('birds')
   if (birdsParam !== null) {
     const n = Number.parseInt(birdsParam, 10)
     if (Number.isNaN(n)) {
-      console.warn(`[birdPets] ?birds=${birdsParam} is not a number; using 4`)
+      console.warn(`[birdPets] ?birds=${birdsParam} is not a number; using 2`)
     } else {
       const clamped = Math.min(8, Math.max(1, n))
       if (clamped !== n) console.warn(`[birdPets] ?birds=${n} out of range 1-8; using ${clamped}`)

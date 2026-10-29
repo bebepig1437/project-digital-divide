@@ -7,8 +7,8 @@
  * physics impulses: pure waypoint steering, delta-time aware, never teleports.
  *
  * Props:
- *   count        — how many birds, 1–8 (default 4). Clamped on small screens
- *                  to 2; birds are hidden entirely below the `sm` breakpoint.
+ *   count        — how many birds, 1–8 (default 2). Clamped on small screens
+ *                  to 2, visible at both breakpoints.
  *   containerRef — ref of the element the birds fly inside (required).
  *   landmarkRef  — ref of the element birds avoid and perch on (e.g. the h1).
  *   className    — override the wrapper classes if mounting somewhere new.
@@ -23,10 +23,10 @@ import { useBirdPets } from './useBirdPets'
 import { FLOCK_ORDER, PERSONALITIES } from './birdPersonalities'
 
 export default function BirdPets({
-  count = 4,
+  count = 2,
   containerRef,
   landmarkRef,
-  className = 'pointer-events-none absolute inset-0 z-20 hidden select-none sm:block',
+  className = 'pointer-events-none absolute inset-0 z-20 select-none',
 }) {
   const hostRefs = useRef([])
   const flyRefs = useRef([])

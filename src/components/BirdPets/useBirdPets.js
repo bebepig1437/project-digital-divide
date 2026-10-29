@@ -33,12 +33,11 @@
  *     re-picks inside the same frame.
  *
  * Gates: prefers-reduced-motion -> static perched birds, no RAF;
- * IntersectionObserver pause offscreen; pointer-events none (CSS); hidden
- * below sm (CSS); personalities + static colour tints kept.
+ * IntersectionObserver pause offscreen; pointer-events none (CSS);
+ * personalities + static colour tints kept.
  *
- * Route modes: legacy multi-leg waypoint planner by default; a grid A*
- * pathfinder (birdPathfinder.js) behind ?birds-route=grid. The A/B decides
- * which becomes the default.
+ * Route modes: legacy multi-leg waypoint planner ships by default; the grid
+ * A* experiment remains opt-in behind ?birds-route=grid after losing the A/B.
  */
 
 import { useEffect, useRef } from 'react'
@@ -165,7 +164,7 @@ import {
 export function useBirdPets({
   containerRef,
   landmarkRef,
-  count = 4,
+  count = 2,
   hostRefs,
   flyRefs,
   perchRefs,
@@ -201,12 +200,8 @@ export function useBirdPets({
             top: Math.min(...m.headlineRects.map((r) => r.top)),
             bottom: Math.max(...m.headlineRects.map((r) => r.bottom)),
             lines: m.headlineRects,
-            // Letter-level obstacle field; falls back to per-line rects
-            // until the glyph measure has landed.
-            glyphs:
-              Array.isArray(m.headlineGlyphs) && m.headlineGlyphs.length
-                ? m.headlineGlyphs
-                : m.headlineRects,
+            // One shared inset line set for sweeps and route checks.
+            collisionRects: m.headlineCollisionRects || [],
           }
         : null
       // perchSrc: breakpoint perch points from the first rendered line (no
@@ -301,7 +296,7 @@ export function useBirdPets({
     const distToLandmark = (px, py, g) => {
       if (!g.h1) return Infinity
       let min = Infinity
-      for (const line of g.h1.glyphs) {
+      for (const line of g.h1.collisionRects) {
         const d = distToRect(px, py, line)
         if (d < min) min = d
       }
@@ -313,7 +308,7 @@ export function useBirdPets({
     // text is blocked.
     const crossesH1Lines = (x1, y1, x2, y2, g, pad) => {
       if (!g.h1) return false
-      for (const line of g.h1.glyphs) {
+      for (const line of g.h1.collisionRects) {
         if (crossesH1(
           x1, y1, x2, y2,
           {
@@ -1733,7 +1728,7 @@ export function useBirdPets({
         const rightX = Math.max(leftX + 60, clamp(g.w - mX, leftX + 61, Math.max(leftX + 62, g.w - 8)))
         const clearAt = (y) =>
           (!g.h1 ||
-            !g.h1.glyphs.some(
+            !g.h1.collisionRects.some(
               (line) => y > line.top - mY - 10 && y < line.bottom + mY + 10
             )) &&
           (!g.logo || y < g.logo.top - mY - 10 || y > g.logo.bottom + mY + 10) &&
@@ -1796,7 +1791,7 @@ export function useBirdPets({
         const cxMid = clamp(b.x, bound + 6, Math.max(bound + 7, g.w - bound - 6))
         let clear = true
         if (g.h1) {
-          for (const line of g.h1.glyphs) {
+          for (const line of g.h1.collisionRects) {
             if (
               distToRect(cxMid, cy, {
                 left: line.left - REPULSION_PAD,
@@ -1914,7 +1909,7 @@ export function useBirdPets({
           const rects = [
             ...(g.logo ? [g.logo] : []),
             ...g.buttons,
-            ...(g.h1 ? g.h1.glyphs : []),
+            ...(g.h1 ? g.h1.collisionRects : []),
           ]
           let clear = rects.length > 0
           for (const o of rects) {
@@ -2040,7 +2035,7 @@ export function useBirdPets({
           for (const btn of g.buttons) pushOutIfInside(b, btn, fhw, fhh)
           if (b.state === 'flying' && g.h1) {
             const tPadY = Math.min(REPULSION_PAD, b.cfg.size * FOOT_FRAC - 1)
-            for (const line of g.h1.glyphs) {
+            for (const line of g.h1.collisionRects) {
               pushOutIfInside(b, line, REPULSION_PAD + fhw, tPadY)
             }
           }
@@ -2439,11 +2434,9 @@ export function useBirdPets({
       for (const btn of g.buttons) {
         if (sweptHit(btn, padHWb, padHHb, 'button')) break
       }
-      // Headline keep-out LETTER BY LETTER (flying only): each glyph is its
-      // own solid box, so a bird bounces off an individual letter with the
-      // letter's true face normal, and the airspace left of/right of the
-      // line (and over descenders' boxes) is real open space instead of a
-      // full-line wall. Vertical pad floors at the sprite half-height (legs
+      // Headline keep-out PER LINE (flying only): the shared 4px-inset
+      // ink-height line rectangles leave the inter-line gaps open.
+      // Vertical pad floors at the sprite half-height (legs
       // graze the ink top, never cross it) and is also capped below the
       // perch-anchor clearance (size*FOOT_FRAC): a bird taking off FROM a
       // perch — anchor size*FOOT_FRAC above the ink line — must start
@@ -2460,7 +2453,7 @@ export function useBirdPets({
             ? Math.min(b.cfg.size * BIRD_HALF_H_FRAC, b.cfg.size * FOOT_FRAC - 1)
             : b.cfg.size * BIRD_HALF_H_FRAC
         )
-        for (const glyph of g.h1.glyphs) {
+        for (const glyph of g.h1.collisionRects) {
           if (sweptHit(glyph, REPULSION_PAD + padHWb, textPadY, 'text')) break
         }
       }
@@ -2815,7 +2808,7 @@ export function useBirdPets({
       dbgOverlayHost.replaceChildren(
         ...(g.logo ? [rect(g.logo, '#ff2d55')] : []),
         ...g.buttons.map((r) => rect(r, '#32d74b')),
-        ...(g.h1 ? g.h1.glyphs.map((r) => rect(r, '#ffd60a')) : [])
+        ...(g.h1 ? g.h1.collisionRects.map((r) => rect(r, '#ffd60a')) : [])
       )
     }
 

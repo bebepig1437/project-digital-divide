@@ -19,7 +19,8 @@ export const PERSONALITIES = {
     maxBank: 40,
     perchEvery: [12000, 20000],
     rest: [5000, 8000],
-    filter: null,
+    tint: null,
+    opacity: 1,
   },
   hummer: {
     size: 20,
@@ -30,17 +31,22 @@ export const PERSONALITIES = {
     perchEvery: [12000, 20000],
     rest: [5000, 8000],
     dart: [2500, 4000],
-    filter: 'hue-rotate(15deg) brightness(1.1)',
+    // Static tint instead of a per-frame filter: hue +15deg, slightly
+    // brighter, expressed against the inherited ink so themes keep working.
+    // An unsupported relative-colour value is simply ignored (no filter).
+    tint: 'hsl(from currentColor calc(h + 15) s calc(l * 1.1))',
+    opacity: 1,
   },
   glider: {
     size: 28,
-    maxSpeed: 1.2,
+    maxSpeed: 1.0,
     steerStrength: 0.056,
     wingDur: '600ms',
     maxBank: 30,
     perchEvery: [15000, 25000],
     rest: [8000, 12000],
-    filter: 'hue-rotate(-15deg) opacity(0.85)',
+    tint: 'hsl(from currentColor calc(h - 15) s l)',
+    opacity: 0.85,
   },
 }
 
@@ -201,27 +207,61 @@ export const ZONE_WEIGHTS = {
   'center-open': 0.8,
 }
 
-// Speed modulation: distance-to-hazard replaces constant max speed. The live
-// multiplier lerps at SPEED_LERP toward the highest-restriction applicable.
-export const SPEED_OPEN = 1.0
-export const SPEED_NEAR_OBSTACLE = 0.55 // < 80px from any obstacle rect
-export const SPEED_NEAR_CORNER = 0.7 // < 100px from the current route corner
-export const SPEED_FINAL = 0.6 // < 80px to the final target
-export const SPEED_LONG = 1.15 // open space with a > 300px leg
-export const SPEED_OBSTACLE_DIST = 80
-export const SPEED_CORNER_DIST = 100
-export const SPEED_FINAL_DIST = 80
-export const SPEED_LONG_DIST = 300
-export const SPEED_LERP = 0.08 // per-frame lerp toward the target multiplier
+// ---- post-crash choreography: dizzy + crash immunity ----------------------
+// After a collision resolves through the sticky-recoil bounce (impact →
+// confused → recover), the bird holds STATIONARY for DIZZY_MS: velocity zero,
+// a slow ±DIZZY_WOBBLE_DEG wobble at DIZZY_WOBBLE_HZ, wings folded, and three
+// star icons orbiting its head at DIZZY_STARS_HZ (CSS: .pdd-dizzy-stars).
+// Then crash immunity opens: the picker refuses any target that requires a
+// waypoint turn or lies closer than ROUTE_MIN_CLEARANCE to an obstacle, and
+// scripted ramming is suspended, until two straight sight-line flights
+// complete or CRASH_IMMUNE_MS elapses (whichever first).
+export const DIZZY_MS = 1400
+export const DIZZY_WOBBLE_DEG = 6
+export const DIZZY_WOBBLE_HZ = 1.5
+export const DIZZY_STARS_HZ = 2
+export const CRASH_IMMUNE_MS = 6000
+export const CRASH_IMMUNE_FLIGHTS = 2
+export const ROUTE_MIN_CLEARANCE = 160 // px to the nearest obstacle edge for a crash-safe target
+
+// Multi-leg routing planner (task: full obstacle coverage). Route legs
+// candidate waypoints ring each blocking pad's center; recursion depth is
+// bounded by ROUTE_MAX_LEGS; routes are scored so shorter + straighter wins.
+export const ROUTE_MAX_LEGS = 4 // max legs (segments) in a planned route
+export const ROUTE_WP_NEAR = 40 // near ring: radius beyond half pad diagonal (8 dirs)
+export const ROUTE_WP_FAR = 100 // far ring: extra cardinal radius (4 dirs)
+export const ROUTE_TURN_COST = 80 // px-equivalent score penalty per turn
+export const ROUTE_TURN_COS = 0.94 // leg-dot threshold (~20 deg) counting as a turn
+export const ROUTE_FINAL_CLEAR = 30 // final-leg clearance past every routing pad edge
+export const ROUTE_WP_ARRIVE = 15 // px: intermediate waypoint considered reached
+export const ESCAPE_MS = 400 // in-pad emergency escape burst duration
+export const ESCAPE_OUT_DIST = 40 // px outside the pad that ends the escape early
+export const ESCAPE_SPEED_MUL = 1.4 // escape velocity multiplier over current speed
+export const ESCAPED_PAD_REJECT_MS = 5000 // escaped pad rejects routes for this long
+export const ARRIVE_SLOW_DIST = 60 // px: perched-approach deceleration is the ONLY speed modulation left
+
+// ---- routing pad + steering deadband (no visual rubbing) -------------------
+// Routes and targets are validated against a pad ROUTING_PAD_EXTRA wider
+// (every side) than the collision pad, so a validated route keeps visible
+// clearance to the block instead of grazing its padded boundary. A steering
+// deadband dampens corrections to STEER_DEADBAND_MUL within STEER_DEADBAND
+// px of a routing-pad edge (overshoot insurance; a healthy route should
+// never enter it — dbg logs every active frame to expose route regressions).
+export const ROUTING_PAD_EXTRA = 20
+export const STEER_DEADBAND = 40
+export const STEER_DEADBAND_MUL = 0.4
+// Deadband per PCB, exercise 5 (this addendum, item 5): pad-dist >= STEER_SETOUT
+export const STEER_SETOUT = 4
 
 // ---- rare ramming ---------------------------------------------------------
-// Ramming is CHOREOGRAPHED: every RAM_MIN..RAM_MAX wall-ms, when clear of all
-// obstacles, a bird overrides its route for 1.5s, steering straight into the
-// nearest obstacle. The hit runs the normal sweep + sticky-recoil path (same
-// feather/squash behavior as an accidental collision) and the route is
-// regenerated after recovery.
-export const RAM_MIN_MS = 60000
-export const RAM_MAX_MS = 120000
+// Ramming is CHOREOGRAPHED, never accidental: at most one ram per bird every
+// RAM_COOLDOWN_MS, and only when the approach leg to a solid is grid-verified
+// clear. The bird then overrides its route for 1.5s and steers into that solid
+// on purpose. The hit runs the normal sweep + sticky-recoil path (feathers,
+// squash, dizzy stars) and the route regenerates after recovery.
+export const RAM_COOLDOWN_MS = 90000
+export const RAM_MIN_MS = RAM_COOLDOWN_MS
+export const RAM_MAX_MS = RAM_COOLDOWN_MS * 2
 export const RAM_WINDOW_MS = 1500
 export const RAM_CLEAR_DIST = 100 // px: minimum clearance from every obstacle to arm a ram
 export const RAM_FAR_PICK = 400 // px: nearest obstacle beyond this → pick at random

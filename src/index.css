@@ -155,9 +155,10 @@
 
   /* ---- Flying + perched hero birds (side-view FlyingBird, swapped with PerchedBird) ---- */
   .pdd-bird-wing {
-    /* Shoulder hinge: each wing rotates about its own joint, not the body center. */
+    /* Shoulder hinge: each wing rotates about its own joint, not the body center.
+       No will-change here: SVG <g> transforms don't get a compositor layer in
+       Chrome, so the hint only added layer churn to every flap frame. */
     transform-box: view-box;
-    will-change: transform;
   }
 
   .pdd-bird-wing-near {
@@ -424,6 +425,65 @@
     }
   }
 
+  /* Post-crash dizzy stars (pdd-bird-dizzy-stars): three small stars
+     orbiting the bird's head at 2Hz (DIZZY_STARS_HZ) with phase offsets
+     0ms / 333ms / 667ms so the trio orbits together — two on a 14px-radius
+     ellipse, the third trailing slightly wider and later, removed after
+     exactly DIZZY_MS by the hook. Orbit motion is pure CSS
+     (rotate → translateX → counter-rotate): no per-frame JS. */
+  .pdd-bird-dizzy-stars {
+    position: absolute;
+    left: 50%;
+    top: 2px; /* head height on the 24-unit sprite */
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+  .pdd-dizzy-star {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 9px;
+    height: 9px;
+    margin: -4.5px; /* center the star on the orbit anchor */
+    font-size: 9px;
+    line-height: 9px;
+    text-align: center;
+    opacity: 0.9;
+    animation: pdd-dizzy-orbit 500ms linear infinite;
+  }
+  .pdd-dizzy-star:nth-child(2) {
+    animation-delay: 333ms;
+  }
+  .pdd-dizzy-star:nth-child(3) {
+    animation-delay: 667ms; /* the trailing third star */
+  }
+  @keyframes pdd-dizzy-orbit {
+    from {
+      transform: rotate(0deg) translateX(14px) rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg) translateX(14px) rotate(-360deg);
+    }
+  }
+  @keyframes pdd-dizzy-orbit-trail {
+    from {
+      transform: rotate(0deg) translateX(17px) rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg) translateX(17px) rotate(-360deg);
+    }
+  }
+
+  /* Dizzy mid-state: wings held folded instead of flapping (JS keeps
+     is-flapping off during the hold; these hold the folded pose). */
+  .is-dizzy .pdd-bird-wing-near {
+    transform: rotate(10deg);
+  }
+  .is-dizzy .pdd-bird-wing-far {
+    transform: rotate(-6deg);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .pdd-fly.is-flapping .pdd-bird-wing-near,
     .pdd-fly.is-flapping .pdd-bird-wing-far,
@@ -435,7 +495,8 @@
     .is-impacting .pdd-fly,
     .is-confused .pdd-fly,
     .is-confused .pdd-bird-wing-near,
-    .is-recovering .pdd-fly {
+    .is-recovering .pdd-fly,
+    .pdd-dizzy-star {
       animation: none;
       transition: none;
     }

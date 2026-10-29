@@ -23,15 +23,122 @@
  */
 
 import { useEffect, useRef } from 'react'
+import { REPULSION_PAD, ROUTING_PAD_EXTRA } from './birdPersonalities'
 
 const DESKTOP_MQ = '(min-width: 640px)'
 const SETTLE_MS = 1200
+
+// Tight painted-art bounds inside a logo <img>: the source art has
+// transparent padding (the hummingbird does not fill its square canvas),
+// so the element rect is wider than the VISIBLE art — most visibly on the
+// right, where birds bounce in mid-air. This scans a downsampled copy of
+// the natural image once per natural-URL (memoized below) and returns the
+// opaque bounding box as per-side FRACTIONS of the element size. With
+// object-cover and a square element, fractions map linearly onto the
+// element rect; caller falls back to the full rect on any failure.
+const ALPHA_SCAN_PX = 128 // canvas sample size per side
+const ALPHA_THRESHOLD = 16 // treat alpha < 13% as padding (anti-alias fringe)
+// Opaque sources (JPEG) pad their canvas with a flat background colour
+// instead of transparency: the hummingbird's white margins read as
+// "painted" to an alpha-only scan, so the collider stayed the full square
+// and birds bounced ~22px short of the visible art (worst on the right).
+// Background pixels are detected by sampling the four corners — each
+// margin pixel differs from the sampled colour only by JPEG noise (~≤6),
+// while art pixels differ far beyond that.
+const BG_DELTA_THRESHOLD = 26 // per-channel Δ from the sampled bg colour
+
+const alphaBoxFrac = (() => {
+  const cache = new Map() // naturalWidth-currentSrc key → {l, r, t, b} fractions
+  return (img) => {
+    try {
+      const nw = img.naturalWidth
+      const nh = img.naturalHeight
+      if (!nw || !nh) return null
+      const key = `${img.currentSrc || img.src} ${nw}x${nh}`
+      if (cache.has(key)) return cache.get(key)
+      const cv = document.createElement('canvas')
+      cv.width = ALPHA_SCAN_PX
+      cv.height = ALPHA_SCAN_PX
+      const ctx = cv.getContext('2d', { willReadFrequently: true })
+      if (!ctx) return null
+      // object-cover with a square source into a square element: the full
+      // canvas covers the element exactly — draw natural → sample directly.
+      ctx.drawImage(img, 0, 0, nw, nh, 0, 0, ALPHA_SCAN_PX, ALPHA_SCAN_PX)
+      const data = ctx.getImageData(0, 0, ALPHA_SCAN_PX, ALPHA_SCAN_PX).data
+      // Sample the four corners and average them as the padding colour:
+      // the hummingsbird's margins are all the same flat background, so the
+      // average is exact enough (each corner is within JPEG noise of it).
+      let bgR = 0
+      let bgG = 0
+      let bgB = 0
+      for (const [cx, cy] of [
+        [0, 0],
+        [ALPHA_SCAN_PX - 1, 0],
+        [0, ALPHA_SCAN_PX - 1],
+        [ALPHA_SCAN_PX - 1, ALPHA_SCAN_PX - 1],
+      ]) {
+        const o = (cy * ALPHA_SCAN_PX + cx) * 4
+        bgR += data[o]
+        bgG += data[o + 1]
+        bgB += data[o + 2]
+      }
+      bgR /= 4
+      bgG /= 4
+      bgB /= 4
+      const isArt = (y, x) => {
+        const o = (y * ALPHA_SCAN_PX + x) * 4
+        return (
+          data[o + 3] >= ALPHA_THRESHOLD &&
+          (Math.abs(data[o] - bgR) > BG_DELTA_THRESHOLD ||
+            Math.abs(data[o + 1] - bgG) > BG_DELTA_THRESHOLD ||
+            Math.abs(data[o + 2] - bgB) > BG_DELTA_THRESHOLD)
+        )
+      }
+      let minL = ALPHA_SCAN_PX
+      let maxR = -1
+      let minT = ALPHA_SCAN_PX
+      let maxB = -1
+      for (let y = 0; y < ALPHA_SCAN_PX; y++) {
+        for (let x = 0; x < ALPHA_SCAN_PX; x++) {
+          if (isArt(y, x)) {
+            if (x < minL) minL = x
+            if (x > maxR) maxR = x
+            if (y < minT) minT = y
+            if (y > maxB) maxB = y
+          }
+        }
+      }
+      if (maxR < 0) return null // fully transparent source: no painted art
+      const box = {
+        l: minL / ALPHA_SCAN_PX,
+        r: (maxR + 1) / ALPHA_SCAN_PX,
+        t: minT / ALPHA_SCAN_PX,
+        b: (maxB + 1) / ALPHA_SCAN_PX,
+      }
+      cache.set(key, box)
+      return box
+    } catch {
+      return null // CORS/taint or readback failure: keep the element rect
+    }
+  }
+})()
 
 // Perch fractions along the FIRST rendered line's top edge (its width share).
 // Desktop gets 6 spots for up to 6-landing birds; mobile only ever shows 2
 // birds, so 3 spots along a narrower line is enough.
 const PERCH_FRACS_DESKTOP = [0.08, 0.25, 0.42, 0.58, 0.75, 0.92]
 const PERCH_FRACS_MOBILE = [0.15, 0.5, 0.85]
+
+// Routing-pad expansion: tight rect + margin on every side. Used to derive
+// `routeRect` views of every obstacle pad (single source, two arrays).
+const expandRect = (r, m) => ({
+  left: r.left - m,
+  right: r.right + m,
+  top: r.top - m,
+  bottom: r.bottom + m,
+  width: r.right - r.left + 2 * m,
+  height: r.bottom - r.top + 2 * m,
+})
 
 export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
   const metricsRef = useRef(null)
@@ -44,6 +151,7 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
     let debounceId = 0
     let lastLogoBoundKey = null
     let lastHeadlineKey = null
+    let lastPadsKey = null
     const mq = window.matchMedia(DESKTOP_MQ)
     let isDesktop = mq.matches
 
@@ -158,12 +266,40 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
       // one of them is display:none and must not be treated as a collider).
       let logoRect = null
       let logoEl = null
+      let logoAlphaBox = null
       for (const img of [...heroEl.querySelectorAll('img')]) {
         const r = img.getBoundingClientRect()
         if (r.width > 4 && r.height > 4 && img.getClientRects().length > 0) {
           logoRect = toHeroRect(r, heroBox)
           logoEl = img
           break
+        }
+      }
+      // Tight-painted correction: inset the element rect by the scanned
+      // transparent margins so the LOGO HITBOX is the visible hummingbird
+      // art, not its square canvas (the art's right side has the largest
+      // transparent gutter — birds used to bounce in mid-air there). Runs
+      // after img.decode() in this lifecycle, so the natural pixels are
+      // already available; a scan failure falls back to the element rect.
+      // FULL element rect, kept alongside the tight art box: the ROUTING pad
+      // must cover the whole logo footprint (full height, top to bottom —
+      // the bird wedge zone), while the collision sweep keeps the tight box.
+      const logoFullRect = logoRect ? { ...logoRect } : null
+      if (logoEl && logoRect) {
+        const box = alphaBoxFrac(logoEl)
+        if (box) {
+          const w = logoRect.width
+          const h = logoRect.height
+          logoRect = {
+            ...logoRect,
+            left: logoRect.left + box.l * w,
+            right: logoRect.left + box.r * w,
+            top: logoRect.top + box.t * h,
+            bottom: logoRect.top + box.b * h,
+            width: (box.r - box.l) * w,
+            height: (box.b - box.t) * h,
+          }
+          logoAlphaBox = box
         }
       }
 
@@ -186,19 +322,22 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
         .map((el) => toHeroRect(el.getBoundingClientRect(), heroBox))
 
       // On change-only bounds log: the measured rect must be the TIGHT
-      // bounds of the visible logo art. The hero logos are bare <img>
-      // elements (no wrapper div) with object-cover, so the element rect IS
-      // the painted bounds — verified here rather than assumed.
+      // bounds of the visible logo art — now guaranteed by the alpha-scan
+      // correction above rather than assumed (the pre-fix comment claimed
+      // the element rect == painted bounds, which was false for this art).
       const boundKey = logoRect
         ? `${logoRect.left.toFixed(1)},${logoRect.top.toFixed(1)} ${(logoRect.right - logoRect.left).toFixed(1)}x${(logoRect.bottom - logoRect.top).toFixed(1)}`
         : 'none'
       if (boundKey !== lastLogoBoundKey) {
         lastLogoBoundKey = boundKey
+        const ab = logoAlphaBox
+          ? ` alphaBox[l=${(logoAlphaBox.l * 100).toFixed(1)}% r=${((1 - logoAlphaBox.r) * 100).toFixed(1)}% t=${(logoAlphaBox.t * 100).toFixed(1)}% b=${((1 - logoAlphaBox.b) * 100).toFixed(1)}%]`
+          : ' alphaBox=none(full-rect fallback)'
         console.info(
           `[BirdPets] logo bounds measured=${boundKey}` +
             ` elementRect=${logoEl ? `${logoEl.getBoundingClientRect().width.toFixed(1)}x${logoEl.getBoundingClientRect().height.toFixed(1)}` : 'n/a'}` +
-            ` natural=${logoEl ? `${logoEl.naturalWidth}x${logoEl.naturalHeight}` : 'n/a'}` +
-            ' (hero logo is a bare object-cover <img>: element rect == painted bounds unless the source has transparent padding)'
+            ` natural=${logoEl ? `${logoEl.naturalWidth}x${logoEl.naturalHeight}` : 'n/a'}` + ab +
+            ' (hero logo collider is the alpha-scanned painted-art box; element rect only on scan failure)'
         )
       }
 
@@ -225,6 +364,75 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
         ? markEl.getBoundingClientRect().top - heroBox.top
         : null
 
+      // ---- unified obstacle pads (task: full-coverage routing) ----------
+      // Single source for routing AND collision. colRect = the tight
+      // collision rect (logo = the tight painted-art box that the sweeps
+      // use); routeRect = the routing view (colRect + ROUTING_PAD_EXTRA)
+      // — EXCEPT the logo, whose routing view is the FULL element rect + pad
+      // (full height, top to bottom: routes must plan around the whole box,
+      // not graze under its bottom face), and headline glyph rects, which
+      // additionally keep their REPULSION_PAD keep-out. Hero edges join as
+      // inward-facing pads so transit routes are rejected near the boundary
+      // (terminal legs are exempted in the planner — pool targets
+      // legitimately sit POOL_EDGE_INSET px from an edge).
+      const textRects =
+        Array.isArray(headlineGlyphs) && headlineGlyphs.length
+          ? headlineGlyphs
+          : headlineRects || []
+      const W = heroBox.width
+      const H = heroBox.height
+      const BAND = ROUTING_PAD_EXTRA
+      const obstaclePads = []
+      textRects.forEach((gl, gi) => {
+        obstaclePads.push({
+          id: `line-${gi}`,
+          kind: 'text',
+          colRect: gl,
+          routeRect: expandRect(gl, REPULSION_PAD + ROUTING_PAD_EXTRA),
+        })
+      })
+      if (logoRect) {
+        obstaclePads.push({
+          id: 'logo',
+          kind: 'logo',
+          colRect: logoRect,
+          routeRect: expandRect(logoFullRect || logoRect, ROUTING_PAD_EXTRA),
+        })
+      }
+      buttonRects.forEach((r, bi) => {
+        obstaclePads.push({
+          id: `btn-${bi}`,
+          kind: 'button',
+          colRect: r,
+          routeRect: expandRect(r, ROUTING_PAD_EXTRA),
+        })
+      })
+      obstaclePads.push(
+        { id: 'edge-top', kind: 'edge', colRect: null, routeRect: { left: -200, right: W + 200, top: -200, bottom: BAND, width: W + 400, height: BAND + 200 } },
+        { id: 'edge-bottom', kind: 'edge', colRect: null, routeRect: { left: -200, right: W + 200, top: H - BAND, bottom: H + 200, width: W + 400, height: BAND + 200 } },
+        { id: 'edge-left', kind: 'edge', colRect: null, routeRect: { left: -200, right: BAND, top: -200, bottom: H + 200, width: BAND + 200, height: H + 400 } },
+        { id: 'edge-right', kind: 'edge', colRect: null, routeRect: { left: W - BAND, right: W + 200, top: -200, bottom: H + 200, width: BAND + 200, height: H + 400 } }
+      )
+      const routingPads = obstaclePads.map((p) => p.routeRect)
+      const collisionPads = obstaclePads
+        .filter((p) => p.colRect)
+        .map((p) => p.colRect)
+      const padsKey = obstaclePads
+        .map(
+          (p) =>
+            `${p.id}:${p.routeRect.width.toFixed(0)}x${p.routeRect.height.toFixed(0)}@${p.routeRect.left.toFixed(0)},${p.routeRect.top.toFixed(0)}`
+        )
+        .join('|')
+      if (padsKey !== lastPadsKey) {
+        lastPadsKey = padsKey
+        console.info(
+          `[BirdPets] obstaclePads n=${obstaclePads.length}` +
+            ` ids=${obstaclePads.map((p) => p.id).join(',')}` +
+            ` logo route=${logoRect ? `${(logoFullRect || logoRect).width.toFixed(0)}x${(logoFullRect || logoRect).height.toFixed(0)} col=${logoRect.width.toFixed(0)}x${logoRect.height.toFixed(0)}` : 'none'}` +
+            ` buttons=${buttonRects.length} edges=4 routingPads=${routingPads.length} collisionPads=${collisionPads.length}`
+        )
+      }
+
       const metrics = {
         heroW: heroBox.width,
         heroH: heroBox.height,
@@ -237,6 +445,9 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
         headlineElTop,
         perchPoints,
         isDesktop,
+        obstaclePads,
+        routingPads,
+        collisionPads,
         updatedAt: performance.now(),
       }
       metricsRef.current = metrics

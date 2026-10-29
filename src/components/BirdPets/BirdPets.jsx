@@ -63,7 +63,13 @@ export default function BirdPets({
             }}
             className="absolute left-0 top-0 will-change-transform"
             data-bird-host={i}
-            style={cfg.filter ? { filter: cfg.filter } : undefined}
+            style={{
+              // Static personality tint: no runtime filter on a layer whose
+              // inner SVG repaints every wing frame (that forced a filtered
+              // re-raster every frame and showed up as choppy tearing).
+              color: cfg.tint || undefined,
+              opacity: cfg.opacity,
+            }}
           >
             <FlyingBird
               ref={(el) => {

@@ -34,15 +34,29 @@
  *
  * Gates: prefers-reduced-motion -> static perched birds, no RAF;
  * IntersectionObserver pause offscreen; pointer-events none (CSS); hidden
- * below sm (CSS); personalities + hue filters kept.
+ * below sm (CSS); personalities + static colour tints kept.
+ *
+ * Route modes: legacy multi-leg waypoint planner by default; a grid A*
+ * pathfinder (birdPathfinder.js) behind ?birds-route=grid. The A/B decides
+ * which becomes the default.
  */
 
 import { useEffect, useRef } from 'react'
 import useLayoutMetrics from './useLayoutMetrics'
 import {
+  GRID_MARGIN,
+  GRID_MARGIN_MOBILE,
+  buildNavGrid,
+  gridLineClear,
+  gridPath,
+  gridStats,
+  testNavRoutes,
+} from './birdPathfinder'
+import {
   ARRIVE_RADIUS,
   ARRIVE_SAFETY_MS,
   ARRIVE_SPEED,
+  ARRIVE_SLOW_DIST,
   ARRIVE_TERM_FACTOR,
   BANK_SMOOTH,
   BOOST_MS,
@@ -50,8 +64,14 @@ import {
   BIRD_HALF_W_FRAC,
   BOUNCE_COOLDOWN_MS,
   BOUNCE_RESTITUTION,
+  CRASH_IMMUNE_FLIGHTS,
+  CRASH_IMMUNE_MS,
   DART_DECAY_MS,
   DART_SPEED,
+  DIZZY_MS,
+  DIZZY_STARS_HZ,
+  DIZZY_WOBBLE_DEG,
+  DIZZY_WOBBLE_HZ,
   DT_CAP_MS,
   FEATHER_CAP,
   FEATHER_CONE_DEG,
@@ -101,12 +121,28 @@ import {
   POOL_ROWS,
   POOL_SAMPLE_N,
   PERSONALITIES,
+  ROUTE_MIN_CLEARANCE,
+  ROUTE_MAX_LEGS,
+  ROUTE_WP_NEAR,
+  ROUTE_WP_FAR,
+  ROUTE_TURN_COST,
+  ROUTE_TURN_COS,
+  ROUTE_FINAL_CLEAR,
+  ROUTE_WP_ARRIVE,
+  ESCAPE_MS,
+  ESCAPE_OUT_DIST,
+  ESCAPE_SPEED_MUL,
+  ESCAPED_PAD_REJECT_MS,
+  STEER_DEADBAND,
+  STEER_DEADBAND_MUL,
+  STEER_SETOUT,
   RAM_CLEAR_DIST,
   RAM_FAR_PICK,
   RAM_MAX_MS,
   RAM_MIN_MS,
   RAM_WINDOW_MS,
   REPULSION_PAD,
+  ROUTING_PAD_EXTRA,
   ROUTE_CORNER_DIST,
   ROUTE_CORNER_FRAMES,
   ROUTE_CORNER_MOVE,
@@ -114,16 +150,6 @@ import {
   ROUTE_POP_RADIUS,
   ROUTE_WP_RING,
   ROUTE_WP_STEP,
-  SPEED_CORNER_DIST,
-  SPEED_FINAL,
-  SPEED_FINAL_DIST,
-  SPEED_LERP,
-  SPEED_LONG,
-  SPEED_LONG_DIST,
-  SPEED_NEAR_CORNER,
-  SPEED_NEAR_OBSTACLE,
-  SPEED_OBSTACLE_DIST,
-  SPEED_OPEN,
   STUCK_FRAMES,
   START_SLOTS,
   TARGET_ARRIVE_RADIUS,
@@ -195,6 +221,11 @@ export function useBirdPets({
         elTop: m.headlineElTop,
         logo: m.logoRect,
         buttons: Array.isArray(m.buttonRects) ? m.buttonRects : [],
+        // Unified obstacle pads (task step 2): every headline glyph/logo/
+        // button/hero-edge with tight colRects and expanded routeRects.
+        // pathBlocked/makeRoute/routingPadEdgeVec iterate this set; the
+        // integration-loop sweep keeps its tight per-kind rects.
+        pads: Array.isArray(m.obstaclePads) ? m.obstaclePads : [],
         perchSrc: m.perchPoints,
       }
     }
@@ -204,6 +235,13 @@ export function useBirdPets({
     const W0 = Math.max(geom0.w, 320)
     const H0 = Math.max(geom0.h, 240)
     const now0 = performance.now()
+    const params = new URLSearchParams(window.location.search)
+    const dbgOn = params.has('birds-debug')
+    const gridMode = params.get('birds-route') === 'grid'
+    // Measurement kill switch: ?birds-rams=off disables the scripted ramming
+    // choreography entirely (both routing arms), so A/B captures compare
+    // pure routing. Default stays ON in normal use.
+    const ramsOff = params.get('birds-rams') === 'off'
 
     // ---- birds -----------------------------------------------------------
     const flockSize = Math.max(1, Math.min(8, count))
@@ -241,6 +279,10 @@ export function useBirdPets({
         bank: null,
         bounceCoolUntil: 0,
         recoil: null, // sticky three-phase bounce state (see steer)
+        dizzyUntil: 0, // post-crash dizzy hold (bounce → dizzy → immunity)
+        crashImmuneUntil: 0, // crash-immunity window end (0 = no immunity)
+        immuneFlights: 0, // straight-line flights completed this window
+        legImmune: false, // the CURRENT target is a committed immune leg
         noProgressFrames: 0,
         commitFrames: 0,
       }
@@ -395,60 +437,246 @@ export function useBirdPets({
     // only fires on world changes or genuine overshoot.
 
     // Minimum clearance to the nearest obstacle surface (headline keep-outs
-    // at their sweep pads, solid logo/buttons raw). Feeds speed modulation
-    // and ram arming.
+    // at their sweep pads, solid logo/buttons raw). Feeds the crash-immunity
+    // clearance filter and ram arming.
     const minDistToObstacles = (g, x, y) => {
       let min = Infinity
-      if (g.h1) {
-        for (const line of g.h1.glyphs) {
-          const d = distToRect(x, y, {
-            left: line.left - REPULSION_PAD,
-            right: line.right + REPULSION_PAD,
-            top: line.top - REPULSION_PAD,
-            bottom: line.bottom + REPULSION_PAD,
-          })
-          if (d < min) min = d
-        }
-      }
-      if (g.logo) min = Math.min(min, distToRect(x, y, g.logo))
-      for (const btn of g.buttons) {
-        const d = distToRect(x, y, btn)
+      for (const p of g.pads) {
+        if (p.kind === 'edge') continue
+        const d = distToRect(x, y, p.routeRect)
         if (d < min) min = d
       }
       return min
     }
 
-    // Sight-line test: the WHOLE segment vs every obstacle (headline lines
-    // additionally expanded by their keep-out pad), sweep-based — a path
-    // may thread the gap between two lines but a path through any line is
-    // blocked, identical semantics to the old point-sampled crossesH1Lines.
-    const pathBlocked = (g, x0, y0, x1, y1, padX, padY) => {
-      if (g.logo && sweepSegmentVsRect(x0, y0, x1, y1, g.logo, padX, padY)) return true
-      for (const btn of g.buttons) {
-        if (sweepSegmentVsRect(x0, y0, x1, y1, btn, padX, padY)) return true
-      }
-      if (g.h1) {
-        for (const line of g.h1.glyphs) {
-          if (
-            sweepSegmentVsRect(
-              x0,
-              y0,
-              x1,
-              y1,
-              {
-                left: line.left - REPULSION_PAD,
-                right: line.right + REPULSION_PAD,
-                top: line.top - REPULSION_PAD,
-                bottom: line.bottom + REPULSION_PAD,
-              },
-              padX,
-              padY
-            )
-          )
-            return true
+    // Nearest ROUTING pad edge from (x, y): every obstacle swept with the
+    // bird's collision pad PLUS ROUTING_PAD_EXTRA (text adds the keep-out
+    // pad too). Returns { d, nx, ny } — signed distance to the pad boundary
+    // (POSITIVE outside, NEGATIVE inside) and the unit vector pointing INTO
+    // the pad (toward the obstacle). Outside, that vector points at the
+    // boundary point; inside, it points at the nearest face's inward normal.
+    // Feeds the steering deadband — a validated route passes through real
+    // clearance and should never enter the pad at all; if it does (overshoot
+    // or a collision push-in), chase-direction corrections are dampened
+    // there instead of shoving deeper, while outward escape corrections
+    // keep full strength (no wall-drag).
+    const routingPadEdgeVec = (b, g, x, y) => {
+      const ex = b.cfg.size * BIRD_HALF_W_FRAC + 2
+      const ey = b.cfg.size * BIRD_HALF_H_FRAC + 2
+      let best = { d: Infinity, nx: 0, ny: 0, id: null }
+      let inside = null // deepest inside-probe: { depth, nx, ny, id } (inward normal)
+      const probe = (r, id) => {
+        const L = r.left - ex
+        const R = r.right + ex
+        const T = r.top - ey
+        const B = r.bottom + ey
+        const cx = clamp(x, L, R)
+        const cy = clamp(y, T, B)
+        const dx = cx - x
+        const dy = cy - y
+        const d = Math.hypot(dx, dy)
+        if (d > 0.0001) {
+          if (d < best.d) best = { d, nx: dx / d, ny: dy / d }
+        } else if (x >= L && x <= R && y >= T && y <= B) {
+          // inside the swept rect: depth to the nearest face + its INWARD normal
+          const dL = x - L
+          const dR = R - x
+          const dT = y - T
+          const dB = B - y
+          const depth = Math.min(dL, dR, dT, dB)
+          if (!inside || depth < inside.depth) {
+            // INTO the pad = toward the obstacle: nearest face LEFT → the
+            // obstacle core is to the bird's RIGHT (+x), face RIGHT → −x,
+            // face TOP → +y, face BOTTOM → −y (left/top/bottom/right of the
+            // pad's face list maps to l/r/t/b signs below).
+            inside =
+              depth === dL
+                ? { depth, nx: 1, ny: 0, id: id }
+                : depth === dR
+                  ? { depth, nx: -1, ny: 0, id: id }
+                  : depth === dT
+                    ? { depth, nx: 0, ny: 1, id: id }
+                    : { depth, nx: 0, ny: -1, id: id }
+          }
         }
       }
+      for (const p of g.pads) probe(p.routeRect, p.id)
+      return inside
+        ? { d: -inside.depth, nx: inside.nx, ny: inside.ny, id: inside.id }
+        : best
+    }
+
+    // Sight-line test: the WHOLE segment vs EVERY pad in the unified
+    // obstaclePads set (headline glyphs + full-height logo + every button +
+    // hero edge pads), each at its routing view (routeRect: tight rect +
+    // ROUTING_PAD_EXTRA; the logo's routeRect is the FULL element rect).
+    // skipIds = pads the caller explicitly excludes (the planner recursing
+    // around a ring waypoint of pad P); avoidIds = recently-escaped pads —
+    // any leg crossing one is BLOCKED so routes back through it are
+    // rejected, never re-planned through it.
+    const pathBlocked = (g, x0, y0, x1, y1, padX, padY, skipIds, avoidIds) => {
+      for (const p of g.pads) {
+        if (skipIds && skipIds.has(p.id)) continue
+        if (avoidIds && avoidIds.has(p.id)) return true
+        if (sweepSegmentVsRect(x0, y0, x1, y1, p.routeRect, padX, padY))
+          return true
+      }
       return false
+    }
+
+    // Final-leg safety zone (task step 4): the terminal leg must clear every
+    // non-edge routing pad edge by ROUTE_FINAL_CLEAR — targets hugging an
+    // obstacle (the stuck-on-button / stuck-on-logo-bottom pattern) are
+    // rejected instead of approached. Edge pads are exempt: pool targets
+    // legitimately sit near a hero edge.
+    const finalLegViolatingPad = (g, x0, y0, x1, y1, padX, padY) => {
+      for (const p of g.pads) {
+        if (p.kind === 'edge') continue
+        if (
+          sweepSegmentVsRect(
+            x0,
+            y0,
+            x1,
+            y1,
+            p.routeRect,
+            padX + ROUTE_FINAL_CLEAR,
+            padY + ROUTE_FINAL_CLEAR
+          )
+        )
+          return p
+      }
+      return null
+    }
+
+    const routePadXY = (b) => ({
+      px: b.cfg.size * BIRD_HALF_W_FRAC + 2 + ROUTING_PAD_EXTRA,
+      py: b.cfg.size * BIRD_HALF_H_FRAC + 2 + ROUTING_PAD_EXTRA,
+    })
+
+    // First blocker along the segment (lowest sweep-entry t). Edge pads are
+    // never detoured around — a transit leg crossing an edge band is simply
+    // rejected (the candidate dies), matching “routes near the edge are
+    // rejected”.
+    const firstBlocker = (g, x0, y0, x1, y1, padX, padY, skipIds, avoidIds) => {
+      let blocker = null
+      for (const p of g.pads) {
+        if (p.kind === 'edge') continue
+        if (skipIds && skipIds.has(p.id)) continue
+        if (avoidIds && avoidIds.has(p.id)) continue
+        const h = sweepSegmentVsRect(x0, y0, x1, y1, p.routeRect, padX, padY)
+        if (h && (!blocker || h.t < blocker.h.t)) blocker = { h, pad: p }
+      }
+      return blocker
+    }
+
+    // Detour waypoints for one pad: near ring (8 dirs, radius half diagonal
+    // + ROUTE_WP_NEAR) + far ring (4 cardinals, + ROUTE_WP_FAR), cleaned out
+    // of the padded pad box, deduped, sorted by detour chord length.
+    const detourWps = (b, g, pad, fx, fy, tx, ty) => {
+      const r = pad.routeRect
+      const cx = (r.left + r.right) / 2
+      const cy = (r.top + r.bottom) / 2
+      const near = Math.max(r.right - r.left, r.bottom - r.top) / 2 + ROUTE_WP_NEAR
+      const far = near + ROUTE_WP_FAR
+      const list = []
+      for (let k = 0; k < 8; k++) {
+        const a = (Math.PI / 4) * k
+        list.push(cleanWp(b, g, r, cx + Math.cos(a) * near, cy + Math.sin(a) * near))
+      }
+      for (let k = 0; k < 4; k++) {
+        const a = (Math.PI / 2) * k
+        list.push(cleanWp(b, g, r, cx + Math.cos(a) * far, cy + Math.sin(a) * far))
+      }
+      const seen = new Set()
+      const wps = []
+      for (const w of list) {
+        const key = `${w.x},${w.y}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        if (Math.hypot(w.x - fx, w.y - fy) <= 12) continue
+        if (Math.hypot(w.x - tx, w.y - ty) <= 12) continue
+        wps.push(w)
+      }
+      wps.sort(
+        (p, q) =>
+          Math.hypot(p.x - fx, p.y - fy) +
+          Math.hypot(p.x - tx, p.y - ty) -
+          (Math.hypot(q.x - fx, q.y - fy) + Math.hypot(q.x - tx, q.y - ty))
+      )
+      return wps
+    }
+
+    const routeScore = (fx, fy, pts) => {
+      let len = 0
+      let turns = 0
+      let prevX = fx
+      let prevY = fy
+      let legX = 0
+      let legY = 0
+      for (let k = 0; k < pts.length; k++) {
+        const px = pts[k].x - prevX
+        const py = pts[k].y - prevY
+        len += Math.hypot(px, py)
+        if (k >= 1) {
+          const denom = Math.max(1e-6, Math.hypot(legX, legY) * Math.hypot(px, py))
+          if ((legX * px + legY * py) / denom < ROUTE_TURN_COS) turns++
+        }
+        legX = px
+        legY = py
+        prevX = pts[k].x
+        prevY = pts[k].y
+      }
+      return { len, turns, score: len + ROUTE_TURN_COST * turns }
+    }
+
+    const planRoute = (b, g, fx, fy, tx, ty, depth, skipIds, avoidIds, isFinal) => {
+      const { px, py } = routePadXY(b)
+      if (!pathBlocked(g, fx, fy, tx, ty, px, py, skipIds, avoidIds)) {
+        const v = isFinal
+          ? finalLegViolatingPad(g, fx, fy, tx, ty, px, py)
+          : null
+        if (!v) return [{ x: tx, y: ty }]
+        // Final leg violates the ROUTE_FINAL_CLEAR zone: try to insert ONE
+        // more waypoint (a ring point of the violating pad) that restores
+        // full clearance; nothing valid → reject this target (null).
+        if (depth > 0) {
+          for (const w of detourWps(b, g, v, fx, fy, tx, ty).slice(0, 4)) {
+            if (
+              !pathBlocked(g, fx, fy, w.x, w.y, px, py, null, avoidIds) &&
+              !pathBlocked(g, w.x, w.y, tx, ty, px, py, null, avoidIds) &&
+              !finalLegViolatingPad(g, w.x, w.y, tx, ty, px, py)
+            ) {
+              return [{ x: w.x, y: w.y }, { x: tx, y: ty }]
+            }
+          }
+        }
+        return null
+      }
+      if (depth <= 0) return null
+      const blocker = firstBlocker(g, fx, fy, tx, ty, px, py, skipIds, avoidIds)
+      if (!blocker) return null
+      const P = blocker.pad
+      const skipP = new Set(skipIds)
+      skipP.add(P.id)
+      // Skip-pad semantics: the from→W leg is excluded from pad P so ring
+      // candidates beside P are reachable; the W→to leg re-includes every
+      // pad (P honoured again downstream).
+      let best = null
+      let bestScore = Infinity
+      for (const w of detourWps(b, g, P, fx, fy, tx, ty).slice(0, 6)) {
+        const A = planRoute(b, g, fx, fy, w.x, w.y, depth - 1, skipP, avoidIds, false)
+        if (!A) continue
+        const B = planRoute(b, g, w.x, w.y, tx, ty, depth - 1, null, avoidIds, isFinal)
+        if (!B) continue
+        const combined = [...A, ...B]
+        if (combined.length > ROUTE_MAX_LEGS) continue
+        const { score } = routeScore(fx, fy, combined)
+        if (score < bestScore) {
+          bestScore = score
+          best = combined
+        }
+      }
+      return best
     }
 
     const zoneOf = (g, x, y) => {
@@ -471,6 +699,10 @@ export function useBirdPets({
     // 4a: the valid-target pool — obstacle-cleared lattice centers, zoned and
     // weighted (ZONE_WEIGHTS). Rebuilt per metric refresh; never per frame.
     let targetPool = []
+    // Task step 5: pads a bird recently escaped from — routes that cross
+    // them are rejected by pickTarget for ESCAPED_PAD_REJECT_MS. Map of
+    // pad id → reject-until timestamp; purged on every pick.
+    const escapedPads = new Map()
     const buildPool = (g) => {
       if (!g || g.w <= 0 || g.h <= 0) {
         targetPool = []
@@ -487,9 +719,13 @@ export function useBirdPets({
       const x0 = POOL_EDGE_INSET + (interiorW - (colsN - 1) * cellW) / 2
       const y0 = POOL_EDGE_INSET + (interiorH - (rowsN - 1) * cellH) / 2
       const obs = []
-      if (g.h1) for (const line of g.h1.glyphs) obs.push(line)
-      if (g.logo) obs.push(g.logo)
-      for (const btn of g.buttons) obs.push(btn)
+      // Pool cells must clear the ROUTING pads (not just the tight rects):
+      // a target inside an obstacle's routing view can never satisfy the
+      // planner's final-leg clearance, so it would only waste picks.
+      for (const p of g.pads) {
+        if (p.kind === 'edge') continue
+        obs.push(p.routeRect)
+      }
       const list = []
       for (let r = 0; r < rowsN; r++) {
         for (let c = 0; c < colsN; c++) {
@@ -530,8 +766,8 @@ export function useBirdPets({
     // obstacles like headline lines — those candidates slide to the nearest
     // face instead of dying.
     const cleanWp = (b, g, rect, x, y) => {
-      const padX = b.cfg.size * BIRD_HALF_W_FRAC + ROUTE_WP_STEP
-      const padY = b.cfg.size * BIRD_HALF_H_FRAC + ROUTE_WP_STEP
+      const padX = b.cfg.size * BIRD_HALF_W_FRAC + ROUTE_WP_STEP + ROUTING_PAD_EXTRA
+      const padY = b.cfg.size * BIRD_HALF_H_FRAC + ROUTE_WP_STEP + ROUTING_PAD_EXTRA
       const L = rect.left - padX
       const R = rect.right + padX
       const T = rect.top - padY
@@ -552,90 +788,181 @@ export function useBirdPets({
       return { x: Math.round(px), y: Math.round(py) }
     }
 
-    // 4d: route generation. Direct chord → 1 ring waypoint around the first
-    // blocker → a bounded pair of chords through two ring points → reject.
-    // Every leg is sweep-tested; the first blocker is the lowest-entering
-    // obstacle along the ray.
-    const makeRoute = (b, g, target) => {
-      const padX = b.cfg.size * BIRD_HALF_W_FRAC + 2
-      const padY = b.cfg.size * BIRD_HALF_H_FRAC + 2
-      if (!pathBlocked(g, b.x, b.y, target.x, target.y, padX, padY)) return [target]
-
-      let blocker = null
-      const testBlocker = (rect, isText) => {
-        const bx = isText
-          ? {
-              left: rect.left - REPULSION_PAD,
-              right: rect.right + REPULSION_PAD,
-              top: rect.top - REPULSION_PAD,
-              bottom: rect.bottom + REPULSION_PAD,
-            }
-          : rect
-        const h = sweepSegmentVsRect(b.x, b.y, target.x, target.y, bx, padX, padY)
-        if (h && (!blocker || h.t < blocker.h.t)) blocker = { h, rect: bx }
+    // ---- grid A* routing ( ?birds-route=grid ) ----------------------------
+    // The grid is built lazily from the same obstaclePads the sweep uses,
+    // keyed by hero size + pad rects so it rebuilds only on a real layout
+    // change. Nav margins shrink on narrow heroes so corridors survive.
+    let navGrid = null
+    let navKey = ''
+    const navStats = []
+    if (dbgOn) window.__birdNav = navStats
+    const navGridFor = (g) => {
+      if (!g || g.w <= 0 || g.h <= 0) return null
+      const margin = g.w < 640 ? GRID_MARGIN_MOBILE : GRID_MARGIN
+      const spriteHalf =
+        Math.max(...birds.map((b) => b.cfg.size)) * BIRD_HALF_W_FRAC
+      const key = `${g.w.toFixed(0)}x${g.h.toFixed(0)}|${margin}|${g.pads
+        .map((p) => {
+          const r = p.colRect || p.routeRect
+          return `${p.id}:${r.left.toFixed(0)},${r.top.toFixed(0)},${r.right.toFixed(0)},${r.bottom.toFixed(0)}`
+        })
+        .join('|')}`
+      if (navGrid && key === navKey) return navGrid
+      navGrid = buildNavGrid({
+        width: g.w,
+        height: g.h,
+        pads: g.pads,
+        spriteHalf,
+        margin,
+      })
+      navKey = key
+      if (dbgOn) {
+        const st = gridStats(navGrid)
+        const probes = testNavRoutes(navGrid)
+        const ok = probes.filter((p) => p.ok).length
+        console.info(
+          `[bird-diag] navgrid cells=${st.cells} blocked=${st.blockedPct.toFixed(1)}% margin=${margin} half=${spriteHalf.toFixed(1)} routes=${ok}/3` +
+            ` ms=${probes.map((p) => (p.ok ? p.ms.toFixed(1) : 'x')).join(',')}`
+        )
+        // Verification handles: read the grid probe + stats from outside.
+        window.__birdGrid = navGrid
+        window.__birdGridProbe = { stats: st, margin, routes: probes }
       }
-      if (g.logo) testBlocker(g.logo, false)
-      for (const btn of g.buttons) testBlocker(btn, false)
-      if (g.h1) for (const line of g.h1.glyphs) testBlocker(line, true)
-      if (!blocker) return null
+      return navGrid
+    }
 
-      const rect = blocker.rect
-      const cx = (rect.left + rect.right) / 2
-      const cy = (rect.top + rect.bottom) / 2
-      const ring = []
-      for (let k = 0; k < 8; k++) {
-        const a = (Math.PI / 4) * k
-        ring.push(
-          cleanWp(
-            b,
-            g,
-            rect,
-            cx + Math.cos(a) * ROUTE_WP_RING,
-            cy + Math.sin(a) * ROUTE_WP_RING
-          )
+    const gridRoute = (b, g, target) => {
+      const grid = navGridFor(g)
+      if (!grid) return null
+      // Latency covers failures too (a hung A* is the risk we care about).
+      const t0 = performance.now()
+      const res = gridPath(grid, b.x, b.y, target.x, target.y)
+      navStats.push(performance.now() - t0)
+      if (navStats.length > 80) navStats.shift()
+      if (!res) return null
+      if (dbgOn) {
+        console.info(
+          `[bird-diag] gridroute bird=${b.id} pts=${res.points.length} exp=${res.expansions} ms=${res.ms.toFixed(2)}`
         )
       }
-      const wps = ring.filter(
-        (w, idx) =>
-          ring.findIndex((v) => v.x === w.x && v.y === w.y) === idx &&
-          Math.hypot(w.x - b.x, w.y - b.y) > 12 &&
-          Math.hypot(w.x - target.x, w.y - target.y) > 12
-      )
-      wps.sort(
-        (p, q) =>
-          Math.hypot(p.x - b.x, p.y - b.y) +
-          Math.hypot(p.x - target.x, p.y - target.y) -
-          (Math.hypot(q.x - b.x, q.y - b.y) + Math.hypot(q.x - target.x, q.y - target.y))
-      )
-      for (const w of wps) {
-        if (
-          !pathBlocked(g, b.x, b.y, w.x, w.y, padX, padY) &&
-          !pathBlocked(g, w.x, w.y, target.x, target.y, padX, padY)
-        ) {
-          return [w, target]
-        }
-      }
-      for (let a = 0; a < wps.length && a < ROUTE_PAIR_LIMIT; a++) {
-        for (let c = a + 1; c < wps.length && c < ROUTE_PAIR_LIMIT; c++) {
-          const w1 = wps[a]
-          const w2 = wps[c]
-          if (
-            !pathBlocked(g, b.x, b.y, w1.x, w1.y, padX, padY) &&
-            !pathBlocked(g, w1.x, w1.y, w2.x, w2.y, padX, padY) &&
-            !pathBlocked(g, w2.x, w2.y, target.x, target.y, padX, padY)
-          ) {
-            return [w1, w2, target]
+      return res.points
+    }
+
+    // 4d: route generation — the multi-leg planner. Every candidate route
+    // is sweep-tested against the unified obstaclePads; the terminal leg is
+    // additionally held to the ROUTE_FINAL_CLEAR safety zone; routes are
+    // scored (total length + turn penalty) and the best up to ROUTE_MAX_LEGS
+    // legs wins. Escaped pads (avoidIds) block any crossing leg, so a target
+    // whose route crosses one is rejected rather than re-planned through it.
+    const makeRoute = (b, g, target, avoidIds) => {
+      if (gridMode) {
+        const pts = gridRoute(b, g, target)
+        if (!pts) return null
+        // Escaped-pad policy: a grid path that crosses a recently escaped
+        // pad is rejected so the bird leaves the pocket instead of looping
+        // straight back into it.
+        if (avoidIds && avoidIds.size) {
+          const { px, py } = routePadXY(b)
+          for (const p of g.pads) {
+            if (!avoidIds.has(p.id)) continue
+            let fx = b.x
+            let fy = b.y
+            for (const pt of pts) {
+              if (
+                sweepSegmentVsRect(fx, fy, pt.x, pt.y, p.routeRect, px, py)
+              ) {
+                return null
+              }
+              fx = pt.x
+              fy = pt.y
+            }
           }
         }
+        return pts
       }
-      return null
+      const route = planRoute(
+        b,
+        g,
+        b.x,
+        b.y,
+        target.x,
+        target.y,
+        ROUTE_MAX_LEGS,
+        null,
+        avoidIds,
+        true
+      )
+      if (route && dbgOn) {
+        const s = routeScore(b.x, b.y, route)
+        console.info(
+          `[bird-diag] route bird=${b.id} from=(${b.x.toFixed(0)},${b.y.toFixed(0)}) to=(${target.x.toFixed(0)},${target.y.toFixed(0)}) legs=${route.length} len=${s.len.toFixed(0)} turns=${s.turns} score=${s.score.toFixed(0)}`
+        )
+      }
+      return route
     }
 
     const hoverFall = (b, now) => {
-      // No immediately viable route: brief in-place hover, fresh samples on
-      // the throttled retry (pickTarget's repick window gates the churn).
+      // No immediately viable route: brief hover with fresh samples on the
+      // throttled retry (pickTarget's repick window gates the churn). NOT an
+      // immune leg: a hover target completes instantly, so it must never
+      // count toward the two-flight immunity expiry.
+      //
+      // Pad-escape lift: an in-place target from INSIDE the routing pad
+      // (post-crash pocket, bounce park-back, ram end) produces ZERO
+      // progress — wedged-escape then re-picks from the same wall position
+      // every 1.2s while every straight leg from that face is pad-blocked,
+      // so the mill never opens. The hover target is instead lifted
+      // STEER_SETOUT + 6px past the pad edge (0.8px/frame escape) along the
+      // nearest face's OUTWARD normal; a bird already clear of the pad
+      // keeps the plain in-place hover.
       b.waypointQueue = []
-      b.target = { x: b.x, y: b.y }
+      b.legImmune = false
+      b.gridPath = null
+      b.gridGoal = null
+      // Lift direction: the nearest-face outward normal is only the FIRST
+      // candidate — if it points into a second pad (corner wedges), the lift
+      // target lands in a blocked cell and the bird stays stuck. Scan 8
+      // directions (primary normal first, then cardinals + diagonals) and
+      // pick the first whose escape position is free of every routing pad
+      // by the bird's half-extent. Last resort: the plain one-coordinate
+      // override; the throttled re-pick re-tries rather than wedging.
+      const g = geom()
+      const edge = routingPadEdgeVec(b, g, b.x, b.y)
+      const need = STEER_SETOUT + 6
+      const fhw = b.cfg.size * BIRD_HALF_W_FRAC + ROUTING_PAD_EXTRA
+      const fhh = b.cfg.size * BIRD_HALF_H_FRAC + ROUTING_PAD_EXTRA
+      const freeAt = (ex, ey) => {
+        if (ex < fhw || ey < fhh || ex > g.w - fhw || ey > g.h - fhh) return false
+        for (const p of g.pads) {
+          if (ex > p.routeRect.left - fhw && ex < p.routeRect.right + fhw &&
+              ey > p.routeRect.top - fhh && ey < p.routeRect.bottom + fhh) {
+            return false
+          }
+        }
+        return true
+      }
+      const dirs = []
+      if (edge.d < need) dirs.push({ x: -edge.nx, y: -edge.ny })
+      dirs.push(
+        { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 },
+        { x: 0.7071, y: -0.7071 }, { x: 0.7071, y: 0.7071 },
+        { x: -0.7071, y: 0.7071 }, { x: -0.7071, y: -0.7071 }
+      )
+      let slug = null
+      for (const d of dirs) {
+        const ex = b.x + d.x * need
+        const ey = b.y + d.y * need
+        if (freeAt(ex, ey)) {
+          slug = { x: b.x + d.x * (need + 6), y: b.y + d.y * (need + 6) }
+          break
+        }
+      }
+      if (!slug) {
+        slug = edge.d < need
+          ? { x: b.x - edge.nx * need, y: b.y - edge.ny * need }
+          : { x: b.x, y: b.y }
+      }
+      b.target = slug
       b.repickHoldUntil = now + 400
     }
 
@@ -645,6 +972,18 @@ export function useBirdPets({
     const pickTarget = (b, g, now) => {
       b.pickCount = (b.pickCount || 0) + 1
       b._pickVersion = (b._pickVersion || 0) + 1
+      // Escaped-pad reject list: drop expired entries, keep live ones as
+      // the planner's avoidIds (routes crossing them are rejected).
+      let avoidIds = null
+      if (escapedPads.size) {
+        for (const [pid, until] of escapedPads) {
+          if (until <= now) escapedPads.delete(pid)
+          else {
+            if (!avoidIds) avoidIds = new Set()
+            avoidIds.add(pid)
+          }
+        }
+      }
 
     // Patrol trigger: every 4th target selection (~25%) starts a loop —
     // but only in 'flying' and never while committed to a perch; if the
@@ -675,16 +1014,156 @@ export function useBirdPets({
       (t) => Math.hypot(t.x - b.x, t.y - b.y) >= MIN_PICK_DIST
     )
     cands.sort((p, q) => q.weight - p.weight)
+    // Crash immunity: while active, a target is crash-safe ONLY if its
+    // route is a single straight sight line (no waypoints, no corner turns)
+    // AND it clears every obstacle edge by ROUTE_MIN_CLEARANCE. Anything
+    // else is refused — the picker will not route into a crash during the
+    // window (scripted ramming is suspended separately in steer). No safe
+    // target → the existing hover-fall retry keeps the bird drifting in
+    // place until airspace opens up.
+    const immune = now < b.crashImmuneUntil
     for (const c of cands) {
-      const route = makeRoute(b, g, c)
-      if (route) {
+      if (immune && minDistToObstacles(g, c.x, c.y) < ROUTE_MIN_CLEARANCE) {
+        continue
+      }
+      const route = makeRoute(b, g, c, avoidIds)
+      // Crash-safe pick: legacy measures the leg count (one straight leg);
+      // grid mode asks the same question of the grid — a direct sight line
+      // with two cells of clearance.
+      const immuneDirect =
+        immune && route
+          ? gridMode
+            ? (() => {
+                const grid = navGridFor(g)
+                return (
+                  !!grid && gridLineClear(grid, b.x, b.y, c.x, c.y, 16)
+                )
+              })()
+            : route.length === 1
+          : false
+      if (route && (!immune || immuneDirect)) {
         b.target = route[0]
         b.waypointQueue = route.slice(1)
+        if (gridMode) {
+          // Pure-pursuit polyline: pursueGrid() projects onto it each frame
+          // and steers at a 50px lookahead point.
+          b.gridPath = [{ x: b.x, y: b.y }, ...route]
+          b.gridGoal = { x: c.x, y: c.y }
+          b.gridIdx = 0
+          b.gridReplanAt = 0
+        } else {
+          b.gridPath = null
+          b.gridGoal = null
+        }
+        // Straight-leg marker: only a committed immune pick completes a
+        // crash-free flight (hover fallbacks don't count).
+        b.legImmune = immune
+        if (dbgOn && immune) {
+          console.info(
+            `[bird-diag] immune pick ${b.id} flight=${b.immuneFlights + 1}/${CRASH_IMMUNE_FLIGHTS} legs=1 clear=${minDistToObstacles(g, c.x, c.y).toFixed(0)}px`
+          )
+        }
         return
       }
     }
     hoverFall(b, now)
   }
+
+    // ---- grid pure-pursuit follower ----------------------------------------
+    // Projects the bird onto its planned polyline, steers at a 50px lookahead
+    // point, and re-plans when it drifts >46px off the corridor or the route
+    // has gone stale. Returns the next target, 'arrived', or null when there
+    // is nothing to follow.
+    const pursueGrid = (b, g, now) => {
+      const path = b.gridPath
+      if (!path || path.length < 2) return null
+      let bestD2 = Infinity
+      let bestSeg = 1
+      let px = b.x
+      let py = b.y
+      for (let k = 1; k < path.length; k++) {
+        const a = path[k - 1]
+        const c = path[k]
+        const vx = c.x - a.x
+        const vy = c.y - a.y
+        const len2 = vx * vx + vy * vy || 1
+        const tt = clamp(((b.x - a.x) * vx + (b.y - a.y) * vy) / len2, 0, 1)
+        const qx = a.x + vx * tt
+        const qy = a.y + vy * tt
+        const d2 = (b.x - qx) ** 2 + (b.y - qy) ** 2
+        if (d2 < bestD2) {
+          bestD2 = d2
+          bestSeg = k
+          px = qx
+          py = qy
+        }
+      }
+      const goal = path[path.length - 1]
+      const toGoalX = goal.x - b.x
+      const toGoalY = goal.y - b.y
+      const goalDist = Math.hypot(toGoalX, toGoalY)
+      if (
+        goalDist < TARGET_ARRIVE_RADIUS &&
+        b.vx * toGoalX + b.vy * toGoalY >= 0
+      ) {
+        return 'arrived'
+      }
+      if (Math.sqrt(bestD2) > 46 && now > (b.gridReplanAt || 0) + 1500) {
+        b.gridReplanAt = now
+        const replanned = makeRoute(b, g, b.gridGoal || goal, null)
+        if (replanned) {
+          b.gridPath = [{ x: b.x, y: b.y }, ...replanned]
+          b.gridGoal = b.gridGoal || { x: goal.x, y: goal.y }
+        } else {
+          b.gridPath = null
+          b.gridGoal = null
+          b.waypointQueue = []
+          return 'arrived'
+        }
+      }
+      // Lookahead along the polyline from the projection. 50px is the
+      // turn-radius-friendly compromise — but a lookahead that walks PAST a
+      // sharp vertex makes the bird chord-cut the corner, which is how the
+      // glyph wall got grazed. Corner clamp: when the walk would carry
+      // `remain` beyond a vertex whose turn is sharper than 45°
+      // (dot(dirBefore, dirAfter) < cos 45°), the lookahead stops AT that
+      // vertex; the bird steers directly at the corner until it is crossed,
+      // i.e. it turns ON the corner instead of cutting through it. Gentle
+      // curves (<45°) still smooth-path.
+      let remain = 50
+      let cur = { x: px, y: py }
+      for (let k = Math.max(1, bestSeg); k < b.gridPath.length; k++) {
+        const c = b.gridPath[k]
+        const dx = c.x - cur.x
+        const dy = c.y - cur.y
+        const d = Math.hypot(dx, dy)
+        if (d >= remain) {
+          const tt = remain / d
+          cur = { x: cur.x + dx * tt, y: cur.y + dy * tt }
+          break
+        }
+        remain -= d
+        cur = { x: c.x, y: c.y }
+        // About to cross vertex c into segment k → k+1: measure the turn.
+        const n = b.gridPath[k + 1]
+        if (!n) break
+        const prev = b.gridPath[k - 1]
+        const ix = c.x - prev.x
+        const iy = c.y - prev.y
+        const ox = n.x - c.x
+        const oy = n.y - c.y
+        const dot =
+          (ix * ox + iy * oy) /
+          ((Math.hypot(ix, iy) || 1) * (Math.hypot(ox, oy) || 1))
+        if (dot < Math.SQRT1_2) {
+          // ≥45° turn: steer AT the vertex for the duration of the turn.
+          cur = { x: c.x, y: c.y }
+          break
+        }
+      }
+      b.gridIdx = bestSeg
+      return cur
+    }
 
     // ---- perch points -------------------------------------------------------
     // Breakpoint-aware headline perching, computed in useLayoutMetrics from
@@ -748,34 +1227,47 @@ export function useBirdPets({
       const fly = flyRefs.current[i]
       const perched = perchRefs.current[i]
       if (!host) return
+      // Only write a class when its boolean actually flips: the old code
+      // toggled ~10 classes per bird per frame, invalidating style for no
+      // visual change.
+      const setCls = (el, name, on) => {
+        if (el && el.classList.contains(name) !== on) el.classList.toggle(name, on)
+      }
       host.dataset.state = b.state
 
       const flying = b.state === 'flying' || b.state === 'arriving'
       // Glider spreads its wings during the perch descent instead of flapping.
       const gliding = b.key === 'glider' && b.state === 'arriving'
       const inFlyingPose = b.state === 'flying' || b.state === 'arriving'
+      // Post-crash dizzy: slow in-place wobble, wings folded, stars orbiting
+      // (the star spans themselves live on the host via dizzyStars).
+      const nowDizzy = !!b.dizzyUntil && now < b.dizzyUntil
+      setCls(host, 'is-dizzy', nowDizzy)
       // Bounce choreography: the host wrapper carries ONE of the three phase
       // classes (is-impacting / is-confused / is-recovering), derived per
       // frame from recoil.start — no setTimeout chain, so RAF suspension
       // can't desync the phases; keyframes run on the sprite so the per-frame
       // transform on the host stays intact.
       const recoilPhase = b.recoil ? now - b.recoil.start : Infinity
-      host.classList.toggle(
+      setCls(
+        host,
         'is-impacting',
         inFlyingPose && b.recoil !== null && recoilPhase < RECOIL_IMPACT_MS
       )
-      host.classList.toggle(
+      setCls(
+        host,
         'is-confused',
         inFlyingPose && b.recoil !== null && recoilPhase >= RECOIL_IMPACT_MS && recoilPhase < RECOIL_HOLD_END_MS
       )
-      host.classList.toggle(
+      setCls(
+        host,
         'is-recovering',
         inFlyingPose && b.recoil !== null && recoilPhase >= RECOIL_HOLD_END_MS && recoilPhase < RECOIL_END_MS
       )
       if (fly) {
-        fly.classList.toggle('is-flapping', flying && !reduced && !gliding)
-        fly.classList.toggle('hidden', b.state === 'perched')
-        fly.classList.toggle('pdd-glide-pose', gliding)
+        setCls(fly, 'is-flapping', flying && !reduced && !gliding && !nowDizzy)
+        setCls(fly, 'hidden', b.state === 'perched')
+        setCls(fly, 'pdd-glide-pose', gliding)
         // Flap cadence: speed-up near a perch (approach flare). During the
         // impact+confusion phases the wings are HELD mid-flap by CSS
         // (animation-play-state: paused under the phase classes) and keep
@@ -788,16 +1280,13 @@ export function useBirdPets({
         }
       }
       if (perched) {
-        perched.classList.toggle('hidden', b.state !== 'perched')
+        setCls(perched, 'hidden', b.state !== 'perched')
         const landed = b.state === 'perched'
         const idleActive = landed && now < b.idleUntil
-        perched.classList.toggle('pdd-land-flare', landed && now < b.flareUntil)
-        perched.classList.toggle('pdd-idle-tilt', idleActive && b.idleKind === 0)
-        perched.classList.toggle('pdd-idle-flick', idleActive && b.idleKind === 1)
-        perched.classList.toggle(
-          'pdd-idle-ruffle',
-          idleActive && b.idleKind === 2
-        )
+        setCls(perched, 'pdd-land-flare', landed && now < b.flareUntil)
+        setCls(perched, 'pdd-idle-tilt', idleActive && b.idleKind === 0)
+        setCls(perched, 'pdd-idle-flick', idleActive && b.idleKind === 1)
+        setCls(perched, 'pdd-idle-ruffle', idleActive && b.idleKind === 2)
         if (!landed) {
           perched.classList.remove(
             'pdd-land-flare',
@@ -816,6 +1305,17 @@ export function useBirdPets({
           `translate(${b.x.toFixed(1)}px, ${b.y.toFixed(1)}px)` +
           (b.facing === -1 ? ' scaleX(-1)' : '')
       } else {
+        if (nowDizzy) {
+          // Dizzy wobble: ±DIZZY_WOBBLE_DEG at DIZZY_WOBBLE_HZ around the
+          // held heading — no bank smoothing (velocity is zero anyway), and
+          // the smoothed bank is left stale so it re-eases post-dizzy.
+          const wob =
+            DIZZY_WOBBLE_DEG * Math.sin(now * 0.001 * Math.PI * 2 * DIZZY_WOBBLE_HZ)
+          host.style.transform =
+            `translate(${b.x.toFixed(1)}px, ${b.y.toFixed(1)}px) rotate(${wob.toFixed(1)}deg)` +
+            (b.facing === -1 ? ' scaleX(-1)' : '')
+          return
+        }
         // Rotation smoothing: the raw per-frame atan2 angle is clamped to the
         // personality limit but can still swing the full ±40..50° within one
         // frame near vertical flight (the visible wing-flap-like bank flip),
@@ -1017,29 +1517,91 @@ export function useBirdPets({
           t.x,
           t.y,
           g.logo,
-          b.cfg.size * BIRD_HALF_W_FRAC + 2,
-          b.cfg.size * BIRD_HALF_H_FRAC + 2
+          b.cfg.size * BIRD_HALF_W_FRAC + 2 + ROUTING_PAD_EXTRA,
+          b.cfg.size * BIRD_HALF_H_FRAC + 2 + ROUTING_PAD_EXTRA
         )
       )
         return false
       if (!g.h1) return true
-      return !crossesH1Lines(b.x, b.y, t.x, t.y, g, REPULSION_PAD)
+      return !crossesH1Lines(b.x, b.y, t.x, t.y, g, REPULSION_PAD + ROUTING_PAD_EXTRA)
+    }
+
+    // ---- post-crash dizzy (bounce → dizzy → immunity → fresh route) ----------
+    // After the sticky recoil resolves, the bird holds STATIONARY for
+    // DIZZY_MS: velocity zero, a slow ±DIZZY_WOBBLE_DEG wobble at
+    // DIZZY_WOBBLE_HZ (renderBird), wings folded, and three star icons
+    // orbiting its head — pure DOM, CSS-animated, no per-frame JS. While
+    // dizzy the bird is skipped by steering, sweeps, picking, patrol and
+    // ram (stationary; nothing to sweep against). When dizzy ends, crash
+    // immunity opens (see pickTarget) and a fresh route is picked.
+    const dizzyStars = (b, i, on) => {
+      const host = hostRefs.current[i]
+      if (!host) return
+      const existing = host.querySelectorAll('.pdd-bird-dizzy-stars')
+      if (on && existing.length === 0) {
+        const wrap = document.createElement('span')
+        wrap.className = 'pdd-bird-dizzy-stars'
+        for (let k = 0; k < 3; k++) {
+          const star = document.createElement('span')
+          star.className = 'pdd-dizzy-star'
+          star.textContent = '✦'
+          wrap.appendChild(star)
+        }
+        host.appendChild(wrap)
+      } else if (!on) {
+        existing.forEach((el) => el.remove())
+      }
+    }
+
+    const enterDizzy = (b, i, now) => {
+      b.recoil = null
+      b.dizzyUntil = now + DIZZY_MS
+      b.vx = 0
+      b.vy = 0
+      // Dizzy always resumes as flying with a fresh route: an arriving
+      // glide that collided releases its perch commitment.
+      if (b.perchIdx >= 0) releasePerch(b)
+      if (b.state === 'arriving') b.state = 'flying'
+      b.hardApproach = false
+      b.patrolLoop = null
+      b.ramUntil = 0
+      b.ramTarget = null
+      b.target = null
+      b.waypointQueue = []
+      b.legImmune = false
+      dizzyStars(b, i, true)
+      if (dbgOn) {
+        console.info(
+          `[bird-diag] dizzy start bird=${i} t=+${Math.round(now - now0)}ms hold=${DIZZY_MS}ms wobble=±${DIZZY_WOBBLE_DEG}deg@${DIZZY_WOBBLE_HZ}Hz stars@${DIZZY_STARS_HZ}Hz`
+        )
+      }
+    }
+
+    const endDizzy = (b, i, now) => {
+      b.dizzyUntil = 0
+      dizzyStars(b, i, false)
+      b.crashImmuneUntil = now + CRASH_IMMUNE_MS
+      b.immuneFlights = 0
+      if (dbgOn) {
+        console.info(
+          `[bird-diag] dizzy end bird=${i} t=+${Math.round(now - now0)}ms immunity open: 2 straight clear flights or ${CRASH_IMMUNE_MS}ms`
+        )
+      }
+      pickTarget(b, geom(), now)
     }
 
     // ---- feathers ------------------------------------------------------------
-    // Spawned ONLY when the colliding surface is the logo — the hero's one
-    // object that visibly sheds on impact. Hero edge, headline and other
-    // collisions still recoil + squash, they just don't spawn particles
-    // (cheaper on the DOM, and consistent with the button/text hitboxes that
-    // never spawn). Logo collisions are detected against the cached logoRect
-    // from useLayoutMetrics, checked separately from headline/hero edges.
+    // Spawned on EVERY solid impact — logo, headline glyphs, buttons and hero
+    // edges all shed a burst at the contact point. The FEATHER_CAP ceiling
+    // keeps rapid crashes from running away (18 live spans max). The burst
+    // direction is the reflected velocity; colour comes from the bird's
+    // computed colour so each personality sheds its own tint.
     // Spawned on collision at the bird position, flying away from the impact
     // in the reflected direction ± 22°. Purely CSS-animated: initial
     // velocity + rotation are inline custom properties feeding one keyframe,
     // and animationend removes each span — no per-feather JS loop. The
     // 18-feather cap prevents runaway accumulation on rapid collisions.
-    const spawnFeathers = (b, i, angle, surface) => {
-      if (surface !== 'logo') return
+    const spawnFeathers = (b, i, angle) => {
       if (reduced) return
       const layer = featherLayerRef?.current
       if (!layer) return
@@ -1332,9 +1894,21 @@ export function useBirdPets({
       // steers straight into the nearest obstacle (a random one when the
       // nearest is farther than RAM_FAR_PICK). The impact rides the normal
       // swept-collision + sticky-recoil path; when the window expires the
-      // route regenerates from scratch.
-      const ramSched = dbgOn ? [8000, 15000] : [RAM_MIN_MS, RAM_MAX_MS]
-      if (b.state === 'flying' && b.perchIdx < 0 && !b.patrolLoop && !b.ramUntil) {
+      // route regenerates from scratch. SUSPENDED entirely while crash
+      // immunity is open — the immunity window must end with zero scripted
+      // crashes; the ram timer resumes from wherever it was.
+      // Real schedule in every mode: one ram per bird at most every 90s
+      // (the old debug 8-15s shortcut would have broken that policy and
+      // biased the A/B capture).
+      const ramSched = [RAM_MIN_MS, RAM_MAX_MS]
+      if (
+        !ramsOff &&
+        b.state === 'flying' &&
+        b.perchIdx < 0 &&
+        !b.patrolLoop &&
+        !b.ramUntil &&
+        now >= b.crashImmuneUntil
+      ) {
         if (!b.nextRamAt) b.nextRamAt = now + rand(ramSched[0], ramSched[1])
         if (now >= b.nextRamAt) {
           const rects = [
@@ -1350,25 +1924,49 @@ export function useBirdPets({
             }
           }
           if (clear) {
-            let pick = rects[0]
-            let best = Infinity
-            for (const o of rects) {
-              const d = distToRect(b.x, b.y, o)
-              if (d < best) {
-                best = d
-                pick = o
+            // Planned impact: aim at the face of a solid, but only after
+            // the APPROACH leg (to a point 46px off that face) passes the
+            // grid. The impact itself is intentionally exempt — this is a
+            // choreographed moment, not an accident.
+            const grid = navGridFor(g)
+            const order = [...rects].sort(
+              (a, c) =>
+                distToRect(b.x, b.y, a) - distToRect(b.x, b.y, c)
+            )
+            const trial =
+              order.length > 1 &&
+              distToRect(b.x, b.y, order[0]) > RAM_FAR_PICK
+                ? [
+                    order[Math.floor(Math.random() * order.length)],
+                    ...order,
+                  ]
+                : order
+            let ready = false
+            for (const o of trial) {
+              const faceX = clamp(b.x, o.left, o.right)
+              const faceY = clamp(b.y, o.top, o.bottom)
+              const ndx = b.x - faceX
+              const ndy = b.y - faceY
+              const nm = Math.hypot(ndx, ndy) || 1
+              const ax = faceX + (ndx / nm) * 46
+              const ay = faceY + (ndy / nm) * 46
+              if (grid && !gridLineClear(grid, b.x, b.y, ax, ay)) continue
+              b.ramTarget = { x: faceX, y: faceY }
+              b.ramUntil = now + RAM_WINDOW_MS
+              b.waypointQueue = []
+              b.gridPath = null
+              b.gridGoal = null
+              b.nextRamAt = Infinity
+              ready = true
+              if (dbgOn) {
+                console.info(
+                  `[bird-diag] ram start bird=${i} cds=${((now - (b.lastRamAt || 0)) / 1000).toFixed(0)}s target=(${faceX.toFixed(0)},${faceY.toFixed(0)}) t=+${Math.round(now - now0)}ms`
+                )
               }
+              b.lastRamAt = now
+              break
             }
-            if (best > RAM_FAR_PICK) {
-              pick = rects[Math.floor(Math.random() * rects.length)]
-            }
-            b.ramTarget = {
-              x: clamp(b.x, pick.left, pick.right),
-              y: clamp(b.y, pick.top, pick.bottom),
-            }
-            b.ramUntil = now + RAM_WINDOW_MS
-            b.waypointQueue = []
-            b.nextRamAt = Infinity
+            if (!ready) b.nextRamAt = now + 3000
           } else {
             // Not clear of the obstacle field yet: retry in 2s instead of
             // abandoning the schedule.
@@ -1379,6 +1977,8 @@ export function useBirdPets({
       if (b.ramUntil) {
         if (now < b.ramUntil && b.ramTarget) {
           b.waypointQueue = []
+          b.gridPath = null
+          b.gridGoal = null
           b.target = b.ramTarget
         } else {
           if (dbgOn) {
@@ -1390,6 +1990,24 @@ export function useBirdPets({
           b.ramTarget = null
           b.nextRamAt = now + rand(ramSched[0], ramSched[1])
           pickTarget(b, g, now)
+        }
+      }
+
+      // Grid route following ( ?birds-route=grid ): steer at the lookahead
+      // point on the planned polyline; arrival or drift re-plans/picks.
+      if (gridMode && b.gridPath && !b.patrolLoop && !b.ramUntil) {
+        if (b.perchIdx >= 0 || b.state !== 'flying') {
+          b.gridPath = null
+          b.gridGoal = null
+        } else {
+          const look = pursueGrid(b, g, now)
+          if (look === 'arrived') {
+            b.gridPath = null
+            b.gridGoal = null
+            pickTarget(b, g, now)
+          } else if (look) {
+            b.target = look
+          }
         }
       }
 
@@ -1445,9 +2063,11 @@ export function useBirdPets({
             b.vx = R.nx * RECOIL_CLEAR_AWAY_SPEED
             b.vy = R.ny * RECOIL_CLEAR_AWAY_SPEED
           }
-          b.recoil = null
+          // Bounce fully resolved → the addendum dizzy hold takes over
+          // (1400ms, stars, then crash immunity opens).
+          enterDizzy(b, i, now)
         } else if (elapsed >= RECOIL_END_MS) {
-          b.recoil = null
+          enterDizzy(b, i, now)
         }
         // Phase C: fall through — the reflected velocity carries the bird
         // off the surface while normal steering resumes underneath.
@@ -1472,7 +2092,12 @@ export function useBirdPets({
         return
       }
 
-      if (dist < TARGET_ARRIVE_RADIUS && !b.patrolLoop && !b.ramUntil) {
+      if (
+        dist < TARGET_ARRIVE_RADIUS &&
+        !b.patrolLoop &&
+        !b.ramUntil &&
+        !b.gridPath
+      ) {
         // reached the current target (patrol targets move every frame — no
         // waypoint advancement logic may fire mid-loop)
         if (b.state === 'arriving') {
@@ -1481,6 +2106,14 @@ export function useBirdPets({
             return
           }
         } else if (b.waypointQueue.length) {
+          // Intermediate waypoints are reached at ROUTE_WP_ARRIVE (15px, the
+          // planner's turn radius) — or already inside TARGET_ARRIVE_RADIUS
+          // and still moving toward it (overshoot guard). The final queued
+          // waypoint before a perch target: the glide-in begins here.
+          if (dist >= ROUTE_WP_ARRIVE && (b.vx * dx + b.vy * dy) < 0) {
+            renderBird(b, i, now)
+            return
+          }
           const next = b.waypointQueue.shift()
           b.target = next
           if (b.cfg.dart) b.hoverUntil = now + HOVER_MS // hummer hover between darts
@@ -1495,55 +2128,145 @@ export function useBirdPets({
           // just receded past the target shouldn't immediately re-pick from
           // behind itself (overshoot oscillation guard).
           const dot = b.vx * dx + b.vy * dy
-          if (dot >= 0 || dist < 8) pickTarget(b, g, now)
+          if (dot >= 0 || dist < 8) {
+            // Crash immunity flight tally: only a completed straight
+            // sight-line leg counts toward the two-flight expiry — a
+            // hover-fall target (dist 0, completed instantly) does not.
+            if (now < b.crashImmuneUntil && b.legImmune) {
+              b.legImmune = false
+              b.immuneFlights = (b.immuneFlights || 0) + 1
+              if (b.immuneFlights >= CRASH_IMMUNE_FLIGHTS) {
+                b.crashImmuneUntil = 0
+                b.immuneFlights = 0
+                if (dbgOn) {
+                  console.info(
+                    `[bird-diag] immunity cleared by flights ${b.id} t=+${Math.round(now - now0)}ms`
+                  )
+                }
+              } else if (dbgOn) {
+                console.info(
+                  `[bird-diag] immunity flight complete ${b.id} n=${b.immuneFlights}/${CRASH_IMMUNE_FLIGHTS} t=+${Math.round(now - now0)}ms`
+                )
+              }
+            }
+            pickTarget(b, g, now)
+          }
         }
       }
 
+      // Speed is CONSTANT per personality (maxSpeed) on every leg — the SM
+      // near-target/corner/long-leg/hazard modulation block is deleted: speed
+      // comes from the route, not from proximity (the addendum's anti-rub /
+      // anti-drag rule). The single exception is the final ARRIVE_SLOW_DIST
+      // (60px) of a perch approach, where the existing arrival deceleration
+      // still trades speed for the land condition.
       let desiredSpeed = b.cfg.maxSpeed
-      if (b.state === 'arriving') {
+      if (b.state === 'arriving' && dist < ARRIVE_SLOW_DIST) {
         desiredSpeed = Math.min(b.cfg.maxSpeed, dist * ARRIVE_TERM_FACTOR)
-      } else {
-        // SM: speed modulation — distance-to-hazard beats a constant max
-        // speed. The live multiplier lerps (frame-rate compensated) toward
-        // the highest restriction applicable this frame; restrictions
-        // combine as a minimum, so a long leg INTO a hazard slows as it
-        // closes rather than holding SPEED_LONG to the end.
-        const lastPt = b.waypointQueue.length
-          ? b.waypointQueue[b.waypointQueue.length - 1]
-          : t
-        let mulT = SPEED_OPEN
-        if (dist < SPEED_FINAL_DIST) mulT = Math.min(mulT, SPEED_FINAL)
-        if (
-          b.waypointQueue.length &&
-          Math.hypot(b.waypointQueue[0].x - b.x, b.waypointQueue[0].y - b.y) <
-            SPEED_CORNER_DIST
-        ) {
-          mulT = Math.min(mulT, SPEED_NEAR_CORNER)
-        }
-        if (Math.hypot(lastPt.x - b.x, lastPt.y - b.y) > SPEED_LONG_DIST) {
-          mulT = Math.min(mulT, SPEED_LONG)
-        }
-        const nearHaz = [
-          ...(g.h1 ? g.h1.glyphs : []),
-          ...(g.logo ? [g.logo] : []),
-          ...g.buttons,
-        ].some((o) => distToRect(b.x, b.y, o) < SPEED_OBSTACLE_DIST)
-        if (nearHaz) mulT = Math.min(mulT, SPEED_NEAR_OBSTACLE)
-        const k = 1 - Math.pow(1 - SPEED_LERP, dt)
-        b.speedMul =
-          b.speedMul === undefined ? mulT : b.speedMul + (mulT - b.speedMul) * k
-        desiredSpeed = b.cfg.maxSpeed * b.speedMul
       }
       const inv = dist > 0.0001 ? 1 / dist : 0
       let desDirX = dx * inv
       let desDirY = dy * inv
+      // Curvature guard: kill speed into hard turns so the flown arc stays
+      // inside the planned corridor (the old planner only validated chords).
+      if (gridMode && b.gridPath) {
+        const vm = Math.hypot(b.vx, b.vy)
+        if (vm > 0.15 && dist > 1) {
+          const dot = (b.vx * dx + b.vy * dy) / (vm * dist)
+          if (dot < 0.5) desiredSpeed *= 0.6
+          else if (dot < 0.8) desiredSpeed *= 0.82
+        }
+        // Clearance cap: inside 45px of a blocked band the desired speed
+        // scales back toward 0.5× (full speed ≥45px), so the flow never
+        // rubs a wall at pace — the slowdown begins before the bird is
+        // nearly touching the surface.
+        const nav = navGridFor(g)
+        if (nav) {
+          const ci = Math.min(nav.cols - 1, Math.max(0, (b.x / nav.cell) | 0))
+          const cj = Math.min(nav.rows - 1, Math.max(0, (b.y / nav.cell) | 0))
+          const dClear = nav.dist[cj * nav.cols + ci]
+          if (dClear < 45) desiredSpeed *= Math.max(0.5, 0.5 + dClear / 90)
+        }
+      }
 
-      const desX = desDirX * desiredSpeed
-      const desY = desDirY * desiredSpeed
+      let desX = desDirX * desiredSpeed
+      let desY = desDirY * desiredSpeed
       // Takeoff boost: double steering strength for the launch arc.
       const steerMul = now < b.boostUntil ? 2 : 1
-      b.vx += (desX - b.vx) * b.cfg.steerStrength * steerMul * dt
-      b.vy += (desY - b.vy) * b.cfg.steerStrength * steerMul * dt
+      let mult = steerMul
+      // Steering deadband (block-rubbing fix (b)): the deadband zone is the
+      // interior of the routing pad — a valid sight-line route keeps the
+      // bird outside it by construction, so the only way in is overshoot.
+      // Inside the pad, steering corrections are dampened to
+      // STEER_DEADBAND_MUL so small steering pushes can no longer charge
+      // the pad edge and repeatedly re-trigger the push-out (the visible
+      // rubbing); ESCAPING the pad keeps full strength, so a bird inside
+      // (post-crash, post ram) retreats at full authority instead of
+      // dragging along the wall. Validated routes should never be here;
+      // under ?birds-debug=1 every active frame logs pad presence — more
+      // than 1 per bird per 60s means route validation regressed.
+      // Task step 5: an in-pad bird first enters ESCAPE mode — the desired
+      // velocity is overridden to the pad's OUTWARD normal (negative of the
+      // into-pad contract) at ESCAPE_SPEED_MUL × maxSpeed with FULL steer
+      // force (escape overrides the deadband), until ESCAPE_MS expires or
+      // the bird is ESCAPE_OUT_DIST outside; the route is then regenerated
+      // with the escaped pad on the reject list.
+      // Perch committals are excluded: their glide deliberately descends
+      // into the perch's keep-out (the perch sits ON the surface), and a
+      // dampened descent would be the wall-drag being "/eliminated". Same
+      // for the launch-grace window (a takeoff starts inside the pad).
+      if (
+        b.state === 'flying' &&
+        !b.patrolLoop &&
+        !b.ramUntil &&
+        b.perchIdx < 0 &&
+        now >= (b.launchGraceUntil || 0)
+      ) {
+        const edge = routingPadEdgeVec(b, g, b.x, b.y)
+        if (edge.d < 0) {
+          if (now >= (b.escapeUntil || 0)) {
+            b.escapeUntil = now + ESCAPE_MS
+            escapedPads.set(edge.id, now + ESCAPED_PAD_REJECT_MS)
+            if (dbgOn) {
+              console.info(
+                `[bird-diag] escape bird=${b.id} pad=${edge.id} d=${edge.d.toFixed(1)} out=(${(-edge.nx).toFixed(2)},${(-edge.ny).toFixed(2)}) t=+${Math.round(now - now0)}ms`
+              )
+            }
+          }
+          desDirX = -edge.nx
+          desDirY = -edge.ny
+          desiredSpeed = b.cfg.maxSpeed
+          desX = desDirX * desiredSpeed * ESCAPE_SPEED_MUL
+          desY = desDirY * desiredSpeed * ESCAPE_SPEED_MUL
+        } else {
+          if ((b.escapeUntil || 0) > now && edge.d >= ESCAPE_OUT_DIST) {
+            // Succeeded early: far enough outside while the window is open.
+            b.escapeUntil = 0
+            b.target = null
+            b.waypointQueue = []
+            pickTarget(b, g, now)
+          } else if (b.escapeUntil && now >= b.escapeUntil) {
+            // Window expired (still inside but escape dropped the route):
+            // regenerate from the new position; a persistent inside state
+            // re-triggers the burst next frame rather than milling silently.
+            b.escapeUntil = 0
+            b.target = null
+            b.waypointQueue = []
+            pickTarget(b, g, now)
+          }
+          // Outside the pad: NO dampening. The pre-refactor design dampened
+          // only the pad INTERIOR (chase corrections pushing the bird in);
+          // interior frames now enter escape mode instead, which overrides
+          // the deadband with full-strength outward steering (task step 6).
+          // Dampening the NEAR zone was the regression the first verification
+          // capture exposed (healthy 130px approaches slowed to 0.4×).
+        }
+      } else if (b.escapeUntil && now >= b.escapeUntil) {
+        // Eligibility lost mid-escape (state change): drop the burst.
+        b.escapeUntil = 0
+      }
+      b.vx += (desX - b.vx) * b.cfg.steerStrength * mult * dt
+      b.vy += (desY - b.vy) * b.cfg.steerStrength * mult * dt
 
       // Arriving birds bleed speed so they can meet the land condition
       // (dist < 6 AND speed < 0.3) instead of overshooting the perch forever.
@@ -1711,8 +2434,8 @@ export function useBirdPets({
         sweptHit(g.logo, padHWb, logoPadHH, 'logo')
       }
       // Buttons: solid, flying AND arriving — same three-phase bounce as any
-      // other surface (feathers stay logo-only by construction below, and
-      // buttons are excluded from the perch pool by construction).
+      // other surface (buttons are excluded from the perch pool by design,
+      // but shed feathers like every other solid hit).
       for (const btn of g.buttons) {
         if (sweptHit(btn, padHWb, padHHb, 'button')) break
       }
@@ -1775,10 +2498,10 @@ export function useBirdPets({
           if (gap !== null) dbgJit.collisionIntervals.push(gap)
           dbgJit.lastCollisionAt = now
           console.info(
-            `[bird-diag] collision bird=${i} surface=${hitSurface} t=+${Math.round(now - now0)}ms gapSinceLast=${gap === null ? 'first' : Math.round(gap) + 'ms'} normal=(${N.nx},${N.ny}) reflectV=(${b.recoil.rvx.toFixed(2)},${b.recoil.rvy.toFixed(2)})`
+            `[bird-diag] collision bird=${i} surface=${hitSurface} t=+${Math.round(now - now0)}ms gapSinceLast=${gap === null ? 'first' : Math.round(gap) + 'ms'} normal=(${N.nx},${N.ny}) reflectV=(${b.recoil.rvx.toFixed(2)},${b.recoil.rvy.toFixed(2)}) tgt=${b.target ? `(${b.target.x.toFixed(0)},${b.target.y.toFixed(0)})` : 'null'} q=${b.waypointQueue.length} imm=${now < b.crashImmuneUntil} ram=${b.ramUntil > now ? 1 : 0} pos=(${b.x.toFixed(0)},${b.y.toFixed(0)})`
           )
         }
-        spawnFeathers(b, i, Math.atan2(b.recoil.rvy, b.recoil.rvx), hitSurface)
+        spawnFeathers(b, i, Math.atan2(b.recoil.rvy, b.recoil.rvx))
         // Train breaker: hitting the SAME surface twice within 900ms means
         // steering is re-entering the keep-out after every bounce (the
         // observed sag-bounce train — LOS check passes because it tests the
@@ -1932,7 +2655,45 @@ export function useBirdPets({
       if (!g || g.w <= 0 || g.h <= 0) return
 
       dbgLogRects(g)
+      // Collider overlay refreshes only on geometry changes (cheap key).
+      if (dbgOn && dbgOverlayKey !== `${g.logo ? g.logo.left.toFixed(1) + ',' + g.logo.top.toFixed(1) : '-'}|${g.buttons.length}`) {
+        dbgOverlayKey = `${g.logo ? g.logo.left.toFixed(1) + ',' + g.logo.top.toFixed(1) : '-'}|${g.buttons.length}`
+        dbgOverlay(g)
+      }
       birds.forEach((b, i) => {
+        // Immunity expiry: two straight flights OR 6000ms, whichever first
+        // (flight counting happens in steer's arrival branch).
+        if (b.crashImmuneUntil && now >= b.crashImmuneUntil) {
+          b.crashImmuneUntil = 0
+          b.immuneFlights = 0
+          b.legImmune = false
+          if (dbgOn) {
+            console.info(
+              `[bird-diag] immunity expired bird=${i} t=+${Math.round(now - now0)}ms`
+            )
+          }
+        }
+        // Dizzy: post-crash hold — velocity zeroed, drift suppressed, and
+        // the bird is skipped by steering, sweeps, picking, patrol and ram
+        // (it's stationary; nothing to sweep against). No dbgFrame: held
+        // position updates the prev bookkeeping itself.
+        if (b.dizzyUntil) {
+          if (now >= b.dizzyUntil) {
+            endDizzy(b, i, now)
+          } else {
+            b.vx = 0
+            b.vy = 0
+            b.x = clamp(b.x, 0, Math.max(0, g.w - b.cfg.size))
+            b.y = clamp(b.y, 0, Math.max(0, g.h - b.cfg.size))
+            const p = dbgOn ? dbgPrev[i] : null
+            if (p) {
+              p.x = b.x
+              p.y = b.y
+            }
+          }
+          renderBird(b, i, now)
+          return
+        }
         if (b.state === 'perched') {
           // §0: a slot can move under an OCCUPIED bird without a metrics
           // update firing (font swap / late hero layout settle). Re-anchor
@@ -2004,7 +2765,6 @@ export function useBirdPets({
     //   Verification — collisions log with timestamps + inter-collision
     //   gaps; logo-inside frames counted; headline perches log the glyph
     //   anchor chain (§0).
-    const dbgOn = new URLSearchParams(window.location.search).has('birds-debug')
     const dbgUntil = dbgOn ? now0 + 120000 : 0
     const dbgPrev = dbgOn ? birds.map(() => ({ x: NaN, y: NaN, inside: false })) : null
     const dbgStats = dbgOn
@@ -2025,8 +2785,40 @@ export function useBirdPets({
         }
       : null
     let dbgRectsLogged = false
+    let dbgOverlayKey = ''
     let dbgMetricsMarker = 0 // set by handleMetricsUpdate, consumed per frame
     let dbgJitterBird = -1
+
+    // ?birds-debug=1 collider overlay: thin outlines of the exact solid
+    // surfaces the sweep uses (logo / buttons / headline line rects
+    // headless vs glyphs), drawn in hero coordinates — makes "the hitbox
+    // isn't tight on the art" observable directly instead of inferred.
+    let dbgOverlayHost = null
+    const dbgOverlay = (g) => {
+      if (!dbgOn) return
+      if (!dbgOverlayHost || !dbgOverlayHost.isConnected) {
+        dbgOverlayHost = document.createElement('div')
+        dbgOverlayHost.setAttribute('aria-hidden', 'true')
+        dbgOverlayHost.style.cssText =
+          'position:absolute;inset:0;pointer-events:none;z-index:30'
+        dbgOverlayHost.className = 'pdd-birddbg-overlay'
+        heroEl.appendChild(dbgOverlayHost)
+      }
+      const rect = (r, color) => {
+        const el = document.createElement('div')
+        el.style.cssText =
+          `position:absolute;left:${r.left.toFixed(1)}px;top:${r.top.toFixed(1)}px;` +
+          `width:${(r.right - r.left).toFixed(1)}px;height:${(r.bottom - r.top).toFixed(1)}px;` +
+          `border:1px dashed ${color}`
+        return el
+      }
+      dbgOverlayHost.replaceChildren(
+        ...(g.logo ? [rect(g.logo, '#ff2d55')] : []),
+        ...g.buttons.map((r) => rect(r, '#32d74b')),
+        ...(g.h1 ? g.h1.glyphs.map((r) => rect(r, '#ffd60a')) : [])
+      )
+    }
+
     const dbgLogRects = (g) => {
       if (dbgRectsLogged || !dbgOn) return
       dbgRectsLogged = true
@@ -2057,9 +2849,14 @@ export function useBirdPets({
             { teleports: 0, inside: 0 }
           )
           const avg = dbgJit.n ? dbgJit.dtSum / dbgJit.n : 0
+          const navSorted = [...navStats].sort((a, b) => a - b)
+          const navP95 = navSorted.length
+            ? navSorted[Math.min(navSorted.length - 1, Math.floor(navSorted.length * 0.95))]
+            : 0
           console.warn(
             `[bird-diag] SUMMARY: teleports=${agg.teleports} insideFrames=${agg.inside} ` +
               `jitter{frames=${dbgJit.n} avgDt=${avg.toFixed(1)}ms minDt=${dbgJit.dtMin === Infinity ? 'n/a' : dbgJit.dtMin.toFixed(1) + 'ms'} maxDt=${dbgJit.dtMax.toFixed(1)}ms clamped=${dbgJit.dtClamped} maxFrameDelta=${dbgJit.maxDelta.toFixed(2)}px} ` +
+              `nav{n=${navStats.length} p95=${navP95.toFixed(2)}ms max=${(navSorted[navSorted.length - 1] || 0).toFixed(2)}ms} ` +
               `collisionGapsMs=${JSON.stringify(dbgJit.collisionIntervals.map(Math.round))} ` +
               `posSamples=${JSON.stringify(dbgJit.posSamples)}`
           )
@@ -2273,6 +3070,7 @@ export function useBirdPets({
       stopLoop()
       io.disconnect()
       mq.removeEventListener?.('change', onMotionChange)
+      if (dbgOverlayHost) dbgOverlayHost.remove()
       onUpdateRef.current = null
     }
   }, [containerRef, landmarkRef, count, hostRefs, flyRefs, perchRefs])

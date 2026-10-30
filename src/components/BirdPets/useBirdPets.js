@@ -42,6 +42,7 @@
 
 import { useEffect, useRef } from 'react'
 import useLayoutMetrics from './useLayoutMetrics'
+import { makeSeededRng } from './birdRandom'
 import {
   GRID_MARGIN,
   GRID_MARGIN_MOBILE,
@@ -158,13 +159,13 @@ import {
   clampMag,
   isReducedMotion,
   lerpAngle,
-  rand,
 } from './birdPersonalities'
 
 export function useBirdPets({
   containerRef,
   landmarkRef,
   count = 2,
+  seed = null,
   hostRefs,
   flyRefs,
   perchRefs,
@@ -179,6 +180,8 @@ export function useBirdPets({
     const heroEl = containerRef?.current
     if (!heroEl) return undefined
 
+    const rng = seed == null ? Math.random : makeSeededRng(seed)
+    const rand = (min, max) => min + rng() * (max - min)
     let rafId = null
     let inView = true
     let reduced = isReducedMotion()
@@ -741,7 +744,7 @@ export function useBirdPets({
       const out = []
       const k = Math.min(n, targetPool.length)
       while (out.length < k && total > 0) {
-        let roll = Math.random() * total
+        let roll = rng() * total
         let pick = null
         for (const t of targetPool) {
           roll -= t.weight
@@ -1429,7 +1432,7 @@ export function useBirdPets({
         b.nextPerchAt = now + rand(PERCH_RETRY_MS[0], PERCH_RETRY_MS[1])
         return
       }
-      const chosen = free[Math.floor(Math.random() * free.length)]
+      const chosen = free[Math.floor(rng() * free.length)]
       // Parked: other birds can't aim at it while we glide in.
       chosen.p.occupiedBy = b.id
       b.perchIdx = chosen.i
@@ -1713,7 +1716,7 @@ export function useBirdPets({
 
     const startPatrol = (b, g, now) => {
       if (!g) return false
-      const shape = PATROL_SHAPES[Math.floor(Math.random() * PATROL_SHAPES.length)]
+      const shape = PATROL_SHAPES[Math.floor(rng() * PATROL_SHAPES.length)]
       // Sweep (L→R→L): a horizontal pass at a FIXED, band-validated Y —
       // 3-4s per direction, a 200ms hang at each edge (velocity damped in
       // steer, then a hard bank onto the reverse leg), 6-9s total. The Y is
@@ -1742,7 +1745,7 @@ export function useBirdPets({
         }
         const valid = bands.filter(([lo, hi]) => hi - lo >= 24)
         if (!valid.length) return false
-        const [lo, hi] = valid[Math.floor(Math.random() * valid.length)]
+        const [lo, hi] = valid[Math.floor(rng() * valid.length)]
         let fixedY = rand(lo, hi)
         let tries = 0
         while (!clearAt(fixedY) && tries < 8) {
@@ -1932,7 +1935,7 @@ export function useBirdPets({
               order.length > 1 &&
               distToRect(b.x, b.y, order[0]) > RAM_FAR_PICK
                 ? [
-                    order[Math.floor(Math.random() * order.length)],
+                    order[Math.floor(rng() * order.length)],
                     ...order,
                   ]
                 : order
@@ -2541,7 +2544,7 @@ export function useBirdPets({
     // perched bird never reads as "dead bird" — picked randomly per trigger.
     const maybeIdle = (b, now) => {
       if (now >= b.nextIdleAt) {
-        b.idleKind = Math.floor(Math.random() * 3) // 0 tilt, 1 flick, 2 ruffle
+        b.idleKind = Math.floor(rng() * 3) // 0 tilt, 1 flick, 2 ruffle
         b.idleUntil = now + IDLE_ANIM_MS
         b.nextIdleAt = now + rand(IDLE_GAP_MIN, IDLE_GAP_MAX)
       }
@@ -3066,5 +3069,5 @@ export function useBirdPets({
       if (dbgOverlayHost) dbgOverlayHost.remove()
       onUpdateRef.current = null
     }
-  }, [containerRef, landmarkRef, count, hostRefs, flyRefs, perchRefs])
+  }, [containerRef, landmarkRef, count, seed, hostRefs, flyRefs, perchRefs])
 }

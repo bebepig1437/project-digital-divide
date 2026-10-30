@@ -273,7 +273,6 @@ export const ROUTE_CORNER_DIST = 30 // obstacle clearance defining "wedged"
 export const ROUTE_CORNER_MOVE = 10 // px of progress below which the wedged window trips
 
 // ---- helpers ---------------------------------------------------------------
-export const rand = (min, max) => min + Math.random() * (max - min)
 export const clamp = (val, min, max) => Math.max(min, Math.min(max, val))
 // Wrap-aware angular lerp — never snaps, never crosses the long way around.
 export const lerpAngle = (prev, target, k) => {

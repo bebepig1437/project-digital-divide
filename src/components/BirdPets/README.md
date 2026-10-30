@@ -47,6 +47,9 @@ not pixel-exact measurements of the rendered bird/text overlap.
 
 The legacy planner remains the default. Grid A* is opt-in via
 `?birds-route=grid`; rams are enabled unless `?birds-rams=off` is supplied.
+`?birds-seed=N` seeds the simulation's random choices with an integer. Frame
+and layout timing can still differ between runs, so this does not guarantee
+identical trajectories or collision counts.
 The measured ship pass reduced text hits, but did not eliminate headline dwells
 or establish clipping-free mobile flight. See the [verification report](../../../screenshots/birds-ship-report.md).
 

@@ -25,7 +25,8 @@ export default function Home() {
   // Flock size: 2 by default; ?birds=N accepts 1–8 (clamped, out-of-range
   // values log a warning). Small screens clamp to 2 inside BirdPets.
   let birdCount = 2
-  const birdsParam = new URLSearchParams(search).get('birds')
+  const params = new URLSearchParams(search)
+  const birdsParam = params.get('birds')
   if (birdsParam !== null) {
     const n = Number.parseInt(birdsParam, 10)
     if (Number.isNaN(n)) {
@@ -36,6 +37,12 @@ export default function Home() {
       birdCount = clamped
     }
   }
+
+  // ?birds-seed=N accepts a non-negative decimal integer only; 1e3, 0x10, +5,
+  // -1, 1.5 and non-numeric values all fall back to Math.random.
+  const seedParam = params.get('birds-seed')
+  const seedValue = seedParam && /^\d+$/.test(seedParam) ? Number(seedParam) : NaN
+  const birdSeed = Number.isSafeInteger(seedValue) ? seedValue : null
 
   const meta = [
     { property: 'og:type', content: 'website' },
@@ -59,7 +66,7 @@ export default function Home() {
       </Helmet>
       {/* ---- Banner (Hero) ---- */}
       <section ref={heroRef} className="hero-banner-bg relative overflow-hidden text-white">
-        <BirdPets containerRef={heroRef} landmarkRef={h1Ref} count={birdCount} />
+        <BirdPets containerRef={heroRef} landmarkRef={h1Ref} count={birdCount} seed={birdSeed} />
         <div className="container-content relative z-10 py-20 text-center sm:py-28">
 
           <img

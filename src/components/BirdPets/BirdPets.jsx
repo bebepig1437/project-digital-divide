@@ -9,6 +9,7 @@
  * Props:
  *   count        — how many birds, 1–8 (default 2). Clamped on small screens
  *                  to 2, visible at both breakpoints.
+ *   seed         — optional integer seed for the simulation's random choices.
  *   containerRef — ref of the element the birds fly inside (required).
  *   landmarkRef  — ref of the element birds avoid and perch on (e.g. the h1).
  *   className    — override the wrapper classes if mounting somewhere new.
@@ -24,6 +25,7 @@ import { FLOCK_ORDER, PERSONALITIES } from './birdPersonalities'
 
 export default function BirdPets({
   count = 2,
+  seed = null,
   containerRef,
   landmarkRef,
   className = 'pointer-events-none absolute inset-0 z-20 select-none',
@@ -45,6 +47,7 @@ export default function BirdPets({
     containerRef,
     landmarkRef,
     count: flockSize,
+    seed,
     hostRefs,
     flyRefs,
     perchRefs,

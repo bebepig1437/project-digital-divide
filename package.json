@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/generate-sitemap.mjs && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:birds": "node scripts/test-birds-rng.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.456.0",

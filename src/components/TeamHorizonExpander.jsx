@@ -6,6 +6,7 @@ export default function TeamHorizonExpander() {
   // The About roster shows active leads only; inactive members stay out.
   const roster = team.filter((m) => m.active !== false)
   const [active, setActive] = useState(1) // Default to Joseph Hu (index 1)
+  const [showAlt, setShowAlt] = useState(false)
 
   return (
     <div className="w-full">
@@ -30,7 +31,7 @@ export default function TeamHorizonExpander() {
                 <div className="absolute inset-0">
                   {member.photo ? (
                     <img
-                      src={member.photo}
+                      src={isExpanded && showAlt && member.altPhoto ? member.altPhoto : member.photo}
                       alt={member.name}
                       className={`h-full w-full object-cover transition-all duration-700 ${
                         isExpanded ? 'scale-100 filter-none' : 'scale-105 opacity-60 grayscale hover:opacity-80'
@@ -65,7 +66,7 @@ export default function TeamHorizonExpander() {
 
                 {/* Expanded State: Full Bio & Details */}
                 <div
-                  className={`relative z-10 flex h-full flex-col justify-end p-6 text-white transition-all duration-500 sm:p-8 md:p-10 ${
+                  className={`relative z-10 flex min-h-full flex-col justify-end p-6 text-white transition-all duration-500 sm:p-8 md:p-10 ${
                     isExpanded
                       ? 'translate-y-0 opacity-100 delay-100'
                       : 'pointer-events-none translate-y-6 opacity-0'
@@ -80,6 +81,18 @@ export default function TeamHorizonExpander() {
                   <p className="mt-4 sm:mt-5 max-w-2xl text-sm leading-relaxed text-white/90 sm:text-base sm:leading-relaxed">
                     {member.bio}
                   </p>
+                  {member.altPhoto && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowAlt((v) => !v)
+                      }}
+                      className="mt-4 self-start rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/20"
+                    >
+                      {showAlt ? 'Show current photo' : `Show ${member.altPhotoLabel?.toLowerCase() || 'alternate photo'}`}
+                    </button>
+                  )}
                 </div>
               </div>
             )

@@ -23,7 +23,9 @@ export const team = [
     name: 'Joshua De Leon',
     active: true,
     focus: 'Hardware & Systems',
-    photo: '/team/joshua.jpg',
+    photo: '/team/josh.jpg',
+    altPhoto: '/team/babyjoshua.jpg',
+    altPhotoLabel: 'Baby photo',
     bio: "Joshua runs bench operations and system testing in Pearland. Every donated laptop passes through his hands: physical intake, motherboard diagnostics, cleaning, swapping broken components, and running operating system benchmarks to verify which setups hold up under daily student use. He spends his time testing charging circuits, checking battery health, and configuring the software image on our Dell Latitude 3130s. He also handles hardware pickups, manages spare parts storage, and runs final quality control before any machine is deployed.",
   },
   {

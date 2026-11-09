@@ -1,16 +1,5 @@
 import Reveal from './Reveal'
 
-const specs = [
-  ['Model', 'Dell Latitude 3130, from Alvin ISD Technology'],
-  ['Processor', 'Intel Pentium Silver N5030, 1.1 GHz, 4 cores / 4 threads, 64-bit'],
-  ['Memory', '4 GB DDR4 @ 2400 MHz, single-channel'],
-  ['Storage', '128 GB M.2 PCIe SSD, plus soldered eMMC flash (no SATA drive)'],
-  ['Graphics', 'Intel HD Graphics 605, about 64 MB video memory'],
-  ['Display', '11.6-inch HD, 1366 \u00d7 768'],
-  ['Audio', 'Realtek ALC3246'],
-  ['BIOS', 'Version 1.43.0'],
-]
-
 const models = [
   {
     label: 'Build It, Keep It',
@@ -32,31 +21,25 @@ export default function HardwareAcceptanceMatrix() {
       <div className="container-content">
         <Reveal>
           <span className="eyebrow">Hardware &amp; Distribution</span>
-          <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">What we run, and how it reaches students</h2>
+          <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">How laptops reach students</h2>
         </Reveal>
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-14">
           <Reveal>
-            <h3 className="text-lg font-bold text-heading">Dell Latitude 3130 specs</h3>
-            <table className="mt-4 w-full border-collapse text-sm">
-              <tbody>
-                {specs.map(([label, value]) => (
-                  <tr key={label} className="border-t border-line/10">
-                    <th scope="row" className="w-28 py-2.5 pr-4 text-left align-top font-semibold text-heading">
-                      {label}
-                    </th>
-                    <td className="py-2.5 text-ink/85">{value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <figure>
+              <img
+                src="/bench-joshua.jpg"
+                alt="Joshua De Leon testing laptops at the bench"
+                width="1600"
+                height="1066"
+                loading="lazy"
+                className="aspect-[4/3] w-full rounded-xl object-cover object-[50%_40%] shadow-sm"
+              />
+              <figcaption className="mt-2 text-pretty text-sm leading-relaxed text-muted">
+                Joshua at the bench, testing Lubuntu, Linux Mint, Raspberry Pi, ChromeOS, and mini Windows 11.
+              </figcaption>
+            </figure>
 
-            <div className="mt-6 rounded-xl border border-line/10 bg-surface/70 p-4 text-sm leading-relaxed text-muted">
-              <p className="font-semibold text-heading">Operating systems we are testing</p>
-              <p className="mt-1">
-                With 4 GB of memory, the operating system matters. We are testing Lubuntu, Linux Mint, Raspberry Pi, ChromeOS, and a mini Windows 11.
-              </p>
-            </div>
           </Reveal>
 
           <Reveal delay={120}>
@@ -74,9 +57,6 @@ export default function HardwareAcceptanceMatrix() {
                 </li>
               ))}
             </ol>
-            <p className="mt-8 rounded-xl border border-brand-teal/15 bg-brand-pale/20 p-4 text-sm leading-relaxed text-heading/90">
-              Reserve fleet: 20 units are held back for parts, quick repairs, and loaners.
-            </p>
           </Reveal>
         </div>
       </div>

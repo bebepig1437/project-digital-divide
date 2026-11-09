@@ -33,7 +33,7 @@ export default function About() {
             Who we are
           </h1>
           <p className="mt-5 text-lg font-medium leading-relaxed text-heading/85 sm:text-xl">
-            We are three high schoolers in Pearland, Texas. When school districts retire working laptops, we clean them up, configure lightweight software, and get them to students who need a computer at home.
+            We're three high schoolers in Pearland, Texas. We got tired of seeing good laptops sit in closets, so we clean them up and get them to kids who need one.
           </p>
         </div>
       </div>

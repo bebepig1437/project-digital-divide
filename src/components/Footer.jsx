@@ -27,8 +27,15 @@ export default function Footer({ showContact = true }) {
                 email.
               </p>
               <p className="mt-4 max-w-md text-sm text-muted">
-                Don't include a student's name or school in this form. We'll ask for that by email
-                once we've replied.
+                We're a nonprofit fiscally sponsored by{' '}
+                <a
+                  href="https://hackclub.com/hcb"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-teal underline dark:text-brand-cyan"
+                >
+                  HCB
+                </a>.
               </p>
             </Reveal>
             <Reveal delay={100}>

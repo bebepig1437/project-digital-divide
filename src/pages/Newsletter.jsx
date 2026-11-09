@@ -19,13 +19,13 @@ export default function Newsletter() {
     <>
       <Helmet>
         <title>News & Updates | Project Digital Divide</title>
-        <meta name="description" content="Updates on our hardware intake, student build workshops, district partnerships, and what we are learning as we build. Field dispatches from the team bridging the digital divide in Houston." />
+        <meta name="description" content="Notes from the three of us on what we're fixing, what broke, and what we learned." />
         {meta.map((m, i) => (
           <meta key={i} {...m} />
         ))}
         <link rel="canonical" href="https://www.projectdigitaldivide.org/newsletter" />
         <meta name="twitter:title" content="News & Updates | Project Digital Divide" />
-        <meta name="twitter:description" content="Updates on our hardware intake, student build workshops, district partnerships, and what we are learning as we build." />
+        <meta name="twitter:description" content="Notes from the three of us on what we're fixing, what broke, and what we learned." />
       </Helmet>
       <section className="relative overflow-hidden pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-brand-pale/40 via-brand-pale/20 to-brand-pale/8" aria-hidden="true" />
@@ -33,7 +33,7 @@ export default function Newsletter() {
           <span className="eyebrow">Field Dispatches</span>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-heading sm:text-5xl">News &amp; updates</h1>
           <p className="mt-5 text-lg font-medium text-heading/85 sm:text-xl">
-            Updates on our hardware intake, student build workshops, district partnerships, and what we are learning as we build.
+            Notes from the three of us on what we're fixing, what broke, and what we learned.
           </p>
         </div>
       </section>

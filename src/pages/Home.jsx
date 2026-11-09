@@ -11,11 +11,11 @@ const siteUrl = 'https://www.projectdigitaldivide.org'
 const logoUrl = `${siteUrl}/logo.webp`
 
 const objectives = [
-  'Get retired laptops from school districts',
-  'Set up light, simple software for schoolwork',
-  'Run workshops where students set up their own laptop',
-  'Work with school counselors to reach students',
-  'Log every laptop so other groups can copy our process',
+  'We pick up retired laptops from school districts',
+  'We wipe them and install light software that runs on older machines',
+  'Students learn to set up a laptop at our workshops',
+  'Counselors tell us which families need one',
+  'We keep notes on every step so others can repeat it',
 ]
 
 export default function Home() {
@@ -87,7 +87,7 @@ export default function Home() {
             Project Digital Divide
           </h1>
           <p className="hero-reveal mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/90">
-            A student-run project that deploys reconditioned laptops to families across Houston.
+            Three high schoolers in Pearland who fix up old school laptops and get them to kids in Houston who need one.
           </p>
           <div className="hero-reveal mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -116,10 +116,10 @@ Laptops sit in closets while students go without. We <span className="text-gradi
             </h2>
             <div className="mt-6 space-y-4 text-lg leading-relaxed text-muted">
               <p>
-                School districts replace laptops on a three to five year cycle. When the cycle ends, working machines get resold or recycled. A few miles away, students do homework on parents' phones because school-issued devices stay at school and there is no computer at home.
+                Districts replace laptops every few years, and good ones often get sold or recycled. Meanwhile, some kids nearby do their homework on a parent's phone.
               </p>
               <p>
-Most retired laptops still work. We clean each one, install simple software, and get it to a student through workshops and school counselors.
+Most of them still work. We clean them, set them up, and get them to students through counselors and workshops.
               </p>
             </div>
 

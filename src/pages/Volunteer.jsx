@@ -75,7 +75,7 @@ export default function Volunteer() {
                 <CheckCircle2 className="text-brand-teal" size={44} />
                 <h2 className="text-2xl font-bold text-heading">Thanks — we got it.</h2>
                 <p className="max-w-sm text-muted">
-                  Thanks for wanting to help bridge the divide. We'll reply by email soon.
+                  Thanks! One of us will email you back soon.
                 </p>
                 <button
                   type="button"

@@ -6,7 +6,8 @@ export default function TeamHorizonExpander() {
   // The About roster shows active leads only; inactive members stay out.
   const roster = team.filter((m) => m.active !== false)
   const [active, setActive] = useState(1) // Default to Joseph Hu (index 1)
-  const [showAlt, setShowAlt] = useState(false)
+  // Per-member photo choice: toggling one lead never changes another's photo.
+  const [altShown, setAltShown] = useState({})
 
   return (
     <div className="w-full">
@@ -31,7 +32,7 @@ export default function TeamHorizonExpander() {
                 <div className="absolute inset-0">
                   {member.photo ? (
                     <img
-                      src={isExpanded && showAlt && member.altPhoto ? member.altPhoto : member.photo}
+                      src={altShown[member.name] && member.altPhoto ? member.altPhoto : member.photo}
                       alt={member.name}
                       className={`h-full w-full object-cover transition-all duration-700 ${
                         isExpanded ? 'scale-100 filter-none' : 'scale-105 opacity-60 grayscale hover:opacity-80'
@@ -72,9 +73,11 @@ export default function TeamHorizonExpander() {
                       : 'pointer-events-none translate-y-6 opacity-0'
                   }`}
                 >
-                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-cyan sm:text-sm">
-                    {member.role || member.focus}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-brand-cyan sm:text-sm">
+                      {member.role || member.focus}
+                    </p>
+                  </div>
                   <h3 className="mt-2 sm:mt-3 font-display text-2xl font-bold tracking-tight text-white sm:text-4xl">
                     {member.name}
                   </h3>
@@ -86,11 +89,11 @@ export default function TeamHorizonExpander() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShowAlt((v) => !v)
+                        setAltShown((s) => ({ ...s, [member.name]: !s[member.name] }))
                       }}
                       className="mt-4 self-start rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/20"
                     >
-                      {showAlt ? 'Show current photo' : `Show ${member.altPhotoLabel?.toLowerCase() || 'alternate photo'}`}
+                      {altShown[member.name] ? 'Show current photo' : `Show ${member.altPhotoLabel?.toLowerCase() || 'alternate photo'}`}
                     </button>
                   )}
                 </div>

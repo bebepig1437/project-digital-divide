@@ -94,14 +94,14 @@ export default function Home() {
               to="/volunteer"
               className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-navy-900 shadow-md transition-all duration-200 hover:bg-brand-pale hover:shadow-lg hover:-translate-y-0.5 dark:bg-brand-cyan dark:text-navy-950 dark:hover:bg-brand-pale"
             >
-              Get involved <ArrowRight size={16} />
+              Volunteer <ArrowRight size={16} />
             </Link>
-            <a
-              href="#mission"
-              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition-all duration-200 hover:bg-white/20 hover:border-white/40"
+            <Link
+              to="/#contact"
+              className="text-sm font-semibold text-white underline underline-offset-4 decoration-white/50 transition-colors duration-200 hover:decoration-white"
             >
-              Learn more
-            </a>
+              Contact us
+            </Link>
           </div>
         </div>
       </section>
@@ -119,7 +119,7 @@ Laptops sit in closets while students go without. We <span className="text-gradi
                 School districts replace laptops on a three to five year cycle. When the cycle ends, working machines get resold or recycled. A few miles away, students do homework on parents' phones because school-issued devices stay at school and there is no computer at home.
               </p>
               <p>
-Most retired laptops still work. Getting one ready for a ninth grader mostly means setting it up. We clean each one, install simple software, and get it to a student through workshops and school counselors.
+Most retired laptops still work. We clean each one, install simple software, and get it to a student through workshops and school counselors.
               </p>
             </div>
 

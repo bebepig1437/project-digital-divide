@@ -6,9 +6,6 @@ import { SUBMIT_ENDPOINT, site } from '../config'
 const reasons = [
   'Donate devices or supplies',
   'Request a laptop for a student',
-  'Host a workshop',
-  'Volunteer',
-  'Partnership',
   'General inquiry',
 ]
 

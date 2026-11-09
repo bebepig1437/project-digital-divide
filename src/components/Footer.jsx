@@ -14,13 +14,12 @@ export default function Footer({ showContact = true }) {
               <span className="eyebrow">Get in touch</span>
               <h2 className="mt-4 text-3xl font-bold text-heading sm:text-4xl">Send us a note</h2>
               <p className="mt-4 max-w-md text-lg text-muted">
-                Donate a laptop or supplies, request a device for a student, host a workshop, or
-                volunteer. Anything useful helps. If you'd rather pick something specific, our{' '}
+                Donate a laptop or supplies, or request a device for a student. Anything useful helps. If you'd rather pick something specific, our{' '}
                 <a
                   href="https://www.amazon.com/hz/wishlist/ls/2BSB1I7207W2K?ref_=wl_share"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand-teal hover:underline dark:text-brand-cyan"
+                  className="text-brand-teal underline dark:text-brand-cyan"
                 >
                   Amazon wishlist
                 </a>{' '}

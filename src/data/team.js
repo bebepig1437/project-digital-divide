@@ -10,6 +10,8 @@ export const team = [
     active: true,
     focus: 'Narrative & Workshops',
     photo: '/team/michelle.jpg',
+    altPhoto: '/team/babymichelle.jpg',
+    altPhotoLabel: 'Baby photo',
     bio: "Michelle opened the district conversation that secured our first 100 laptops. She sent the initial inquiry to Alvin ISD's superintendent, followed the thread through the technology services office, and stayed on it through four months of reviews until the board approved the transfer. Beyond district communications, she writes the narrative sections of our grant proposals, manages our social media updates, and designs the curriculum for student build workshops. She tracks bench metrics to produce clear case studies, making sure our setup procedures and deployment counts are documented accurately.",
   },
   {
@@ -17,6 +19,8 @@ export const team = [
     active: true,
     focus: 'Operations & Web',
     photo: '/team/joseph.jpg',
+    altPhoto: '/team/babyjoseph.jpg',
+    altPhotoLabel: 'Baby photo',
     bio: "Joseph manages project operations, team structure, and our website codebase. He builds the internal systems for tracking milestones, organizes volunteer onboarding, and coordinates who is doing what between build sessions to keep the project organized. On the outreach side, he runs the pipeline to identify district technology contacts, drafts grant applications, and keeps follow-up conversations moving so communications do not stall. When something breaks on the site or an operational bottleneck appears, Joseph handles it.",
   },
   {

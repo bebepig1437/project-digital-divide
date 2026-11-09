@@ -19,7 +19,7 @@
  * React never re-renders per frame.
  *
  * Stuck-proofing (the "bird freezes after a while" class of bugs):
- *  1. pickPerch NEVER commits to a perch whose glide path crosses the landmark
+ *  1. a perch commit NEVER takes a perch whose glide path crosses the landmark
  *     pad — an unreachable perch parked the bird with nextPerchAt = Infinity
  *     forever. No usable perch now means: retry in 3-5s and keep flying.
  *  2. Flying-state arrival requires the bird to be MOVING TOWARD the target
@@ -31,6 +31,12 @@
  *     is a real steering bug to find).
  *  5. target is never null while flying: an empty waypoint queue immediately
  *     re-picks inside the same frame.
+ *
+ * Behavior: goal-driven flock — perched is the DEFAULT state and flight
+ * is the deviation. Six goals (rest, commute, excursion, inspection,
+ * follow, long_pass) run under a small per-bird state machine (see the
+ * goal layer in this file); the pool/route planners serve goal flight
+ * legs, idle cruising is gone, and rest owns the hero most of the time.
  *
  * Gates: prefers-reduced-motion -> static perched birds, no RAF;
  * IntersectionObserver pause offscreen; pointer-events none (CSS);
@@ -89,7 +95,6 @@ import {
   HOVER_DECAY,
   LOGO_PERCH_FRACS,
   MIN_BOUNCE_NORM,
-  MIN_PICK_DIST,
   LAUNCH_GRACE_MS,
   HOVER_MS,
   IDLE_ANIM_MS,
@@ -103,23 +108,17 @@ import {
   RECOIL_HOLD_END_MS,
   RECOIL_IMPACT_MS,
   PERCH_COMMIT_FRAMES,
-  PERCH_RETRY_MS,
   PATROL_CLEAR_PAD,
-  PATROL_DUR_MS,
   PATROL_DRIFT,
-  PATROL_EVERY_N_PICKS,
   PATROL_ORBIT_REVS,
   PATROL_R,
   PATROL_SHAPES,
-  PATROL_SWEEP_EDGE_PAUSE_MS,
-  PATROL_SWEEP_LEG_MS,
   POOL_CELL_MAX_PX,
   POOL_CELL_MIN_PX,
   POOL_CLEAR_RADIUS,
   POOL_COLS,
   POOL_EDGE_INSET,
   POOL_ROWS,
-  POOL_SAMPLE_N,
   PERSONALITIES,
   ROUTE_MIN_CLEARANCE,
   ROUTE_MAX_LEGS,
@@ -261,8 +260,6 @@ export function useBirdPets({
         waypointQueue: [],
         perchIdx: -1,
         committedAt: 0,
-        restUntil: 0,
-        nextPerchAt: 0,
         nextDartAt: 0,
         dartUntil: 0,
         hoverUntil: 0,
@@ -283,6 +280,17 @@ export function useBirdPets({
         legImmune: false, // the CURRENT target is a committed immune leg
         noProgressFrames: 0,
         commitFrames: 0,
+        homePerch: null, // assigned when the perch pool is ready (STEP 1)
+        goal: 'rest', // rest | commute | excursion | inspection | follow | long_pass
+        goalStartedAt: 0,
+        goalEndsAt: 0,
+        goalTarget: null,
+        goalReturnPerch: null,
+        goalPhase: null, // out | approach | hover | follow | return
+        followIdx: -1,
+        followSide: 1,
+        hoverBaseY: 0,
+        budgetSegs: [],
       }
     })
 
@@ -698,7 +706,7 @@ export function useBirdPets({
     // weighted (ZONE_WEIGHTS). Rebuilt per metric refresh; never per frame.
     let targetPool = []
     // Task step 5: pads a bird recently escaped from — routes that cross
-    // them are rejected by pickTarget for ESCAPED_PAD_REJECT_MS. Map of
+    // them are rejected by the goal router for ESCAPED_PAD_REJECT_MS. Map of
     // pad id → reject-until timestamp; purged on every pick.
     const escapedPads = new Map()
     const buildPool = (g) => {
@@ -735,28 +743,6 @@ export function useBirdPets({
         }
       }
       targetPool = list
-    }
-
-    // 4e: weighted draws from the pool (roulette by zone weight).
-    const samplePool = (n) => {
-      let total = 0
-      for (const t of targetPool) total += t.weight
-      const out = []
-      const k = Math.min(n, targetPool.length)
-      while (out.length < k && total > 0) {
-        let roll = rng() * total
-        let pick = null
-        for (const t of targetPool) {
-          roll -= t.weight
-          if (roll <= 0) {
-            pick = t
-            break
-          }
-        }
-        if (pick) out.push(pick)
-        else break
-      }
-      return out
     }
 
     // Push a candidate waypoint out of an obstacle's padded box (nearest face
@@ -901,7 +887,7 @@ export function useBirdPets({
 
     const hoverFall = (b, now) => {
       // No immediately viable route: brief hover with fresh samples on the
-      // throttled retry (pickTarget's repick window gates the churn). NOT an
+      // throttled retry (the router's repick window gates the churn). NOT an
       // immune leg: a hover target completes instantly, so it must never
       // count toward the two-flight immunity expiry.
       //
@@ -964,109 +950,785 @@ export function useBirdPets({
       b.repickHoldUntil = now + 400
     }
 
-    // RP: pool-picked route. The old weighted-thirds sampler with rejection
-    // and subroutes is fully replaced — every target now comes from the
-    // obstacle-cleared pool with a sight-line-valid route.
-    const pickTarget = (b, g, now) => {
-      b.pickCount = (b.pickCount || 0) + 1
-      b._pickVersion = (b._pickVersion || 0) + 1
-      // Escaped-pad reject list: drop expired entries, keep live ones as
-      // the planner's avoidIds (routes crossing them are rejected).
-      let avoidIds = null
-      if (escapedPads.size) {
-        for (const [pid, until] of escapedPads) {
-          if (until <= now) escapedPads.delete(pid)
-          else {
-            if (!avoidIds) avoidIds = new Set()
-            avoidIds.add(pid)
+    // ---- goal layer (behavior rewrite) ---------------------------------------
+    // Perched is the default state; flight is the deviation. Every bird owns
+    // a home perch (STEP 1) and a goal state machine (STEP 2) with six goals:
+    // rest, commute, excursion, inspection, follow, long_pass. Time budgets
+    // are a 120s soft bias, never rule (STEP 5). Steering, the swept
+    // collision system, perch geometry, dizzy/immunity and the ram
+    // choreography are untouched — this layer only decides WHAT the bird
+    // wants and routes the existing machinery to do it. Anywhere the old
+    // loop re-picked a cruise target now re-routes the CURRENT goal instead
+    // (resumeGoalRoute), degrading to a quiet return home when a phase goes
+    // missing.
+
+    const GOAL_DURATIONS = {
+      rest: [8000, 25000],
+      commute: [2000, 3000],
+      excursion: [4000, 6000],
+      inspection: [2000, 3000],
+      follow: [3000, 5000],
+      long_pass: [4000, 6000],
+    }
+
+    // Goal transition tables (STEP 2), exactly as designed.
+    const GOAL_TRANSITIONS = {
+      rest: [
+        ['commute', 0.55],
+        ['excursion', 0.25],
+        ['inspection', 0.1],
+        ['follow', 0.05],
+        ['long_pass', 0.05],
+      ],
+      commute: [['rest', 1]],
+      excursion: [['rest', 1]],
+      inspection: [['rest', 1]],
+      follow: [
+        ['rest', 0.8],
+        ['commute', 0.2],
+      ],
+      long_pass: [['rest', 1]],
+    }
+
+    const weightedGoal = (table) => {
+      let roll = rng()
+      for (const entry of table) {
+        roll -= entry[1]
+        if (roll <= 0) return entry[0]
+      }
+      return table[table.length - 1][0]
+    }
+
+    // STEP 5: rolling 120s activity budget per bird. Segments are sim-time
+    // (capped frames), pruned on every push. Buckets: rest / flight /
+    // excursion — used ONLY to bias the rest-to-flight decision.
+    const BUDGET_WINDOW_MS = 120000
+    const budgetSegs = (b) => b.budgetSegs || (b.budgetSegs = [])
+    const budgetBucket = (goal) =>
+      goal === 'rest' ? 'rest' : goal === 'excursion' ? 'excursion' : 'flight'
+    const budgetPush = (b, now, ms, goal) => {
+      const segs = budgetSegs(b)
+      segs.push([now, Math.min(ms, DT_CAP_MS), budgetBucket(goal)])
+      while (segs.length && segs[0][0] < now - BUDGET_WINDOW_MS) segs.shift()
+    }
+    // Share of the window actually observed. Dividing by the full 120s from
+    // the very first frame reads as ~0% rest and makes every rest extension
+    // fire, which pinned the whole flock to their perches for ~66s after
+    // load (until the budget filled enough to pass the 55% gate). Segments
+    // are pushed every frame, so their durations are the observed span; the
+    // floor keeps the share stable across the first few frames.
+    const BUDGET_MIN_SPAN_MS = 15000
+    const budgetRestFrac = (b) => {
+      let rest = 0
+      let span = 0
+      for (const s of budgetSegs(b)) {
+        span += s[1]
+        if (s[2] === 'rest') rest += s[1]
+      }
+      return rest / Math.max(span, BUDGET_MIN_SPAN_MS)
+    }
+
+    // Phase teardown between goals.
+    const clearFlightPhases = (b) => {
+      b.goalTarget = null
+      b.goalReturnPerch = null
+      b.goalPhase = null
+      b.followIdx = -1
+      b.hoverUntil = 0
+      b.patrolLoop = null
+      b.waypointQueue = []
+      b.gridPath = null
+      b.gridGoal = null
+      b.hardApproach = false
+      b.committedAt = 0
+    }
+
+    // Rest goal: requires a perched bird (callers land first).
+    const startRest = (b, now, dur) => {
+      const d = dur || GOAL_DURATIONS.rest
+      b.goal = 'rest'
+      b.goalStartedAt = now
+      b.goalEndsAt = now + rand(d[0], d[1])
+      clearFlightPhases(b)
+    }
+
+    // Free perch slots (indices), excluding the bird's current slot.
+    const freePerches = (b) => {
+      const out = []
+      for (let i = 0; i < perchPts.length; i++) {
+        if (perchPts[i].occupiedBy) continue
+        if (i === b.perchIdx) continue
+        out.push(i)
+      }
+      return out
+    }
+
+    // Home perch resolution (STEP 1): the assignment persists for the
+    // bird's lifetime. The ONLY re-resolution happens when the slot ceased
+    // to exist in a rebuilt perch pool (breakpoint flip) — the bird takes
+    // the nearest free slot so the territory keeps its rough location.
+    const resolveHome = (b) => {
+      if (b.homePerch != null && perchPts[b.homePerch]) {
+        return b.homePerch
+      }
+      const free = freePerches(b)
+      if (!free.length) return null
+      let best = free[0]
+      let bestD = Infinity
+      for (const i of free) {
+        const p = perchPts[i]
+        const d = Math.hypot(p.x - b.x, p.y - b.y)
+        if (d < bestD) {
+          bestD = d
+          best = i
+        }
+      }
+      b.homePerch = best
+      return best
+    }
+
+    // STEP 3 commute picker: 70% a free perch within 300px of home; 30% the
+    // nearest free perch at any distance. No free perch in range: -1, and
+    // the caller extends rest instead of forcing a bad flight.
+    const pickCommutePerch = (b) => {
+      const homeIdx = resolveHome(b)
+      if (homeIdx == null) return -1
+      const free = freePerches(b)
+      if (!free.length) return -1
+      if (rng() < 0.7) {
+        const home = perchPts[homeIdx]
+        const near = []
+        for (const i of free) {
+          if (Math.hypot(perchPts[i].x - home.x, perchPts[i].y - home.y) < 300) {
+            near.push(i)
+          }
+        }
+        if (!near.length) return -1
+        return near[Math.floor(rng() * near.length)]
+      }
+      let best = free[0]
+      let bestD = Infinity
+      for (const i of free) {
+        const d = Math.hypot(perchPts[i].x - b.x, perchPts[i].y - b.y)
+        if (d < bestD) {
+          bestD = d
+          best = i
+        }
+      }
+      return best
+    }
+
+    // Landing-bound departure (commute): release the current slot, commit
+    // to another free one, and launch with the same hop arc the old takeoff
+    // used so the perch-to-perch move never reads as a teleport.
+    const launchToPerch = (b, i, now, g, idx) => {
+      const dest = perchPts[idx]
+      if (!dest || dest.occupiedBy) return null
+      releasePerch(b)
+      const first = commitPerch(b, now, g, idx)
+      if (!first) return null
+      b.recoil = null
+      b.arriveStart = 0
+      const a = rand(0, Math.PI * 2)
+      b.vx = Math.cos(a) * TAKEOFF_START_SPEED
+      b.vy = Math.sin(a) * TAKEOFF_START_SPEED
+      b.launchGraceUntil = now + LAUNCH_GRACE_MS
+      b.facing = Math.cos(a) >= 0 ? 1 : -1
+      b.boostUntil = now + BOOST_MS
+      if (b.cfg.dart) b.nextDartAt = now + rand(b.cfg.dart[0], b.cfg.dart[1])
+      b.target = first
+      renderBird(b, i, now)
+      return first
+    }
+
+    // Open-air departure: leave the perch toward an arbitrary first waypoint
+    // (loop entry, first inspection leg, or null for follow, which re-aims
+    // in the tick). Same launch arc and grace window as the old takeoff.
+    const departPerch = (b, i, now, firstTarget) => {
+      releasePerch(b)
+      b.state = 'flying'
+      b.recoil = null
+      b.arriveStart = 0
+      const a = rand(0, Math.PI * 2)
+      b.vx = Math.cos(a) * TAKEOFF_START_SPEED
+      b.vy = Math.sin(a) * TAKEOFF_START_SPEED
+      b.launchGraceUntil = now + LAUNCH_GRACE_MS
+      b.facing = Math.cos(a) >= 0 ? 1 : -1
+      b.boostUntil = now + BOOST_MS
+      if (b.cfg.dart) b.nextDartAt = now + rand(b.cfg.dart[0], b.cfg.dart[1])
+      if (firstTarget) b.target = firstTarget
+      renderBird(b, i, now)
+    }
+
+    // Airborne perch commit: mark the slot, hold it, build the glide (the
+    // same constructive route the old perch runs used — perch to perch IS
+    // one gentle arc). Returns the first route waypoint, or null.
+    const commitPerch = (b, now, g, idx) => {
+      const p = perchPts[idx]
+      if (!p || (p.occupiedBy && p.occupiedBy !== b.id)) return null
+      // One bird holds one slot: free the old one before taking this one.
+      if (b.perchIdx >= 0 && b.perchIdx !== idx) releasePerch(b)
+      p.occupiedBy = b.id
+      b.perchIdx = idx
+      b.committedAt = now
+      const perchTarget = { x: p.x, y: p.y - b.cfg.size * FOOT_FRAC }
+      const route = perchRoute(b, p, g)
+      b.waypointQueue = route.slice(1).concat([perchTarget])
+      b.state = 'flying'
+      b.arriveStart = 0
+      b.hardApproach = false
+      b.legImmune = false
+      return route[0]
+    }
+
+    // STEP 3 excursion: cleared open-space cell within 200px of home,
+    // outside every routing pad and at least 40px clear of the headline ink.
+    const pickExcursionPoint = (b, g, hp) => {
+      if (!targetPool.length) buildPool(g)
+      const cands = []
+      for (const c of targetPool) {
+        const dHome = Math.hypot(c.x - hp.x, c.y - hp.y)
+        if (dHome < 60 || dHome > 200) continue
+        let padHit = false
+        for (const p of g.pads) {
+          if (p.kind === 'edge') continue
+          const dr = distToRect(c.x, c.y, p.routeRect)
+          if (dr < 1) {
+            padHit = true
+            break
+          }
+          if (p.kind === 'text' && dr < 40) {
+            padHit = true
+            break
+          }
+        }
+        if (padHit) continue
+        cands.push(c)
+      }
+      if (!cands.length) return null
+      return cands[Math.floor(rng() * cands.length)]
+    }
+    // One-cycle patrol loop around the excursion point — shapes re-used
+    // from the old patrol pool (figure8 / loopDeLoop / corkscrew / orbit;
+    // the sweep shape is retired with the cruise loop it served). Same
+    // perimeter-clearance math as before.
+    const startExcursionLoop = (b, g, now, cx0, cy0) => {
+      const shape = PATROL_SHAPES[Math.floor(rng() * 4)]
+      const R = rand(PATROL_R[0], PATROL_R[1])
+      const dir = b.vx >= 0 ? 1 : -1
+      const drift =
+        shape === 'corkscrew' ? dir * rand(PATROL_DRIFT[0], PATROL_DRIFT[1]) : 0
+      const revs =
+        shape === 'orbit' || shape === 'corkscrew'
+          ? Math.round(rand(PATROL_ORBIT_REVS[0], PATROL_ORBIT_REVS[1]))
+          : 1
+      const bound = R + Math.abs(drift) / 2
+      const need = bound + REPULSION_PAD + PATROL_CLEAR_PAD
+      const cx = clamp(cx0, bound + 6, Math.max(bound + 7, g.w - bound - 6))
+      const cy = clamp(cy0, bound + 6, Math.max(bound + 7, g.h - bound - 6))
+      let clear = true
+      if (g.h1) {
+        for (const line of g.h1.collisionRects) {
+          if (
+            distToRect(cx, cy, {
+              left: line.left - REPULSION_PAD,
+              right: line.right + REPULSION_PAD,
+              top: line.top - REPULSION_PAD,
+              bottom: line.bottom + REPULSION_PAD,
+            }) < need
+          ) {
+            clear = false
+            break
           }
         }
       }
-
-    // Patrol trigger: every 4th target selection (~25%) starts a loop —
-    // but only in 'flying' and never while committed to a perch; if the
-    // startPatrol geometry check fails, normal selection falls through.
-    if (
-      b.state === 'flying' &&
-      b.perchIdx < 0 &&
-      b.pickCount % PATROL_EVERY_N_PICKS === 0 &&
-      startPatrol(b, g, now)
-    ) {
-      b.waypointQueue = []
-      b.target = patrolPoint(0, b.patrolLoop)
-      return
-    }
-    // Throttled hover fallback: a pick that found no route re-samples after a
-    // short hold instead of churning 30 route tests per frame.
-    if (now < (b.repickHoldUntil || 0)) return
-    if (!targetPool.length) buildPool(g)
-    if (!targetPool.length) {
-      hoverFall(b, now)
-      return
-    }
-    // Weighted samples, deduped, route-tested weight-desc: the first
-    // routeable candidate is by construction the highest-weight routeable one
-    // (4e).
-    const uniq = [...new Set(samplePool(POOL_SAMPLE_N))]
-    const cands = uniq.filter(
-      (t) => Math.hypot(t.x - b.x, t.y - b.y) >= MIN_PICK_DIST
-    )
-    cands.sort((p, q) => q.weight - p.weight)
-    // Crash immunity: while active, a target is crash-safe ONLY if its
-    // route is a single straight sight line (no waypoints, no corner turns)
-    // AND it clears every obstacle edge by ROUTE_MIN_CLEARANCE. Anything
-    // else is refused — the picker will not route into a crash during the
-    // window (scripted ramming is suspended separately in steer). No safe
-    // target → the existing hover-fall retry keeps the bird drifting in
-    // place until airspace opens up.
-    const immune = now < b.crashImmuneUntil
-    for (const c of cands) {
-      if (immune && minDistToObstacles(g, c.x, c.y) < ROUTE_MIN_CLEARANCE) {
-        continue
+      if (clear && g.logo) {
+        if (
+          distToRect(cx, cy, {
+            left: g.logo.left - REPULSION_PAD,
+            right: g.logo.right + REPULSION_PAD,
+            top: g.logo.top - REPULSION_PAD,
+            bottom: g.logo.bottom + REPULSION_PAD,
+          }) < need
+        ) {
+          clear = false
+        }
       }
-      const route = makeRoute(b, g, c, avoidIds)
-      // Crash-safe pick: legacy measures the leg count (one straight leg);
-      // grid mode asks the same question of the grid — a direct sight line
-      // with two cells of clearance.
-      const immuneDirect =
-        immune && route
-          ? gridMode
-            ? (() => {
-                const grid = navGridFor(g)
-                return (
-                  !!grid && gridLineClear(grid, b.x, b.y, c.x, c.y, 16)
-                )
-              })()
-            : route.length === 1
-          : false
-      if (route && (!immune || immuneDirect)) {
+      if (clear) {
+        for (const r of g.buttons) {
+          if (
+            distToRect(cx, cy, {
+              left: r.left - REPULSION_PAD,
+              right: r.right + REPULSION_PAD,
+              top: r.top - REPULSION_PAD,
+              bottom: r.bottom + REPULSION_PAD,
+            }) < need
+          ) {
+            clear = false
+            break
+          }
+        }
+      }
+      if (!clear) return false
+      b.patrolLoop = {
+        shape,
+        R,
+        drift,
+        revs,
+        cx: cx - drift / 2,
+        cy,
+        start: now,
+        duration: rand(GOAL_DURATIONS.excursion[0], GOAL_DURATIONS.excursion[1]),
+      }
+      b.waypointQueue = []
+      b.hardApproach = false
+      return true
+    }
+    // STEP 3 inspection: landmarks = logo, every CTA button, every headline
+    // line; anything within 100px of home is excluded. Candidate approach
+    // points sit 40px to the side of the landmark edge at its vertical
+    // center (bird-side first, then the far side); offsets step up
+    // (40/50/60/75) until one is outside every routing pad — the route
+    // planner has final say in startGoal.
+    const pickInspectionApproach = (b, g, hp) => {
+      const lm = []
+      if (g.logo) {
+        lm.push({
+          x: g.logo.left,
+          y: (g.logo.top + g.logo.bottom) / 2,
+          r: g.logo,
+        })
+      }
+      for (const r of g.buttons) {
+        lm.push({ x: r.left, y: (r.top + r.bottom) / 2, r })
+      }
+      if (g.h1) {
+        for (const line of g.h1.lines) {
+          lm.push({ x: line.left, y: (line.top + line.bottom) / 2, r: line })
+        }
+      }
+      const far = []
+      for (const L of lm) {
+        if (distToRect(hp.x, hp.y, L.r) < 100) continue
+        far.push(L)
+      }
+      if (!far.length) return []
+      const L = far[Math.floor(rng() * far.length)]
+      const sideFirst = b.x < L.x ? -1 : 1
+      const cands = []
+      for (const side of [sideFirst, -sideFirst]) {
+        for (const off of [40, 50, 60, 75]) {
+          const x = L.x + side * off
+          const y = L.y
+          if (x < 12 || x > g.w - 12 || y < 12 || y > g.h - 12) continue
+          let blocked = false
+          for (const p of g.pads) {
+            if (p.kind === 'edge') continue
+            if (distToRect(x, y, p.routeRect) < 2) {
+              blocked = true
+              break
+            }
+          }
+          if (blocked) continue
+          cands.push({ x, y })
+        }
+      }
+      return cands
+    }
+    // STEP 3 long pass: edge-to-edge flight in a band-validated Y. The Y
+    // clearance math is the old sweep patrol's; the midpoint dip only rides
+    // when the dipped line stays clear too. Start edge is the one farther
+    // from the bird; the flight is one way, then a quiet return home.
+    const startLongPass = (b, g, now) => {
+      const mX = b.cfg.size * BIRD_HALF_W_FRAC + 14
+      const mY = b.cfg.size * BIRD_HALF_H_FRAC + 14
+      const leftX = clamp(mX, 8, Math.max(8, g.w - mX))
+      const rightX = Math.max(
+        leftX + 60,
+        clamp(g.w - mX, leftX + 61, Math.max(leftX + 62, g.w - 8))
+      )
+      const clearAt = (y) =>
+        (!g.h1 ||
+          !g.h1.collisionRects.some(
+            (line) => y > line.top - mY - 10 && y < line.bottom + mY + 10
+          )) &&
+        (!g.logo || y < g.logo.top - mY - 10 || y > g.logo.bottom + mY + 10) &&
+        !g.buttons.some((r) => y > r.top - mY - 10 && y < r.bottom + mY + 10)
+      const bands = []
+      if (g.h1) {
+        bands.push([mY + 8, g.h1.top - mY - 10])
+        bands.push([g.h1.bottom + mY + 10, g.h - mY - 8])
+      } else {
+        bands.push([mY + 8, g.h - mY - 8])
+      }
+      const valid = bands.filter(([lo, hi]) => hi - lo >= 24)
+      if (!valid.length) return false
+      const [lo, hi] = valid[Math.floor(rng() * valid.length)]
+      let fixedY = rand(lo, hi)
+      let tries = 0
+      while (!clearAt(fixedY) && tries < 8) {
+        fixedY = rand(lo, hi)
+        tries += 1
+      }
+      if (!clearAt(fixedY)) return false
+      const dip = fixedY + 16 < g.h - mY && clearAt(fixedY + 16) ? 16 : 0
+      const dLeft = b.x - leftX
+      const dRight = rightX - b.x
+      const startRight = dRight > dLeft
+      b.patrolLoop = {
+        shape: 'longpass',
+        x0: startRight ? rightX : leftX,
+        x1: startRight ? leftX : rightX,
+        fixedY,
+        dip,
+        start: now,
+        duration: rand(GOAL_DURATIONS.long_pass[0], GOAL_DURATIONS.long_pass[1]),
+      }
+      b.waypointQueue = []
+      b.hardApproach = false
+      return true
+    }
+    // STEP 3 follow: nearest eligible flock mate (in commute/excursion, not
+    // dizzy, no live recoil), else -1.
+    const pickFollowTarget = (b, now) => {
+      let best = -1
+      let bestD = Infinity
+      for (let k = 0; k < birds.length; k++) {
+        const f = birds[k]
+        if (f === b) continue
+        const eligible =
+          (f.goal === 'commute' || f.goal === 'excursion') &&
+          (f.state === 'flying' || f.state === 'arriving') &&
+          !(f.dizzyUntil && now < f.dizzyUntil) &&
+          !f.recoil
+        if (!eligible) continue
+        const d = Math.hypot(f.x - b.x, f.y - b.y)
+        if (d < bestD) {
+          bestD = d
+          best = k
+        }
+      }
+      return best
+    }
+    // Follow point: 100px BEHIND the followed bird's velocity heading,
+    // offset 30px perpendicular (side chosen once per follow).
+    const followPoint = (b, f, g) => {
+      let hx = f.vx
+      let hy = f.vy
+      let m = Math.hypot(hx, hy)
+      if (m < 0.05) {
+        hx = f.facing
+        hy = 0
+        m = 1
+      }
+      hx /= m
+      hy /= m
+      const px = -hy * (b.followSide || 1)
+      const py = hx * (b.followSide || 1)
+      return {
+        x: clamp(f.x - hx * 100 + px * 30, 12, Math.max(12, g.w - 12)),
+        y: clamp(f.y - hy * 100 + py * 30, 12, Math.max(12, g.h - 12)),
+      }
+    }
+    // Return-home leg of every flight goal: land back and rest. Home perch
+    // when it is free; a squat on the nearest free perch for THIS rest
+    // cycle when it is not (the home assignment itself never changes).
+    const beginReturn = (b, now, g) => {
+      b.goalPhase = 'return'
+      if (b.state !== 'flying' && b.state !== 'arriving') return false
+      let first = null
+      const homeIdx = resolveHome(b)
+      if (homeIdx != null && !perchPts[homeIdx].occupiedBy) {
+        first = commitPerch(b, now, g, homeIdx)
+      }
+      if (!first) {
+        const free = freePerches(b)
+        if (free.length) {
+          let best = free[0]
+          let bestD = Infinity
+          for (const k of free) {
+            const d = Math.hypot(perchPts[k].x - b.x, perchPts[k].y - b.y)
+            if (d < bestD) {
+              bestD = d
+              best = k
+            }
+          }
+          first = commitPerch(b, now, g, best)
+        }
+      }
+      if (first) {
+        b.target = first
+        b.hardApproach = false
+        b.legImmune = false
+        return true
+      }
+      // Nothing to land on right now: the existing hover fallback keeps the
+      // bird drifting; retries re-enter this path from resumeGoalRoute.
+      hoverFall(b, now)
+      return false
+    }
+    // Mid-goal router — used everywhere the old loop re-picked a cruise
+    // waypoint: liveness guards, pad escapes, ram end, dizzy recovery,
+    // route-loss. Routes toward whatever the current phase wants; fails
+    // degrade to the return-home leg.
+    const resumeGoalRoute = (b, g, now) => {
+      if (b.goal === 'follow' && b.followIdx >= 0) {
+        // Re-aims per frame in the tick.
+        b.target = null
+        return true
+      }
+      if (b.goal === 'inspection' && b.goalPhase === 'approach' && b.goalTarget) {
+        const route = makeRoute(b, g, b.goalTarget, null)
+        if (route && !(now < b.crashImmuneUntil && route.length !== 1)) {
+          b.target = route[0]
+          b.waypointQueue = route.slice(1)
+          if (gridMode) {
+            b.gridPath = [{ x: b.x, y: b.y }, ...route]
+            b.gridGoal = b.goalTarget
+          }
+          b.legImmune = now < b.crashImmuneUntil && route.length === 1
+          return true
+        }
+      }
+      if (b.goal === 'commute' && b.goalPhase === 'out' && b.goalReturnPerch != null) {
+        const first = commitPerch(b, now, g, b.goalReturnPerch)
+        if (first) {
+          b.target = first
+          return true
+        }
+      }
+      b.goalPhase = 'return'
+      return beginReturn(b, now, g)
+    }
+    // STEP 2: goal expiry handling on the natural patrol-loop end.
+    const onPatrolEnd = (b, i, now, g) => {
+      if (b.state !== 'flying') return
+      if (b.goal === 'excursion' && b.goalPhase === 'out') {
+        b.goalPhase = 'return'
+        beginReturn(b, now, g)
+        return
+      }
+      if (b.goal === 'long_pass' && b.goalPhase === 'out') {
+        b.goalPhase = 'return'
+        beginReturn(b, now, g)
+        return
+      }
+      resumeGoalRoute(b, g, now)
+    }
+    // STEP 3: waypoint arrival during a flight goal (replaces the old
+    // cruise re-pick at the same site).
+    const onFlightTargetReached = (b, g, now) => {
+      if (b.goal === 'inspection' && b.goalPhase === 'approach' && b.goalTarget) {
+        // Hover over the approach point for a beat, then head home.
+        b.goalPhase = 'hover'
+        b.hoverUntil = now + rand(1500, 2000)
+        b.hoverBaseY = b.y
+        b.target = null
+        b.waypointQueue = []
+        b.gridPath = null
+        b.gridGoal = null
+        return
+      }
+      if (b.goal === 'follow') {
+        // The follow point moves every frame; next tick re-aims.
+        b.target = null
+        return
+      }
+      resumeGoalRoute(b, g, now)
+    }
+    // STEP 2: start a goal. Returns false when the goal has no valid target
+    // right now (the caller extends rest instead of forcing a bad flight).
+    const startGoal = (b, i, now, g, goal) => {
+      clearFlightPhases(b)
+      b.goal = goal
+      b.goalStartedAt = now
+      b.goalEndsAt = now + rand(GOAL_DURATIONS[goal][0], GOAL_DURATIONS[goal][1])
+      if (dbgOn) {
+        console.info(
+          `[bird-diag] goal bird=${i} goal=${goal} t=+${Math.round(now - now0)}ms`
+        )
+      }
+      if (goal === 'rest') return true
+      if (b.state !== 'perched' && b.state !== 'flying' && b.state !== 'arriving') {
+        return false
+      }
+      if (goal === 'follow') {
+        const f = pickFollowTarget(b, now)
+        if (f < 0) {
+          // No one is flying: a SHORT rest, then re-roll (spec fallback).
+          startRest(b, now, [5000, 5000])
+          return true
+        }
+        b.followIdx = f
+        b.followSide = rng() < 0.5 ? 1 : -1
+        b.goalPhase = 'follow'
+        departPerch(b, i, now, null)
+        return true
+      }
+      const homeIdx = resolveHome(b)
+      if (homeIdx == null) return false
+      if (goal === 'commute') {
+        const idx = pickCommutePerch(b)
+        if (idx < 0) return false
+        const first = launchToPerch(b, i, now, g, idx)
+        if (!first) return false
+        b.goalReturnPerch = idx
+        b.goalPhase = 'out'
+        b.goalTarget = { x: perchPts[idx].x, y: perchPts[idx].y }
+        return true
+      }
+      if (goal === 'excursion') {
+        const hp = perchPts[homeIdx]
+        if (!hp) return false
+        const c = pickExcursionPoint(b, g, hp)
+        if (!c) return false
+        if (!startExcursionLoop(b, g, now, c.x, c.y)) return false
+        b.goalPhase = 'out'
+        b.goalTarget = { x: c.x, y: c.y }
+        departPerch(b, i, now, patrolPoint(0, b.patrolLoop))
+        return true
+      }
+      if (goal === 'inspection') {
+        const hp = perchPts[homeIdx]
+        if (!hp) return false
+        let chosen = null
+        let route = null
+        for (const ap of pickInspectionApproach(b, g, hp)) {
+          const r = makeRoute(b, g, ap, null)
+          if (r && !(now < b.crashImmuneUntil && r.length !== 1)) {
+            chosen = ap
+            route = r
+            break
+          }
+        }
+        if (!chosen) return false
+        b.goalPhase = 'approach'
+        b.goalTarget = chosen
+        departPerch(b, i, now, route[0])
         b.target = route[0]
         b.waypointQueue = route.slice(1)
         if (gridMode) {
-          // Pure-pursuit polyline: pursueGrid() projects onto it each frame
-          // and steers at a 50px lookahead point.
           b.gridPath = [{ x: b.x, y: b.y }, ...route]
-          b.gridGoal = { x: c.x, y: c.y }
-          b.gridIdx = 0
-          b.gridReplanAt = 0
-        } else {
-          b.gridPath = null
-          b.gridGoal = null
+          b.gridGoal = chosen
         }
-        // Straight-leg marker: only a committed immune pick completes a
-        // crash-free flight (hover fallbacks don't count).
-        b.legImmune = immune
-        if (dbgOn && immune) {
-          console.info(
-            `[bird-diag] immune pick ${b.id} flight=${b.immuneFlights + 1}/${CRASH_IMMUNE_FLIGHTS} legs=1 clear=${minDistToObstacles(g, c.x, c.y).toFixed(0)}px`
-          )
+        return true
+      }
+      if (goal === 'long_pass') {
+        if (!startLongPass(b, g, now)) return false
+        b.goalPhase = 'out'
+        departPerch(b, i, now, patrolPoint(0, b.patrolLoop))
+        return true
+      }
+      return false
+    }
+    // STEP 2: next-goal selection on rest expiry.
+    const pickNextGoal = (b, i, now, g) => {
+      const table = GOAL_TRANSITIONS[b.goal] || GOAL_TRANSITIONS.rest
+      if (b.goal === 'rest') {
+        const r = budgetRestFrac(b)
+        if (r < 0.55) {
+          // Recent rest share too low: extend this rest.
+          startRest(b, now, [4000, 8000])
+          return
+        }
+        if (r > 0.75) {
+          // Never-flight guard: force a commute or an excursion.
+          const forced = rng() < 0.7 ? 'commute' : 'excursion'
+          if (startGoal(b, i, now, g, forced)) return
+          startRest(b, now, [4000, 8000])
+          return
+        }
+      }
+      const next = weightedGoal(table)
+      if (startGoal(b, i, now, g, next)) return
+      // STEP 2 fallback: no valid target for that goal — extend rest by
+      // 8-15s instead of forcing a bad flight.
+      startRest(b, now, [8000, 15000])
+    }
+    // Follow housekeeping: per-frame aim + end conditions (followed bird
+    // lands or crashes early; the follow clock expires per the STEP 2
+    // table, so the mid-air handoff into a commute stays live).
+    const handleFollow = (b, i, now, g) => {
+      if (b.goal !== 'follow') return
+      const f =
+        b.followIdx >= 0 && b.followIdx < birds.length ? birds[b.followIdx] : null
+      if (now >= b.goalEndsAt) {
+        b.followIdx = -1
+        if (rng() < 0.8) {
+          beginReturn(b, now, g) // ends in a landed rest
+        } else {
+          startGoal(b, i, now, g, 'commute') // mid-air handoff
         }
         return
       }
+      const fGone =
+        !f ||
+        f.state === 'perched' ||
+        (f.dizzyUntil && now < f.dizzyUntil) ||
+        !!f.recoil
+      if (fGone) {
+        b.followIdx = -1
+        beginReturn(b, now, g)
+        return
+      }
+      b.target = followPoint(b, f, g)
     }
-    hoverFall(b, now)
-  }
-
+    // STEP 1: home perch assignment — one DISTINCT perch per bird, shuffled.
+    // Deferred here until the perch pool exists (fonts / headline ready);
+    // idempotent, so metrics updates retry it for still-unassigned birds.
+    const assignHomes = (now) => {
+      const free = []
+      for (let i = 0; i < perchPts.length; i++) {
+        if (!perchPts[i].occupiedBy) free.push(i)
+      }
+      for (let k = free.length - 1; k > 0; k--) {
+        const j = Math.floor(rng() * (k + 1))
+        const tmp = free[k]
+        free[k] = free[j]
+        free[j] = tmp
+      }
+      let n = 0
+      for (const b of birds) {
+        if (b.homePerch != null) continue
+        if (n >= free.length) break
+        const idx = free[n]
+        n += 1
+        b.homePerch = idx
+        const p = perchPts[idx]
+        p.occupiedBy = b.id
+        b.perchIdx = idx
+        b.committedAt = now
+        b.state = 'perched'
+        b.x = p.x
+        b.y = p.y - b.cfg.size * FOOT_FRAC
+        startRest(b, now)
+      }
+    }
+    // Breakpoint flip / lost slot: a perched bird re-places on its home
+    // perch (resolveHome re-resolves only after the pool shrank) — the rest
+    // clock keeps running and the per-frame re-anchor drift gives the
+    // gentle settle, as before.
+    const relocatePerched = (b, now) => {
+      b.patrolLoop = null
+      releasePerch(b)
+      let idx = resolveHome(b)
+      if (idx == null || perchPts[idx].occupiedBy) {
+        const free = freePerches(b)
+        idx = free.length ? free[Math.floor(rng() * free.length)] : -1
+      }
+      if (idx >= 0) {
+        perchPts[idx].occupiedBy = b.id
+        b.perchIdx = idx
+        b.committedAt = now
+        b.state = 'perched'
+        return
+      }
+      // Desperate fallback (perch pool empty): airborne until a metrics
+      // update re-assigns; the rest clock fires immediately.
+      b.state = 'flying'
+      b.perchIdx = -1
+      b.goalEndsAt = 0
+    }
     // ---- grid pure-pursuit follower ----------------------------------------
     // Projects the bird onto its planned polyline, steers at a 50px lookahead
     // point, and re-plans when it drifts >46px off the corridor or the route
@@ -1167,10 +1829,10 @@ export function useBirdPets({
     // Breakpoint-aware headline perching, computed in useLayoutMetrics from
     // the FIRST rendered line's rects: desktop 6 points at fractions
     // [0.08..0.92] of the line, mobile 3 points at [0.15, 0.5, 0.85] (only 2
-    // birds fly below sm). p.y is the LINE TOP — pickPerch lifts the anchor
+    // birds fly below sm). p.y is the LINE TOP — a landing commit lifts the anchor
     // by the landing bird's size * FOOT_FRAC so the perched sprite's feet sit
     // exactly on the letter tops. No headline (fonts still loading) → no
-    // points → pickPerch retries on its 3-5s timer while birds keep flying.
+    // points → a perch commit retries on its 3-5s timer while birds glide.
     // occupancy tracks which bird holds each point.
     let perchPts = []
     let lastHeadlineCount = 0
@@ -1424,40 +2086,6 @@ export function useBirdPets({
       return q
     }
 
-    const pickPerch = (b, now, g) => {
-      const free = perchPts
-        .map((p, i) => ({ p, i }))
-        .filter(({ p }) => !p.occupiedBy)
-      if (!free.length) {
-        b.nextPerchAt = now + rand(PERCH_RETRY_MS[0], PERCH_RETRY_MS[1])
-        return
-      }
-      const chosen = free[Math.floor(rng() * free.length)]
-      // Parked: other birds can't aim at it while we glide in.
-      chosen.p.occupiedBy = b.id
-      b.perchIdx = chosen.i
-      b.committedAt = now
-      // Aim the flight at where the PERCHED CENTER will sit: the perch point
-      // is ON the first line's top edge, and the anchor sits size*FOOT_FRAC
-      // above it so the sprite swap at landing is pixel-stable AND the feet
-      // rest exactly on the letter tops (never a fixed pixel offset).
-      const perchTarget = { x: chosen.p.x, y: chosen.p.y - b.cfg.size * FOOT_FRAC }
-      const route = perchRoute(b, chosen.p, g)
-      if (route.length === 1) {
-        b.waypointQueue = [perchTarget]
-        b.target = route[0]
-      } else {
-        b.waypointQueue = [...route.slice(1), perchTarget]
-        b.target = route[0]
-      }
-      b.state = 'flying' // 'arriving' begins when the final glide waypoint is reached
-      b.arriveStart = 0
-      b.hardApproach = false
-      // Park the perch timer; landing schedules the next one via takeOff.
-      b.nextPerchAt = Infinity
-      renderBird(b, birds.indexOf(b), now)
-    }
-
     const land = (b, now) => {
       // No teleport: land only within one frame of motion (position already
       // essentially at the perch thanks to arrival steering).
@@ -1466,7 +2094,13 @@ export function useBirdPets({
       b.vy = 0
       b.recoil = null
       b.fastFlap = false
-      b.restUntil = now + rand(b.cfg.rest[0], b.cfg.rest[1])
+      // Landing always begins a rest goal (perched is the default state) —
+      // a squat perch (home busy) rests there without touching homePerch.
+      b.goal = 'rest'
+      b.goalStartedAt = now
+      b.goalEndsAt =
+        now + rand(GOAL_DURATIONS.rest[0], GOAL_DURATIONS.rest[1])
+      clearFlightPhases(b)
       b.flareUntil = now + LAND_FLARE_MS
       b.nextIdleAt = now + rand(IDLE_GAP_MIN, IDLE_GAP_MAX)
       b.idleUntil = 0
@@ -1531,7 +2165,7 @@ export function useBirdPets({
     // orbiting its head — pure DOM, CSS-animated, no per-frame JS. While
     // dizzy the bird is skipped by steering, sweeps, picking, patrol and
     // ram (stationary; nothing to sweep against). When dizzy ends, crash
-    // immunity opens (see pickTarget) and a fresh route is picked.
+    // immunity opens (the goal router re-routes) and a fresh route is picked.
     const dizzyStars = (b, i, on) => {
       const host = hostRefs.current[i]
       if (!host) return
@@ -1585,7 +2219,7 @@ export function useBirdPets({
           `[bird-diag] dizzy end bird=${i} t=+${Math.round(now - now0)}ms immunity open: 2 straight clear flights or ${CRASH_IMMUNE_MS}ms`
         )
       }
-      pickTarget(b, geom(), now)
+      resumeGoalRoute(b, geom(), now)
     }
 
     // ---- feathers ------------------------------------------------------------
@@ -1634,28 +2268,7 @@ export function useBirdPets({
       }
     }
 
-    const takeOff = (b, i, now) => {
-      releasePerch(b)
-      b.state = 'flying'
-      b.recoil = null
-      const a = rand(0, Math.PI * 2)
-      // Takeoff push: slow first frame, extra steering for BOOST_MS — a
-      // visible launch arc instead of an instant jump to cruising speed.
-      b.vx = Math.cos(a) * TAKEOFF_START_SPEED
-      b.vy = Math.sin(a) * TAKEOFF_START_SPEED
-      // Launch grace: the bird starts standing ON a surface anchor (glyph
-      // tops / logo edge). Random takeoff heading can initially graze that
-      // same surface — position fixes still run every frame, but the
-      // squash/feather choreography is suppressed for the launch arc so a
-      // takeoff doesn't read as "bounced off the perch it just left".
-      b.launchGraceUntil = now + LAUNCH_GRACE_MS
-      b.facing = Math.cos(a) >= 0 ? 1 : -1
-      b.boostUntil = now + BOOST_MS
-      b.nextPerchAt = now + rand(b.cfg.perchEvery[0], b.cfg.perchEvery[1])
-      if (b.cfg.dart) b.nextDartAt = now + rand(b.cfg.dart[0], b.cfg.dart[1])
-      pickTarget(b, geom(), now)
-      renderBird(b, i, now)
-    }
+    // (launchToPerch / departPerch live in the goal layer below.)
 
     // ---- patrol loops -------------------------------------------------------
     // Every 4th target selection (25%), a flying bird traces a closed
@@ -1702,6 +2315,15 @@ export function useBirdPets({
             }
           return { x: L.leftX, y: L.fixedY }
         }
+        case 'longpass': {
+          // Long pass: one-way edge-to-edge flight with a gentle midpoint
+          // dip (the dipped line was validated at goal setup; dip 0 if not).
+          const p1 = clamp(s, 0, 1)
+          return {
+            x: L.x0 + (L.x1 - L.x0) * p1,
+            y: L.fixedY + (L.dip || 0) * Math.sin(Math.PI * p1),
+          }
+        }
         default: {
           // corkscrew: horizontal circle that MIGRATES across the hero at
           // constant speed — the bird spirals while drifting.
@@ -1712,149 +2334,6 @@ export function useBirdPets({
           }
         }
       }
-    }
-
-    const startPatrol = (b, g, now) => {
-      if (!g) return false
-      const shape = PATROL_SHAPES[Math.floor(rng() * PATROL_SHAPES.length)]
-      // Sweep (L→R→L): a horizontal pass at a FIXED, band-validated Y —
-      // 3-4s per direction, a 200ms hang at each edge (velocity damped in
-      // steer, then a hard bank onto the reverse leg), 6-9s total. The Y is
-      // drawn only from open airspace: above or below the headline band,
-      // clear of the logo box and every button pad; no valid band → no
-      // sweep this pick (normal flying resumes).
-      if (shape === 'sweep') {
-        const mSweep = 14
-        const mX = b.cfg.size * BIRD_HALF_W_FRAC + mSweep
-        const mY = b.cfg.size * BIRD_HALF_H_FRAC + mSweep
-        const leftX = clamp(mX, 8, Math.max(8, g.w - mX))
-        const rightX = Math.max(leftX + 60, clamp(g.w - mX, leftX + 61, Math.max(leftX + 62, g.w - 8)))
-        const clearAt = (y) =>
-          (!g.h1 ||
-            !g.h1.collisionRects.some(
-              (line) => y > line.top - mY - 10 && y < line.bottom + mY + 10
-            )) &&
-          (!g.logo || y < g.logo.top - mY - 10 || y > g.logo.bottom + mY + 10) &&
-          !g.buttons.some((r) => y > r.top - mY - 10 && y < r.bottom + mY + 10)
-        const bands = []
-        if (g.h1) {
-          bands.push([mY + 8, g.h1.top - mY - 10])
-          bands.push([g.h1.bottom + mY + 10, g.h - mY - 8])
-        } else {
-          bands.push([mY + 8, g.h - mY - 8])
-        }
-        const valid = bands.filter(([lo, hi]) => hi - lo >= 24)
-        if (!valid.length) return false
-        const [lo, hi] = valid[Math.floor(rng() * valid.length)]
-        let fixedY = rand(lo, hi)
-        let tries = 0
-        while (!clearAt(fixedY) && tries < 8) {
-          fixedY = rand(lo, hi)
-          tries += 1
-        }
-        if (!clearAt(fixedY)) return false
-        const leg = rand(PATROL_SWEEP_LEG_MS[0], PATROL_SWEEP_LEG_MS[1])
-        const t1 = leg
-        const t2 = t1 + PATROL_SWEEP_EDGE_PAUSE_MS
-        const t3 = t2 + leg
-        b.patrolLoop = {
-          shape: 'sweep',
-          leftX,
-          rightX,
-          fixedY,
-          t1,
-          t2,
-          t3,
-          start: now,
-          duration: t3 + PATROL_SWEEP_EDGE_PAUSE_MS,
-        }
-        b.waypointQueue = []
-        b.hardApproach = false
-        return true
-      }
-      const R = rand(PATROL_R[0], PATROL_R[1])
-      const dir = b.vx >= 0 ? 1 : -1
-      const drift =
-        shape === 'corkscrew' ? dir * rand(PATROL_DRIFT[0], PATROL_DRIFT[1]) : 0
-      const revs =
-        shape === 'orbit' || shape === 'corkscrew'
-          ? Math.round(rand(PATROL_ORBIT_REVS[0], PATROL_ORBIT_REVS[1]))
-          : 1
-      // The whole path stays within (R + |drift|/2) of the drift-adjusted
-      // center, so first pick a center whose bounding circle clears every
-      // headline keep-out line (and the hero edges). Never starts inside the
-      // headline force field; if no candidate clears, no patrol this pick.
-      const bound = R + Math.abs(drift) / 2
-      const need = bound + REPULSION_PAD + PATROL_CLEAR_PAD
-      const ysList = g.h1
-        ? [b.y, g.h1.top - need - 8, g.h1.bottom + need + 8]
-        : [b.y]
-      for (const cy0 of ysList) {
-        const cy = clamp(cy0, bound + 6, Math.max(bound + 7, g.h - bound - 6))
-        const cxMid = clamp(b.x, bound + 6, Math.max(bound + 7, g.w - bound - 6))
-        let clear = true
-        if (g.h1) {
-          for (const line of g.h1.collisionRects) {
-            if (
-              distToRect(cxMid, cy, {
-                left: line.left - REPULSION_PAD,
-                right: line.right + REPULSION_PAD,
-                top: line.top - REPULSION_PAD,
-                bottom: line.bottom + REPULSION_PAD,
-              }) < need
-            ) {
-              clear = false
-              break
-            }
-          }
-        }
-        // The logo is solid: a loop whose bounding circle reaches it would
-        // pin the bird against the face for the whole 2-4s pattern.
-        if (
-          clear &&
-          g.logo &&
-          distToRect(cxMid, cy, {
-            left: g.logo.left - REPULSION_PAD,
-            right: g.logo.right + REPULSION_PAD,
-            top: g.logo.top - REPULSION_PAD,
-            bottom: g.logo.bottom + REPULSION_PAD,
-          }) < need
-        ) {
-          clear = false
-        }
-        // Buttons are solid too: a loop crossing the CTA row would pin the
-        // bird on a button face for the whole pattern.
-        if (
-          clear &&
-          g.buttons.some(
-            (r) =>
-              distToRect(cxMid, cy, {
-                left: r.left - REPULSION_PAD,
-                right: r.right + REPULSION_PAD,
-                top: r.top - REPULSION_PAD,
-                bottom: r.bottom + REPULSION_PAD,
-              }) < need
-          )
-        ) {
-          clear = false
-        }
-        if (clear) {
-          b.patrolLoop = {
-            shape,
-            R,
-            drift,
-            revs,
-            cx: cxMid - drift / 2,
-            cy,
-            start: now,
-            duration: rand(PATROL_DUR_MS[0], PATROL_DUR_MS[1]),
-          }
-          b.waypointQueue = []
-          b.hardApproach = false
-          return true
-        }
-      }
-      return false
     }
 
     // ---- steering integration for flying/arriving ---------------------------
@@ -1870,7 +2349,7 @@ export function useBirdPets({
         const s = (now - L.start) / L.duration
         if (b.state !== 'flying' || s >= 1) {
           b.patrolLoop = null
-          if (b.state === 'flying' && !b.target) pickTarget(b, g, now)
+          if (b.state === 'flying') onPatrolEnd(b, i, now, g)
         } else {
           b.target = patrolPoint(clamp(s, 0, 1), L)
           // Sweep edge-hang windows: damp velocity so the bird parks at the
@@ -1987,7 +2466,7 @@ export function useBirdPets({
           b.ramUntil = 0
           b.ramTarget = null
           b.nextRamAt = now + rand(ramSched[0], ramSched[1])
-          pickTarget(b, g, now)
+          resumeGoalRoute(b, g, now)
         }
       }
 
@@ -2002,7 +2481,7 @@ export function useBirdPets({
           if (look === 'arrived') {
             b.gridPath = null
             b.gridGoal = null
-            pickTarget(b, g, now)
+            resumeGoalRoute(b, g, now)
           } else if (look) {
             b.target = look
           }
@@ -2012,7 +2491,7 @@ export function useBirdPets({
       const t = b.target
       if (!t) {
         // Never let a flying bird have nowhere to go.
-        pickTarget(b, g, now)
+        resumeGoalRoute(b, g, now)
         return
       }
       const dx = t.x - b.x
@@ -2147,7 +2626,7 @@ export function useBirdPets({
                 )
               }
             }
-            pickTarget(b, g, now)
+            onFlightTargetReached(b, g, now)
           }
         }
       }
@@ -2242,7 +2721,7 @@ export function useBirdPets({
             b.escapeUntil = 0
             b.target = null
             b.waypointQueue = []
-            pickTarget(b, g, now)
+            resumeGoalRoute(b, g, now)
           } else if (b.escapeUntil && now >= b.escapeUntil) {
             // Window expired (still inside but escape dropped the route):
             // regenerate from the new position; a persistent inside state
@@ -2250,7 +2729,7 @@ export function useBirdPets({
             b.escapeUntil = 0
             b.target = null
             b.waypointQueue = []
-            pickTarget(b, g, now)
+            resumeGoalRoute(b, g, now)
           }
           // Outside the pad: NO dampening. The pre-refactor design dampened
           // only the pad INTERIOR (chase corrections pushing the bird in);
@@ -2525,9 +3004,9 @@ export function useBirdPets({
               `[bird-diag] train-break bird=${i} surface=${hitSurface} t=+${Math.round(now - now0)}ms`
             )
           }
-          pickTarget(b, g, now)
+          resumeGoalRoute(b, g, now)
         } else if (!losClearToTarget(b, g)) {
-          pickTarget(b, g, now)
+          resumeGoalRoute(b, g, now)
         }
         b._lastHitSurface = hitSurface
         b._lastHitAt = now
@@ -2561,8 +3040,7 @@ export function useBirdPets({
         if (b.commitFrames > PERCH_COMMIT_FRAMES) {
           releasePerch(b)
           b.hardApproach = false
-          b.nextPerchAt = now + rand(PERCH_RETRY_MS[0], PERCH_RETRY_MS[1])
-          pickTarget(b, g, now)
+          resumeGoalRoute(b, g, now)
         }
       } else {
         b.commitFrames = 0
@@ -2580,7 +3058,7 @@ export function useBirdPets({
           if (b.noProgressFrames >= STUCK_FRAMES) {
             b.noProgressFrames = 0
             b.hardApproach = false
-            pickTarget(b, g, now)
+            resumeGoalRoute(b, g, now)
           }
         } else {
           b.noProgressFrames = 0
@@ -2624,7 +3102,7 @@ export function useBirdPets({
               `[bird-diag] wedged-escape bird=${i ?? -1} t=+${Math.round(now - now0)}ms distT=${distT.toFixed(1)}`
             )
           }
-          pickTarget(b, g, now)
+          resumeGoalRoute(b, g, now)
         }
       } else {
         b.cornerFrames = 0
@@ -2657,6 +3135,7 @@ export function useBirdPets({
         dbgOverlay(g)
       }
       birds.forEach((b, i) => {
+        budgetPush(b, now, rawDt, b.goal)
         // Immunity expiry: two straight flights OR 6000ms, whichever first
         // (flight counting happens in steer's arrival branch).
         if (b.crashImmuneUntil && now >= b.crashImmuneUntil) {
@@ -2705,14 +3184,16 @@ export function useBirdPets({
               b.y += dy * k
             }
           }
-          if (now >= b.restUntil) {
-            takeOff(b, i, now)
+          if (now >= b.goalEndsAt) {
+            pickNextGoal(b, i, now, g)
+          }
+          if (b.state !== 'perched') {
+            // A new goal launched: steer its first frame.
             steer(b, now, dt, g, i)
           } else {
-            // Rest frames skip dbgFrame (early return), so keep the probe's
-            // previous-position bookkeeping fresh here or the first flying
-            // frame after takeoff compares against a stale pre-landing
-            // position and reports a phantom teleport.
+            // Rest frames skip dbgFrame (early return), so keep the
+            // probe bookkeeping fresh or the first flying frame after
+            // takeoff reports a phantom teleport.
             const p = dbgOn ? dbgPrev[i] : null
             if (p) {
               p.x = b.x
@@ -2736,14 +3217,30 @@ export function useBirdPets({
             }
           }
         } else {
+          // Inspection hover: hold with a gentle 1Hz bob; steering and
+          // liveness are skipped while the hover clock runs.
+          if (b.goalPhase === 'hover' && (b.hoverUntil || 0) > now) {
+            b.vx = 0
+            b.vy = 0
+            b.y = (b.hoverBaseY || b.y) + 4 * Math.sin(now * 0.001 * Math.PI * 2)
+            const p = dbgOn ? dbgPrev[i] : null
+            if (p) {
+              p.x = b.x
+              p.y = b.y
+            }
+            renderBird(b, i, now)
+            return
+          }
+          if (b.goalPhase === 'hover' && now >= (b.hoverUntil || 0)) {
+            // Hover spent: home and rest.
+            b.hoverUntil = 0
+            beginReturn(b, now, g)
+          }
+          if (b.goal === 'follow') handleFollow(b, i, now, g)
           liveness(b, now, g, i)
           steer(b, now, dt, g, i)
-          if (
-            b.state === 'flying' &&
-            !b.patrolLoop &&
-            now >= b.nextPerchAt
-          )
-            pickPerch(b, now, g)
+          // Perch commits are owned by goal phases now; the old
+          // anytime-cruise perch retimer is gone.
         }
         dbgFrame(b, i, now, g, rawDt, rawDt > DT_CAP_MS)
         renderBird(b, i, now)
@@ -2986,6 +3483,7 @@ export function useBirdPets({
       dbgMetricsMarker = performance.now()
       buildPerches()
       targetPool = [] // stale lattice after a layout change is worse than none
+      assignHomes(performance.now())
       const g = geom()
       if (!g || g.w <= 0 || g.h <= 0) return
       birds.forEach((b, i) => {
@@ -2993,7 +3491,7 @@ export function useBirdPets({
         if (b.state === 'perched') {
           const p = b.perchIdx >= 0 ? perchPts[b.perchIdx] : null
           if (info.breakpointChanged || !p || p.occupiedBy !== b.id) {
-            takeOff(b, i, performance.now())
+            relocatePerched(b, i, performance.now())
           } else {
             // Re-anchor WITHOUT a snap: the per-frame settle drift (exp
             // ~1s) carries the bird to the live slot position. An instant
@@ -3039,21 +3537,14 @@ export function useBirdPets({
       }
     })
 
-    // initial targets
+    // Initial state: PERCHED on home perches. Rest is the default state;
+    // flight is the deviation. If the perch pool is not ready yet (fonts
+    // still loading), assignment defers to the first metrics update.
     birds.forEach((b, i) => {
-      b.nextPerchAt = now0 + rand(b.cfg.perchEvery[0], b.cfg.perchEvery[1])
       if (b.cfg.dart) b.nextDartAt = now0 + rand(b.cfg.dart[0], b.cfg.dart[1])
-      b.target = null
-      pickTarget(b, geom(), now0)
-      if (reduced) {
-        // static perched birds only (landing anchor convention, as above)
-        b.state = 'perched'
-        b.perchIdx = Math.min(i, perchPts.length - 1)
-        const p = perchPts[b.perchIdx]
-        b.x = p.x
-        b.y = p.y - b.cfg.size * FOOT_FRAC
-        perchPts[b.perchIdx].occupiedBy = b.id
-      }
+    })
+    assignHomes(now0)
+    birds.forEach((b, i) => {
       setFlapDur(i)
       renderBird(b, i, now0)
     })

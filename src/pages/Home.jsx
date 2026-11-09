@@ -42,7 +42,8 @@ export default function Home() {
   // -1, 1.5 and non-numeric values all fall back to Math.random.
   const seedParam = params.get('birds-seed')
   const seedValue = seedParam && /^\d+$/.test(seedParam) ? Number(seedParam) : NaN
-  const birdSeed = Number.isSafeInteger(seedValue) ? seedValue : null
+  const birdSeed =
+    Number.isSafeInteger(seedValue) && seedValue <= 0xffffffff ? seedValue : null
 
   const meta = [
     { property: 'og:type', content: 'website' },

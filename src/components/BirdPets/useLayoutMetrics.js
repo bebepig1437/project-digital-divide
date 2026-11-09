@@ -234,7 +234,7 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
           // sizes) — equal values mean the Range API didn't produce tighter
           // rects and perches would sit on the line box again.
           const rangeKey = `${rects.length}L ${rects[0].top.toFixed(1)}/${rects[0].bottom - rects[0].top}`
-          if (rangeKey !== lastHeadlineKey) {
+          if (logPads && rangeKey !== lastHeadlineKey) {
             lastHeadlineKey = rangeKey
             const elTop = markEl.getBoundingClientRect().top - heroBox.top
             console.info(
@@ -341,7 +341,7 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
       const boundKey = logoRect
         ? `${logoRect.left.toFixed(1)},${logoRect.top.toFixed(1)} ${(logoRect.right - logoRect.left).toFixed(1)}x${(logoRect.bottom - logoRect.top).toFixed(1)}`
         : 'none'
-      if (boundKey !== lastLogoBoundKey) {
+      if (logPads && boundKey !== lastLogoBoundKey) {
         lastLogoBoundKey = boundKey
         const ab = logoAlphaBox
           ? ` alphaBox[l=${(logoAlphaBox.l * 100).toFixed(1)}% r=${((1 - logoAlphaBox.r) * 100).toFixed(1)}% t=${(logoAlphaBox.t * 100).toFixed(1)}% b=${((1 - logoAlphaBox.b) * 100).toFixed(1)}%]`
@@ -433,7 +433,7 @@ export function useLayoutMetrics({ containerRef, landmarkRef, onUpdateRef }) {
             `${p.id}:${p.routeRect.width.toFixed(0)}x${p.routeRect.height.toFixed(0)}@${p.routeRect.left.toFixed(0)},${p.routeRect.top.toFixed(0)}`
         )
         .join('|')
-      if (padsKey !== lastPadsKey) {
+      if (logPads && padsKey !== lastPadsKey) {
         lastPadsKey = padsKey
         console.info(
           `[BirdPets] obstaclePads n=${obstaclePads.length}` +

@@ -5,7 +5,7 @@ export function makeSeededRng(seed) {
   return function rng() {
     s ^= s << 13
     s >>>= 0
-    s ^= s >> 17
+    s ^= s >>> 17
     s ^= s << 5
     s >>>= 0
     return s / 4294967296

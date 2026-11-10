@@ -17,7 +17,7 @@ export default function Testimonials({
           {items.map((t, i) => (
             <Reveal key={t.quote} delay={i * 80}>
               <figure className="h-full rounded-2xl border border-line/10 bg-surface p-7 shadow-sm">
-                <Quote className="text-brand-teal/40 dark:text-brand-cyan/50" size={28} />
+                <Quote className="text-brand-teal/25 dark:text-brand-cyan/30" size={28} />
                 <blockquote className="mt-3 text-[15px] leading-relaxed text-ink">
                   "{t.quote}"
                 </blockquote>

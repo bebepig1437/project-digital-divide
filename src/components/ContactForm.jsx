@@ -37,7 +37,7 @@ export default function ContactForm() {
   if (status === 'success') {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-brand-teal/20 bg-surface p-10 text-center shadow-sm">
-        <CheckCircle2 className="text-brand-teal" size={40} />
+        <CheckCircle2 className="text-brand-teal/70" size={40} />
         <h3 className="text-xl font-bold text-heading">Thanks for reaching out!</h3>
         <p className="text-muted">We'll get back to you at the email you provided.</p>
         <button
@@ -96,13 +96,13 @@ export default function ContactForm() {
 
       <div className="mt-4 space-y-1.5 text-center text-xs text-muted">
         <p>
-          <Link to="/volunteer" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
+          <Link to="/volunteer" className="text-heading hover:underline inline-flex items-center gap-1">
             Want to help on the bench or at a workshop? Fill out the volunteer form.
             <ArrowRight size={12} />
           </Link>
         </p>
         <p className="whitespace-nowrap">
-          Or email <a href={`mailto:${site.email}`} className="text-brand-teal hover:underline dark:text-brand-cyan">{site.email}</a>
+          Or email <a href={`mailto:${site.email}`} className="text-heading hover:underline">{site.email}</a>
         </p>
       </div>
     </>

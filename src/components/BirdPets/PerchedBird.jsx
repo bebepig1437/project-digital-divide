@@ -1,15 +1,13 @@
 /**
- * PerchedBird — side-view perched silhouette bird, same design family as
- * FlyingBird (which it swaps with when a flock bird lands).
+ * PerchedBird — side-view perched silhouette bird.
  *
  * Design (24px viewBox, facing right by default — beak on the right):
- *  - Body: the same horizontal oval as FlyingBird's.
+ *  - Body: a horizontal oval.
  *  - Head: same rounded shape at the right end, with the same tiny triangle
  *    beak and eye dot.
  *  - Tail: same three feather strokes fanning off the left end, angled down
  *    slightly so the bird reads as resting on its legs.
- *  - Wing: folded flat against the body — a single low-arc overlay (0.5 opacity)
- *    where FlyingBird has its near wing.
+ *  - Wing: folded flat against the body — a single low-arc overlay (0.5 opacity).
  *  - Legs: two thin strokes from the body underside to a feet baseline at
  *    viewBox y≈22 so the bird sits ON the perch point (the host anchor keeps
  *    the center, so feet ≈ center + 0.42*height — see FOOT_FRAC).
@@ -51,13 +49,13 @@ const PerchedBird = forwardRef(function PerchedBird(
         <path d="M6.8 12.9L2.6 13.5" />
         <path d="M6.7 13.6L3.2 15.6" />
         <path d="M7 14.3L4.1 17.7" />
-        {/* Body: same horizontal oval as FlyingBird's */}
+        {/* Body: horizontal oval */}
         <path
           d="M12.3 10.6C15.1 10.6 17 11.7 17 13.1C17 14.5 15.1 15.6 12.3 15.6C9.5 15.6 6.9 14.6 6.9 13.2C6.9 11.7 9.5 10.6 12.3 10.6Z"
           fill="currentColor"
           fillOpacity="0.85"
         />
-        {/* Head + beak + eye (identical to FlyingBird's) */}
+        {/* Head + beak + eye */}
         <path
           d="M16.1 9C17.9 9 19.1 10.2 19.1 11.7C19.1 12.9 18.1 13.9 16.7 14.1L14.9 14.3C15.6 13.5 15.8 12.5 15.5 11.4C15.7 10.2 15.9 9 16.1 9Z"
           fill="currentColor"

@@ -46,7 +46,7 @@ export default function TestimonialFeature() {
                   <div className="absolute top-0 left-0 w-1 h-full bg-brand-gradient" />
                   {/* Watermark quote mark */}
                   <div
-                    className="absolute top-6 left-6 text-[5rem] text-brand-teal/10 dark:text-brand-cyan/10 leading-none select-none -translate-y-6"
+                    className="absolute top-6 left-6 text-[5rem] text-brand-teal/6 dark:text-brand-cyan/6 leading-none select-none -translate-y-6"
                     aria-hidden="true"
                   >
                     &ldquo;

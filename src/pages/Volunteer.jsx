@@ -58,7 +58,7 @@ export default function Volunteer() {
         <meta name="twitter:title" content="Volunteer | Project Digital Divide" />
         <meta name="twitter:description" content="Join our student-led team bridging the digital divide in Houston. Help test laptops, mentor students at build workshops, connect with local schools, or build tracking software." />
       </Helmet>
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/25 via-brand-pale/5 to-canvas pt-16 pb-12 sm:pt-20 sm:pb-16">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-pale/40 via-brand-pale/20 to-canvas pt-16 pb-12 sm:pt-20 sm:pb-16">
         <div className="container-content max-w-3xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-heading sm:text-5xl">Join the team</h1>
           <p className="mt-5 text-lg font-medium text-heading/85 sm:text-xl">
@@ -72,7 +72,7 @@ export default function Volunteer() {
           {status === 'success' ? (
             <Reveal>
               <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-teal/20 bg-brand-pale/10 p-10 text-center shadow-sm">
-                <CheckCircle2 className="text-brand-teal" size={44} />
+                <CheckCircle2 className="text-brand-teal/70" size={44} />
                 <h2 className="text-2xl font-bold text-heading">Thanks — we got it.</h2>
                 <p className="max-w-sm text-muted">
                   Thanks! One of us will email you back soon.
@@ -155,13 +155,13 @@ export default function Volunteer() {
 
                 <div className="space-y-1.5 text-center text-xs text-muted">
                   <p>
-                    <Link to="/#contact" className="text-brand-teal hover:underline dark:text-brand-cyan inline-flex items-center gap-1">
+                    <Link to="/#contact" className="text-heading hover:underline inline-flex items-center gap-1">
                       Just want to donate a device or request one for a student? Use the contact form.
                       <ArrowRight size={12} />
                     </Link>
                   </p>
                   <p className="whitespace-nowrap">
-                    Or email <a href={`mailto:${site.email}`} className="text-brand-teal hover:underline dark:text-brand-cyan">{site.email}</a>
+                    Or email <a href={`mailto:${site.email}`} className="text-heading hover:underline">{site.email}</a>
                   </p>
                 </div>
               </form>

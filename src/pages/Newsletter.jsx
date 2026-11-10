@@ -53,7 +53,7 @@ export default function Newsletter() {
                     className="group block rounded-3xl border border-line/15 bg-surface p-7 transition-all duration-300 hover:border-brand-teal/50 hover:shadow-md sm:p-8"
                   >
                     <div className="flex flex-wrap items-center gap-3">
-                      <time className="text-xs font-semibold uppercase tracking-wider text-brand-teal dark:text-brand-cyan">
+                      <time className="text-xs font-semibold uppercase tracking-wider text-muted">
                         {formatDate(post.date)}
                       </time>
                     </div>

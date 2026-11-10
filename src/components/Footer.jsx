@@ -19,7 +19,7 @@ export default function Footer({ showContact = true }) {
                   href="https://www.amazon.com/hz/wishlist/ls/2BSB1I7207W2K?ref_=wl_share"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand-teal underline dark:text-brand-cyan"
+                  className="text-heading underline hover:decoration-2"
                 >
                   Amazon wishlist
                 </a>{' '}
@@ -32,7 +32,7 @@ export default function Footer({ showContact = true }) {
                   href="https://hackclub.com/hcb"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand-teal underline dark:text-brand-cyan"
+                  className="text-heading underline hover:decoration-2"
                 >
                   HCB
                 </a>.
@@ -52,7 +52,7 @@ export default function Footer({ showContact = true }) {
             <img src="/PDD2048dark.jpeg" alt="Project Digital Divide logo" className="h-11 w-11 rounded-md object-cover hidden dark:block" />
             <div>
               <p className="font-display text-lg font-bold text-white">Project Digital Divide</p>
-              <p className="text-sm text-brand-pale/80">Student-led in Pearland, TX · Serving Greater Houston</p>
+              <p className="text-sm text-white/70">Student-led in Pearland, TX · Serving Greater Houston</p>
             </div>
           </div>
 

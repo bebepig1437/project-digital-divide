@@ -28,7 +28,7 @@ export default function TestimonialStrip() {
                 <div className="rounded-3xl border border-line/15 bg-surface p-8 sm:p-10 shadow-sm relative">
                   {/* Watermark quote mark */}
                   <div
-                    className="absolute top-4 right-4 text-[4rem] text-brand-teal/15 dark:text-brand-cyan/15 leading-none select-none"
+                    className="absolute top-4 right-4 text-[4rem] text-brand-teal/10 dark:text-brand-cyan/10 leading-none select-none"
                     aria-hidden="true"
                   >
                     &ldquo;
